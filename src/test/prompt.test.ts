@@ -1,7 +1,8 @@
 import { evaluatePrompt } from '../index';
+import intent from './prompts/intent.json';
 
 describe('prompt', () => {
-  test('evaluatePrompt returns 4', () => {
-    expect(evaluatePrompt()).toBe(4);
+  test('evaluatePrompt with intentPrompt', () => {
+    expect(evaluatePrompt(intent)).toBe(4);
   });
 });

@@ -1,6 +1,6 @@
 {
   "model": "gpt-3.5-turbo",
   "messages": [],
-  "maxTokens": 500,
+  "max_tokens": 500,
   "temperature": 0.3
 }

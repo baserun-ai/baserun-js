@@ -1,0 +1,12 @@
+{
+  "config": {
+    "model": "gpt-4"
+  },
+  "prompts": [
+    {
+      "role": "user",
+      "template": "Generate a shopping list of the ingredients in ${appetizer}, ${entree}, and ${dessert}."
+    }
+  ],
+  "provider": "openai"
+}

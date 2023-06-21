@@ -12,7 +12,8 @@
     "build": "npm run clean && tsc",
     "test": "jest",
     "lint": "eslint --fix --ext .js,.ts .",
-    "format": "prettier --write \"**/*.{js,ts}\""
+    "format": "prettier --write \"**/*.{js,ts}\"",
+    "prepare": "husky install"
   },
   "keywords": [],
   "author": "",

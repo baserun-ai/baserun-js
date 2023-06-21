@@ -1,11 +1,14 @@
-import { preparePrompt } from '../index';
+import { Baserun } from '../index';
 import path from 'path';
 
 describe('evaluateLLMRequest', () => {
+  let baserun: Baserun;
+  beforeEach(() => {
+    baserun = new Baserun(path.join(__dirname, 'prompts'));
+  });
+
   test('single non template message', () => {
-    expect(
-      preparePrompt(path.join(__dirname, 'prompts', 'static.json')),
-    ).toEqual({
+    expect(baserun.buildPrompt('static')).toEqual({
       model: 'gpt-4',
       messages: [
         {
@@ -18,7 +21,7 @@ describe('evaluateLLMRequest', () => {
 
   test('single variable in single message', () => {
     expect(
-      preparePrompt(path.join(__dirname, 'prompts', 'country.json'), {
+      baserun.buildPrompt('country', {
         country: 'France',
       }),
     ).toEqual({
@@ -35,14 +38,14 @@ describe('evaluateLLMRequest', () => {
   });
 
   test('missing variable', () => {
-    expect(() =>
-      preparePrompt(path.join(__dirname, 'prompts', 'country.json')),
-    ).toThrowError(new Error("Variable 'country' not found"));
+    expect(() => baserun.buildPrompt('country')).toThrowError(
+      new Error("Variable 'country' not found"),
+    );
   });
 
   test('multiple variables in single message', () => {
     expect(
-      preparePrompt(path.join(__dirname, 'prompts', 'ingredients.json'), {
+      baserun.buildPrompt('ingredients', {
         appetizer: 'caesar salad',
         entree: 'spaghetti and meatballs',
         dessert: 'cheesecake',
@@ -61,7 +64,7 @@ describe('evaluateLLMRequest', () => {
 
   test('multiple messages', () => {
     expect(
-      preparePrompt(path.join(__dirname, 'prompts', 'assistant.json'), {
+      baserun.buildPrompt('assistant', {
         company: 'xfinity',
         question: 'Is there an outage in San Francisco?',
       }),

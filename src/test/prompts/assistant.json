@@ -1,0 +1,16 @@
+{
+  "config": {
+    "model": "gpt-4"
+  },
+  "prompts": [
+    {
+      "role": "system",
+      "template": "You are a helpful customer support assistant for ${company}."
+    },
+    {
+      "role": "user",
+      "template": "${question}"
+    }
+  ],
+  "provider": "openai"
+}

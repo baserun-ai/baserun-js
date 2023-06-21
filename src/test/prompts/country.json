@@ -1,0 +1,14 @@
+{
+  "config": {
+    "model": "gpt-3.5-turbo",
+    "max_tokens": 100,
+    "temperature": 0.3
+  },
+  "prompts": [
+    {
+      "role": "user",
+      "template": "What is the capital of ${country}?"
+    }
+  ],
+  "provider": "openai"
+}

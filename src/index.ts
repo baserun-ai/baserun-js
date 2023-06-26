@@ -1,11 +1,14 @@
-import { OpenAIChatMessage, OpenAIRequest, OpenAIRequestInput } from './openai';
+import { OpenAIRequest, OpenAIRequestInput } from './openai';
 import fs from 'fs';
 import path from 'path';
 import { Provider } from './provider';
 import { pickKeys, templatizeString } from './template';
 
+export type AIRequest = OpenAIRequest;
+export type AIRequestInput = OpenAIRequestInput;
+
 export class Baserun {
-  private _prompts: Map<string, OpenAIRequestInput> = new Map();
+  private _prompts: Map<string, AIRequestInput> = new Map();
   constructor(promptsPath: string) {
     try {
       const files = fs.readdirSync(promptsPath);
@@ -29,7 +32,7 @@ export class Baserun {
   buildPrompt(
     prompt: string,
     providedVariables?: Record<string, string>,
-  ): OpenAIRequest {
+  ): AIRequest {
     const input = this._prompts.get(prompt);
     if (!input) {
       throw new Error(`Unable to find prompt '${prompt}'`);
@@ -42,19 +45,17 @@ export class Baserun {
           const { config, messages } = input;
           return {
             ...config,
-            messages: messages.map(
-              ({ content, variables, ...rest }: OpenAIChatMessage) => {
-                return {
-                  ...rest,
-                  content: content
-                    ? templatizeString(
-                        content,
-                        pickKeys(variables, providedVariables),
-                      )
-                    : undefined,
-                };
-              },
-            ),
+            messages: messages.map(({ content, variables, ...rest }) => {
+              return {
+                ...rest,
+                content: content
+                  ? templatizeString(
+                      content,
+                      pickKeys(variables, providedVariables),
+                    )
+                  : undefined,
+              };
+            }),
           };
         }
 

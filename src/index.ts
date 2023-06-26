@@ -1,88 +1,67 @@
-import { OpenAIRequest, OpenAIRequestInput } from './openai';
-import fs from 'fs';
-import path from 'path';
-import { Provider } from './provider';
+import {
+  OpenAIChatRequestInput,
+  OpenAIChatRequestOutput,
+  OpenAICompletionRequestInput,
+  OpenAICompletionRequestOutput,
+  OpenAIRequestInput,
+  OpenAIRequestOutput,
+} from './openai';
+import { BaserunProvider, BaserunType, Variables } from './types';
 import { pickKeys, templatizeString } from './template';
 
-export type AIRequest = OpenAIRequest;
-export type AIRequestInput = OpenAIRequestInput;
+export { OpenAIRequestInput };
+export { Variables };
+export { BaserunProvider };
+export { BaserunType };
 
 export class Baserun {
-  private _prompts: Map<string, AIRequestInput> = new Map();
-  constructor(promptsPath?: string) {
-    if (!promptsPath) {
-      return;
-    }
+  buildPrompt(
+    input: OpenAIChatRequestInput,
+    providedVariables?: Record<string, string>,
+  ): OpenAIChatRequestOutput;
+  buildPrompt(
+    input: OpenAICompletionRequestInput,
+    providedVariables?: Record<string, string>,
+  ): OpenAICompletionRequestOutput;
+  buildPrompt(
+    input: OpenAIRequestInput,
+    providedVariables?: Record<string, string>,
+  ): OpenAIRequestOutput {
+    switch (input.provider) {
+      case BaserunProvider.OpenAI: {
+        switch (input.type) {
+          case BaserunType.Chat: {
+            const { config, messages } = input;
+            return {
+              ...config,
+              messages: messages.map(({ content, variables, ...rest }) => {
+                return {
+                  ...rest,
+                  content: content
+                    ? templatizeString(
+                        content,
+                        pickKeys(variables, providedVariables),
+                      )
+                    : undefined,
+                };
+              }),
+            };
+          }
 
-    try {
-      const files = fs.readdirSync(promptsPath);
-      for (const file of files) {
-        if (path.extname(file) === '.json') {
-          try {
-            const json = fs.readFileSync(path.join(promptsPath, file), 'utf-8');
-            const data = JSON.parse(json);
-            const promptName = path.basename(file, '.json');
-            this._prompts.set(promptName, data);
-          } catch (err) {
-            console.error(`Unable to read prompt '${file}'`);
+          case BaserunType.Completion: {
+            const {
+              config,
+              prompt: { content, variables },
+            } = input;
+            return {
+              ...config,
+              prompt: templatizeString(
+                content,
+                pickKeys(variables, providedVariables),
+              ),
+            };
           }
         }
-      }
-    } catch (err) {
-      throw new Error('Prompt path invalid.');
-    }
-  }
-
-  buildPrompt(
-    input: string,
-    providedVariables?: Record<string, string>,
-  ): AIRequest;
-  buildPrompt(
-    input: AIRequestInput,
-    providedVariables?: Record<string, string>,
-  ): AIRequest;
-  buildPrompt(
-    prompt: string | AIRequestInput,
-    providedVariables?: Record<string, string>,
-  ): AIRequest {
-    const input =
-      typeof prompt === 'string' ? this._prompts.get(prompt) : prompt;
-    if (!input) {
-      throw new Error(`Unable to find prompt '${prompt}'`);
-    }
-
-    const { provider } = input;
-    switch (provider) {
-      case Provider.OpenAI: {
-        if ('messages' in input) {
-          const { config, messages } = input;
-          return {
-            ...config,
-            messages: messages.map(({ content, variables, ...rest }) => {
-              return {
-                ...rest,
-                content: content
-                  ? templatizeString(
-                      content,
-                      pickKeys(variables, providedVariables),
-                    )
-                  : undefined,
-              };
-            }),
-          };
-        }
-
-        const {
-          config,
-          prompt: { content, variables },
-        } = input;
-        return {
-          ...config,
-          prompt: templatizeString(
-            content,
-            pickKeys(variables, providedVariables),
-          ),
-        };
       }
     }
   }

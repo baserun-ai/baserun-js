@@ -1,21 +1,15 @@
 import { Baserun } from '../index';
-import path from 'path';
+import { Prompts } from './prompts';
 
 describe('Baserun', () => {
   let baserun: Baserun;
   beforeEach(() => {
-    baserun = new Baserun(path.join(__dirname, 'prompts'));
-  });
-
-  test('missing prompt', () => {
-    expect(() => baserun.buildPrompt('nonexistent')).toThrowError(
-      new Error("Unable to find prompt 'nonexistent'"),
-    );
+    baserun = new Baserun();
   });
 
   describe('chat', () => {
     test('single non template message', () => {
-      expect(baserun.buildPrompt('static')).toEqual({
+      expect(baserun.buildPrompt(Prompts.static)).toEqual({
         model: 'gpt-4',
         messages: [
           {
@@ -28,7 +22,7 @@ describe('Baserun', () => {
 
     test('single variable in single message', () => {
       expect(
-        baserun.buildPrompt('country', {
+        baserun.buildPrompt(Prompts.country, {
           country: 'France',
         }),
       ).toEqual({
@@ -45,14 +39,14 @@ describe('Baserun', () => {
     });
 
     test('missing variable', () => {
-      expect(() => baserun.buildPrompt('country')).toThrowError(
+      expect(() => baserun.buildPrompt(Prompts.country)).toThrowError(
         new Error("Variable 'country' was not provided"),
       );
     });
 
     test('multiple variables in single message', () => {
       expect(
-        baserun.buildPrompt('ingredients', {
+        baserun.buildPrompt(Prompts.ingredients, {
           appetizer: 'caesar salad',
           entree: 'spaghetti and meatballs',
           dessert: 'cheesecake',
@@ -71,7 +65,7 @@ describe('Baserun', () => {
 
     test('multiple messages', () => {
       expect(
-        baserun.buildPrompt('assistant', {
+        baserun.buildPrompt(Prompts.assistant, {
           company: 'xfinity',
           question: 'Is there an outage in San Francisco?',
         }),
@@ -95,7 +89,7 @@ describe('Baserun', () => {
   describe('completion', () => {
     test('single variable in prompt', () => {
       expect(
-        baserun.buildPrompt('completion', {
+        baserun.buildPrompt(Prompts.completion, {
           country: 'France',
         }),
       ).toEqual({

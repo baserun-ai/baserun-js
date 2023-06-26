@@ -4,10 +4,11 @@
     "max_tokens": 100,
     "temperature": 0.3
   },
-  "prompts": [
+  "messages": [
     {
       "role": "user",
-      "template": "What is the capital of ${country}?"
+      "content": "What is the capital of {country}?",
+      "variables": ["country"]
     }
   ],
   "provider": "openai"

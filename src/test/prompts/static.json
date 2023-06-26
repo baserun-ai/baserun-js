@@ -2,7 +2,7 @@
   "config": {
     "model": "gpt-4"
   },
-  "prompts": [
+  "messages": [
     {
       "role": "user",
       "content": "What is the capital of Portugal?"

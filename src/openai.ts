@@ -1,42 +1,34 @@
 import {
   ChatCompletionRequestMessage,
-  ChatCompletionRequestMessageRoleEnum,
+  CreateCompletionRequest,
   CreateChatCompletionRequest,
 } from 'openai';
 import { Provider } from './provider';
-import { templatizeString } from './template';
 
-interface OpenAITemplateChatMessage {
-  role:
-    | typeof ChatCompletionRequestMessageRoleEnum.System
-    | typeof ChatCompletionRequestMessageRoleEnum.User;
-  template: string;
+interface Variables {
+  /* eslint-disable-next-line  @typescript-eslint/no-explicit-any */
+  variables?: string[];
 }
 
-export type OpenAIChatPrompt =
-  | ChatCompletionRequestMessage
-  | OpenAITemplateChatMessage;
+export type OpenAIChatMessage = ChatCompletionRequestMessage & Variables;
+type OpenAICompletionPrompt = { content: string } & Variables;
 
-export interface OpenAIChatRequestInput {
+interface OpenAIChatRequestInput {
   config: Omit<CreateChatCompletionRequest, 'messages'>;
-  prompts: OpenAIChatPrompt[];
+  messages: OpenAIChatMessage[];
   provider: Provider.OpenAI;
 }
 
-export type OpenAIChatRequest = CreateChatCompletionRequest;
-
-export function evaluateOpenAIPrompt(
-  prompt: OpenAIChatPrompt,
-  /* eslint-disable-next-line  @typescript-eslint/no-explicit-any */
-  variables: any,
-): ChatCompletionRequestMessage {
-  if ('template' in prompt) {
-    const { role, template } = prompt;
-    return {
-      role,
-      content: templatizeString(template, variables),
-    };
-  }
-
-  return prompt;
+interface OpenAICompletionRequestInput {
+  config: Omit<CreateCompletionRequest, 'prompt'>;
+  prompt: OpenAICompletionPrompt;
+  provider: Provider.OpenAI;
 }
+
+export type OpenAIRequestInput =
+  | OpenAIChatRequestInput
+  | OpenAICompletionRequestInput;
+
+export type OpenAIRequest =
+  | CreateChatCompletionRequest
+  | CreateCompletionRequest;

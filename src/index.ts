@@ -6,11 +6,10 @@ import {
   OpenAIRequestInput,
   OpenAIRequestOutput,
 } from './openai';
-import { BaserunProvider, BaserunType, Variables } from './types';
+import { BaserunProvider, BaserunType } from './types';
 import { pickKeys, templatizeString } from './template';
 
 export { OpenAIRequestInput };
-export { Variables };
 export { BaserunProvider };
 export { BaserunType };
 

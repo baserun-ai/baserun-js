@@ -1,7 +1,6 @@
 import { OpenAIChatRequestInput, OpenAIChatRequestOutput, OpenAICompletionRequestInput, OpenAICompletionRequestOutput, OpenAIRequestInput } from './openai';
-import { BaserunProvider, BaserunType, Variables } from './types';
+import { BaserunProvider, BaserunType } from './types';
 export { OpenAIRequestInput };
-export { Variables };
 export { BaserunProvider };
 export { BaserunType };
 export declare class Baserun {

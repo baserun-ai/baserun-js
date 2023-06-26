@@ -9,7 +9,11 @@ export type AIRequestInput = OpenAIRequestInput;
 
 export class Baserun {
   private _prompts: Map<string, AIRequestInput> = new Map();
-  constructor(promptsPath: string) {
+  constructor(promptsPath?: string) {
+    if (!promptsPath) {
+      return;
+    }
+
     try {
       const files = fs.readdirSync(promptsPath);
       for (const file of files) {
@@ -30,10 +34,19 @@ export class Baserun {
   }
 
   buildPrompt(
-    prompt: string,
+    input: string,
+    providedVariables?: Record<string, string>,
+  ): AIRequest;
+  buildPrompt(
+    input: AIRequestInput,
+    providedVariables?: Record<string, string>,
+  ): AIRequest;
+  buildPrompt(
+    prompt: string | AIRequestInput,
     providedVariables?: Record<string, string>,
   ): AIRequest {
-    const input = this._prompts.get(prompt);
+    const input =
+      typeof prompt === 'string' ? this._prompts.get(prompt) : prompt;
     if (!input) {
       throw new Error(`Unable to find prompt '${prompt}'`);
     }

@@ -22,6 +22,9 @@ const template_1 = require("./template");
 class Baserun {
     constructor(promptsPath) {
         this._prompts = new Map();
+        if (!promptsPath) {
+            return;
+        }
         try {
             const files = fs_1.default.readdirSync(promptsPath);
             for (const file of files) {
@@ -43,7 +46,7 @@ class Baserun {
         }
     }
     buildPrompt(prompt, providedVariables) {
-        const input = this._prompts.get(prompt);
+        const input = typeof prompt === 'string' ? this._prompts.get(prompt) : prompt;
         if (!input) {
             throw new Error(`Unable to find prompt '${prompt}'`);
         }

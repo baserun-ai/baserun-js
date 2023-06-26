@@ -3,6 +3,7 @@ export type AIRequest = OpenAIRequest;
 export type AIRequestInput = OpenAIRequestInput;
 export declare class Baserun {
     private _prompts;
-    constructor(promptsPath: string);
-    buildPrompt(prompt: string, providedVariables?: Record<string, string>): AIRequest;
+    constructor(promptsPath?: string);
+    buildPrompt(input: string, providedVariables?: Record<string, string>): AIRequest;
+    buildPrompt(input: AIRequestInput, providedVariables?: Record<string, string>): AIRequest;
 }

@@ -14,8 +14,7 @@ export function pickKeys(
 
 export function templatizeString(
   template: string,
-  /* eslint-disable-next-line  @typescript-eslint/no-explicit-any */
-  variables: { [key: string]: string } = {},
+  variables: Record<string, string> = {},
 ): string {
   let result = template;
 

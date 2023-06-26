@@ -9,7 +9,7 @@ describe('Baserun', () => {
     });
     describe('chat', () => {
         test('single non template message', () => {
-            expect(baserun.buildPrompt(prompts_1.ChatPrompts.static)).toEqual({
+            expect(baserun.buildChatPrompt(prompts_1.ChatPrompts.static)).toEqual({
                 model: 'gpt-4',
                 messages: [
                     {
@@ -20,7 +20,7 @@ describe('Baserun', () => {
             });
         });
         test('single variable in single message', () => {
-            expect(baserun.buildPrompt(prompts_1.ChatPrompts.country, {
+            expect(baserun.buildChatPrompt(prompts_1.ChatPrompts.country, {
                 country: 'France',
             })).toEqual({
                 model: 'gpt-3.5-turbo',
@@ -35,10 +35,10 @@ describe('Baserun', () => {
             });
         });
         test('missing variable', () => {
-            expect(() => baserun.buildPrompt(prompts_1.ChatPrompts.country)).toThrowError(new Error("Variable 'country' was not provided"));
+            expect(() => baserun.buildChatPrompt(prompts_1.ChatPrompts.country)).toThrowError(new Error("Variable 'country' was not provided"));
         });
         test('multiple variables in single message', () => {
-            expect(baserun.buildPrompt(prompts_1.ChatPrompts.ingredients, {
+            expect(baserun.buildChatPrompt(prompts_1.ChatPrompts.ingredients, {
                 appetizer: 'caesar salad',
                 entree: 'spaghetti and meatballs',
                 dessert: 'cheesecake',
@@ -53,7 +53,7 @@ describe('Baserun', () => {
             });
         });
         test('multiple messages', () => {
-            expect(baserun.buildPrompt(prompts_1.ChatPrompts.assistant, {
+            expect(baserun.buildChatPrompt(prompts_1.ChatPrompts.assistant, {
                 company: 'xfinity',
                 question: 'Is there an outage in San Francisco?',
             })).toEqual({
@@ -73,7 +73,7 @@ describe('Baserun', () => {
     });
     describe('completion', () => {
         test('single variable in prompt', () => {
-            expect(baserun.buildPrompt(prompts_1.CompletionPrompts.completion, {
+            expect(baserun.buildCompletionPrompt(prompts_1.CompletionPrompts.completion, {
                 country: 'France',
             })).toEqual({
                 model: 'text-davinci-003',

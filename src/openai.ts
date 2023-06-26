@@ -22,12 +22,9 @@ export interface OpenAICompletionRequestInput {
   type: BaserunType.Completion;
 }
 
+export type OpenAIChatRequestOutput = CreateChatCompletionRequest;
+export type OpenAICompletionRequestOutput = CreateCompletionRequest;
+
 export type OpenAIRequestInput =
   | OpenAIChatRequestInput
   | OpenAICompletionRequestInput;
-
-export type OpenAIChatRequestOutput = CreateChatCompletionRequest;
-export type OpenAICompletionRequestOutput = CreateCompletionRequest;
-export type OpenAIRequestOutput =
-  | OpenAIChatRequestOutput
-  | OpenAICompletionRequestOutput;

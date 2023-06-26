@@ -11,9 +11,7 @@ function pickKeys(keys = [], variables = {}) {
     }, {});
 }
 exports.pickKeys = pickKeys;
-function templatizeString(template, 
-/* eslint-disable-next-line  @typescript-eslint/no-explicit-any */
-variables = {}) {
+function templatizeString(template, variables = {}) {
     let result = template;
     for (const [key, value] of Object.entries(variables)) {
         const regex = new RegExp('\\{\\s*' + key + '\\s*}', 'g');

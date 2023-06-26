@@ -1,5 +1,5 @@
 import { Baserun } from '../index';
-import { Prompts } from './prompts';
+import { ChatPrompts, CompletionPrompts } from './prompts';
 
 describe('Baserun', () => {
   let baserun: Baserun;
@@ -9,7 +9,7 @@ describe('Baserun', () => {
 
   describe('chat', () => {
     test('single non template message', () => {
-      expect(baserun.buildPrompt(Prompts.static)).toEqual({
+      expect(baserun.buildPrompt(ChatPrompts.static)).toEqual({
         model: 'gpt-4',
         messages: [
           {
@@ -22,7 +22,7 @@ describe('Baserun', () => {
 
     test('single variable in single message', () => {
       expect(
-        baserun.buildPrompt(Prompts.country, {
+        baserun.buildPrompt(ChatPrompts.country, {
           country: 'France',
         }),
       ).toEqual({
@@ -39,14 +39,14 @@ describe('Baserun', () => {
     });
 
     test('missing variable', () => {
-      expect(() => baserun.buildPrompt(Prompts.country)).toThrowError(
+      expect(() => baserun.buildPrompt(ChatPrompts.country)).toThrowError(
         new Error("Variable 'country' was not provided"),
       );
     });
 
     test('multiple variables in single message', () => {
       expect(
-        baserun.buildPrompt(Prompts.ingredients, {
+        baserun.buildPrompt(ChatPrompts.ingredients, {
           appetizer: 'caesar salad',
           entree: 'spaghetti and meatballs',
           dessert: 'cheesecake',
@@ -65,7 +65,7 @@ describe('Baserun', () => {
 
     test('multiple messages', () => {
       expect(
-        baserun.buildPrompt(Prompts.assistant, {
+        baserun.buildPrompt(ChatPrompts.assistant, {
           company: 'xfinity',
           question: 'Is there an outage in San Francisco?',
         }),
@@ -89,7 +89,7 @@ describe('Baserun', () => {
   describe('completion', () => {
     test('single variable in prompt', () => {
       expect(
-        baserun.buildPrompt(Prompts.completion, {
+        baserun.buildPrompt(CompletionPrompts.completion, {
           country: 'France',
         }),
       ).toEqual({

@@ -1,7 +1,24 @@
-import { OpenAIRequestInput } from '../openai';
+import {
+  OpenAIChatRequestInput,
+  OpenAICompletionRequestInput,
+} from '../openai';
 import { BaserunProvider, BaserunType } from '../types';
 
-export const Prompts: Record<string, OpenAIRequestInput> = {
+export const CompletionPrompts: Record<string, OpenAICompletionRequestInput> = {
+  completion: {
+    config: {
+      model: 'text-davinci-003',
+    },
+    prompt: {
+      content: 'What is the capital of {country}?',
+      variables: ['country'],
+    },
+    provider: BaserunProvider.OpenAI,
+    type: BaserunType.Completion,
+  },
+};
+
+export const ChatPrompts: Record<string, OpenAIChatRequestInput> = {
   assistant: {
     config: {
       model: 'gpt-4',
@@ -20,17 +37,6 @@ export const Prompts: Record<string, OpenAIRequestInput> = {
     ],
     provider: BaserunProvider.OpenAI,
     type: BaserunType.Chat,
-  },
-  completion: {
-    config: {
-      model: 'text-davinci-003',
-    },
-    prompt: {
-      content: 'What is the capital of {country}?',
-      variables: ['country'],
-    },
-    provider: BaserunProvider.OpenAI,
-    type: BaserunType.Completion,
   },
   country: {
     config: {

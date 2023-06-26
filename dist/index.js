@@ -10,60 +10,31 @@ var __rest = (this && this.__rest) || function (s, e) {
         }
     return t;
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Baserun = void 0;
-const fs_1 = __importDefault(require("fs"));
-const path_1 = __importDefault(require("path"));
-const provider_1 = require("./provider");
+exports.Baserun = exports.BaserunType = exports.BaserunProvider = void 0;
+const types_1 = require("./types");
+Object.defineProperty(exports, "BaserunProvider", { enumerable: true, get: function () { return types_1.BaserunProvider; } });
+Object.defineProperty(exports, "BaserunType", { enumerable: true, get: function () { return types_1.BaserunType; } });
 const template_1 = require("./template");
 class Baserun {
-    constructor(promptsPath) {
-        this._prompts = new Map();
-        if (!promptsPath) {
-            return;
-        }
-        try {
-            const files = fs_1.default.readdirSync(promptsPath);
-            for (const file of files) {
-                if (path_1.default.extname(file) === '.json') {
-                    try {
-                        const json = fs_1.default.readFileSync(path_1.default.join(promptsPath, file), 'utf-8');
-                        const data = JSON.parse(json);
-                        const promptName = path_1.default.basename(file, '.json');
-                        this._prompts.set(promptName, data);
+    buildPrompt(input, providedVariables) {
+        switch (input.provider) {
+            case types_1.BaserunProvider.OpenAI: {
+                switch (input.type) {
+                    case types_1.BaserunType.Chat: {
+                        const { config, messages } = input;
+                        return Object.assign(Object.assign({}, config), { messages: messages.map((_a) => {
+                                var { content, variables } = _a, rest = __rest(_a, ["content", "variables"]);
+                                return Object.assign(Object.assign({}, rest), { content: content
+                                        ? (0, template_1.templatizeString)(content, (0, template_1.pickKeys)(variables, providedVariables))
+                                        : undefined });
+                            }) });
                     }
-                    catch (err) {
-                        console.error(`Unable to read prompt '${file}'`);
+                    case types_1.BaserunType.Completion: {
+                        const { config, prompt: { content, variables }, } = input;
+                        return Object.assign(Object.assign({}, config), { prompt: (0, template_1.templatizeString)(content, (0, template_1.pickKeys)(variables, providedVariables)) });
                     }
                 }
-            }
-        }
-        catch (err) {
-            throw new Error('Prompt path invalid.');
-        }
-    }
-    buildPrompt(prompt, providedVariables) {
-        const input = typeof prompt === 'string' ? this._prompts.get(prompt) : prompt;
-        if (!input) {
-            throw new Error(`Unable to find prompt '${prompt}'`);
-        }
-        const { provider } = input;
-        switch (provider) {
-            case provider_1.Provider.OpenAI: {
-                if ('messages' in input) {
-                    const { config, messages } = input;
-                    return Object.assign(Object.assign({}, config), { messages: messages.map((_a) => {
-                            var { content, variables } = _a, rest = __rest(_a, ["content", "variables"]);
-                            return Object.assign(Object.assign({}, rest), { content: content
-                                    ? (0, template_1.templatizeString)(content, (0, template_1.pickKeys)(variables, providedVariables))
-                                    : undefined });
-                        }) });
-                }
-                const { config, prompt: { content, variables }, } = input;
-                return Object.assign(Object.assign({}, config), { prompt: (0, template_1.templatizeString)(content, (0, template_1.pickKeys)(variables, providedVariables)) });
             }
         }
     }

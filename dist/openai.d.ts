@@ -16,8 +16,7 @@ export interface OpenAICompletionRequestInput {
     provider: BaserunProvider.OpenAI;
     type: BaserunType.Completion;
 }
-export type OpenAIRequestInput = OpenAIChatRequestInput | OpenAICompletionRequestInput;
 export type OpenAIChatRequestOutput = CreateChatCompletionRequest;
 export type OpenAICompletionRequestOutput = CreateCompletionRequest;
-export type OpenAIRequestOutput = OpenAIChatRequestOutput | OpenAICompletionRequestOutput;
+export type OpenAIRequestInput = OpenAIChatRequestInput | OpenAICompletionRequestInput;
 export {};

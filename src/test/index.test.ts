@@ -9,7 +9,7 @@ describe('Baserun', () => {
 
   describe('chat', () => {
     test('single non template message', () => {
-      expect(baserun.buildPrompt(ChatPrompts.static)).toEqual({
+      expect(baserun.buildChatPrompt(ChatPrompts.static)).toEqual({
         model: 'gpt-4',
         messages: [
           {
@@ -22,7 +22,7 @@ describe('Baserun', () => {
 
     test('single variable in single message', () => {
       expect(
-        baserun.buildPrompt(ChatPrompts.country, {
+        baserun.buildChatPrompt(ChatPrompts.country, {
           country: 'France',
         }),
       ).toEqual({
@@ -39,14 +39,14 @@ describe('Baserun', () => {
     });
 
     test('missing variable', () => {
-      expect(() => baserun.buildPrompt(ChatPrompts.country)).toThrowError(
+      expect(() => baserun.buildChatPrompt(ChatPrompts.country)).toThrowError(
         new Error("Variable 'country' was not provided"),
       );
     });
 
     test('multiple variables in single message', () => {
       expect(
-        baserun.buildPrompt(ChatPrompts.ingredients, {
+        baserun.buildChatPrompt(ChatPrompts.ingredients, {
           appetizer: 'caesar salad',
           entree: 'spaghetti and meatballs',
           dessert: 'cheesecake',
@@ -65,7 +65,7 @@ describe('Baserun', () => {
 
     test('multiple messages', () => {
       expect(
-        baserun.buildPrompt(ChatPrompts.assistant, {
+        baserun.buildChatPrompt(ChatPrompts.assistant, {
           company: 'xfinity',
           question: 'Is there an outage in San Francisco?',
         }),
@@ -89,7 +89,7 @@ describe('Baserun', () => {
   describe('completion', () => {
     test('single variable in prompt', () => {
       expect(
-        baserun.buildPrompt(CompletionPrompts.completion, {
+        baserun.buildCompletionPrompt(CompletionPrompts.completion, {
           country: 'France',
         }),
       ).toEqual({

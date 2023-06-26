@@ -2,14 +2,16 @@
   "config": {
     "model": "gpt-4"
   },
-  "prompts": [
+  "messages": [
     {
       "role": "system",
-      "template": "You are a helpful customer support assistant for ${company}."
+      "content": "You are a helpful customer support assistant for {company}.",
+      "variables": ["company"]
     },
     {
       "role": "user",
-      "template": "${question}"
+      "content": "{question}",
+      "variables": ["question"]
     }
   ],
   "provider": "openai"

@@ -1,15 +1,11 @@
-import {
-  evaluateOpenAIPrompt,
-  OpenAIChatPrompt,
-  OpenAIChatRequest,
-  OpenAIChatRequestInput,
-} from './openai';
+import { OpenAIChatMessage, OpenAIRequest, OpenAIRequestInput } from './openai';
 import fs from 'fs';
 import path from 'path';
 import { Provider } from './provider';
+import { pickKeys, templatizeString } from './template';
 
 export class Baserun {
-  private _prompts: Map<string, OpenAIChatRequestInput> = new Map();
+  private _prompts: Map<string, OpenAIRequestInput> = new Map();
   constructor(promptsPath: string) {
     try {
       const files = fs.readdirSync(promptsPath);
@@ -21,7 +17,7 @@ export class Baserun {
             const promptName = path.basename(file, '.json');
             this._prompts.set(promptName, data);
           } catch (err) {
-            console.error(`Unable to read prompt: ${file}`);
+            console.error(`Unable to read prompt '${file}'`);
           }
         }
       }
@@ -30,19 +26,47 @@ export class Baserun {
     }
   }
 
-  /* eslint-disable-next-line  @typescript-eslint/no-explicit-any */
-  buildPrompt(prompt: string, variables?: any): OpenAIChatRequest {
+  buildPrompt(
+    prompt: string,
+    providedVariables?: Record<string, string>,
+  ): OpenAIRequest {
     const input = this._prompts.get(prompt);
     if (!input) {
-      throw new Error(`Unable to find prompt: ${prompt}`);
+      throw new Error(`Unable to find prompt '${prompt}'`);
     }
-    const { config, prompts, provider } = input;
+
+    const { provider } = input;
     switch (provider) {
       case Provider.OpenAI: {
+        if ('messages' in input) {
+          const { config, messages } = input;
+          return {
+            ...config,
+            messages: messages.map(
+              ({ content, variables, ...rest }: OpenAIChatMessage) => {
+                return {
+                  ...rest,
+                  content: content
+                    ? templatizeString(
+                        content,
+                        pickKeys(variables, providedVariables),
+                      )
+                    : undefined,
+                };
+              },
+            ),
+          };
+        }
+
+        const {
+          config,
+          prompt: { content, variables },
+        } = input;
         return {
           ...config,
-          messages: prompts.map((prompt: OpenAIChatPrompt) =>
-            evaluateOpenAIPrompt(prompt, variables),
+          prompt: templatizeString(
+            content,
+            pickKeys(variables, providedVariables),
           ),
         };
       }

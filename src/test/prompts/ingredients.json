@@ -2,10 +2,11 @@
   "config": {
     "model": "gpt-4"
   },
-  "prompts": [
+  "messages": [
     {
       "role": "user",
-      "template": "Generate a shopping list of the ingredients in ${appetizer}, ${entree}, and ${dessert}."
+      "content": "Generate a shopping list of the ingredients in {appetizer}, {entree}, and {dessert}.",
+      "variables": ["appetizer", "entree", "dessert"]
     }
   ],
   "provider": "openai"

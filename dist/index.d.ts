@@ -1,9 +1,10 @@
-import { OpenAIRequest, OpenAIRequestInput } from './openai';
-export type AIRequest = OpenAIRequest;
-export type AIRequestInput = OpenAIRequestInput;
+import { OpenAIChatRequestInput, OpenAIChatRequestOutput, OpenAICompletionRequestInput, OpenAICompletionRequestOutput, OpenAIRequestInput } from './openai';
+import { BaserunProvider, BaserunType, Variables } from './types';
+export { OpenAIRequestInput };
+export { Variables };
+export { BaserunProvider };
+export { BaserunType };
 export declare class Baserun {
-    private _prompts;
-    constructor(promptsPath?: string);
-    buildPrompt(input: string, providedVariables?: Record<string, string>): AIRequest;
-    buildPrompt(input: AIRequestInput, providedVariables?: Record<string, string>): AIRequest;
+    buildPrompt(input: OpenAIChatRequestInput, providedVariables?: Record<string, string>): OpenAIChatRequestOutput;
+    buildPrompt(input: OpenAICompletionRequestInput, providedVariables?: Record<string, string>): OpenAICompletionRequestOutput;
 }

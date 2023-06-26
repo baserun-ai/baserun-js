@@ -1,21 +1,15 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 const index_1 = require("../index");
-const path_1 = __importDefault(require("path"));
+const prompts_1 = require("./prompts");
 describe('Baserun', () => {
     let baserun;
     beforeEach(() => {
-        baserun = new index_1.Baserun(path_1.default.join(__dirname, 'prompts'));
-    });
-    test('missing prompt', () => {
-        expect(() => baserun.buildPrompt('nonexistent')).toThrowError(new Error("Unable to find prompt 'nonexistent'"));
+        baserun = new index_1.Baserun();
     });
     describe('chat', () => {
         test('single non template message', () => {
-            expect(baserun.buildPrompt('static')).toEqual({
+            expect(baserun.buildPrompt(prompts_1.ChatPrompts.static)).toEqual({
                 model: 'gpt-4',
                 messages: [
                     {
@@ -26,7 +20,7 @@ describe('Baserun', () => {
             });
         });
         test('single variable in single message', () => {
-            expect(baserun.buildPrompt('country', {
+            expect(baserun.buildPrompt(prompts_1.ChatPrompts.country, {
                 country: 'France',
             })).toEqual({
                 model: 'gpt-3.5-turbo',
@@ -41,10 +35,10 @@ describe('Baserun', () => {
             });
         });
         test('missing variable', () => {
-            expect(() => baserun.buildPrompt('country')).toThrowError(new Error("Variable 'country' was not provided"));
+            expect(() => baserun.buildPrompt(prompts_1.ChatPrompts.country)).toThrowError(new Error("Variable 'country' was not provided"));
         });
         test('multiple variables in single message', () => {
-            expect(baserun.buildPrompt('ingredients', {
+            expect(baserun.buildPrompt(prompts_1.ChatPrompts.ingredients, {
                 appetizer: 'caesar salad',
                 entree: 'spaghetti and meatballs',
                 dessert: 'cheesecake',
@@ -59,7 +53,7 @@ describe('Baserun', () => {
             });
         });
         test('multiple messages', () => {
-            expect(baserun.buildPrompt('assistant', {
+            expect(baserun.buildPrompt(prompts_1.ChatPrompts.assistant, {
                 company: 'xfinity',
                 question: 'Is there an outage in San Francisco?',
             })).toEqual({
@@ -79,7 +73,7 @@ describe('Baserun', () => {
     });
     describe('completion', () => {
         test('single variable in prompt', () => {
-            expect(baserun.buildPrompt('completion', {
+            expect(baserun.buildPrompt(prompts_1.CompletionPrompts.completion, {
                 country: 'France',
             })).toEqual({
                 model: 'text-davinci-003',

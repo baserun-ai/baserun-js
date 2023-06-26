@@ -1,22 +1,23 @@
 import { ChatCompletionRequestMessage, CreateCompletionRequest, CreateChatCompletionRequest } from 'openai';
-import { Provider } from './provider';
-interface Variables {
-    variables?: string[];
-}
+import { BaserunProvider, BaserunType, Variables } from './types';
 export type OpenAIChatMessage = ChatCompletionRequestMessage & Variables;
 type OpenAICompletionPrompt = {
     content: string;
 } & Variables;
-interface OpenAIChatRequestInput {
+export interface OpenAIChatRequestInput {
     config: Omit<CreateChatCompletionRequest, 'messages'>;
     messages: OpenAIChatMessage[];
-    provider: Provider.OpenAI;
+    provider: BaserunProvider.OpenAI;
+    type: BaserunType.Chat;
 }
-interface OpenAICompletionRequestInput {
+export interface OpenAICompletionRequestInput {
     config: Omit<CreateCompletionRequest, 'prompt'>;
     prompt: OpenAICompletionPrompt;
-    provider: Provider.OpenAI;
+    provider: BaserunProvider.OpenAI;
+    type: BaserunType.Completion;
 }
 export type OpenAIRequestInput = OpenAIChatRequestInput | OpenAICompletionRequestInput;
-export type OpenAIRequest = CreateChatCompletionRequest | CreateCompletionRequest;
+export type OpenAIChatRequestOutput = CreateChatCompletionRequest;
+export type OpenAICompletionRequestOutput = CreateCompletionRequest;
+export type OpenAIRequestOutput = OpenAIChatRequestOutput | OpenAICompletionRequestOutput;
 export {};

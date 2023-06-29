@@ -1,6 +1,6 @@
 import { ChatCompletionRequestMessage, CreateCompletionRequest, CreateChatCompletionRequest } from 'openai';
 import { BaserunProvider, BaserunType, Variables } from './types';
-import { ChatCompletionRequestMessageRoleEnum } from "openai";
+import { ChatCompletionRequestMessageRoleEnum } from 'openai';
 export type OpenAIChatMessage = ChatCompletionRequestMessage & Variables;
 export type OpenAICompletionPrompt = {
     content: string;

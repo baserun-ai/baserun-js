@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.templatizeString = exports.pickKeys = void 0;
+exports.parseVariablesFromTemplateString = exports.templatizeString = exports.pickKeys = void 0;
 function pickKeys(keys = [], variables = {}) {
     return keys.reduce((acc, key) => {
         if (!(key in variables)) {
@@ -23,3 +23,30 @@ function templatizeString(template, variables = {}) {
     return result;
 }
 exports.templatizeString = templatizeString;
+function parseVariablesFromTemplateString(template) {
+    const segments = [];
+    let currentIndex = 0;
+    const regex = new RegExp('\\{([^{}]*?)}', 'g');
+    let match;
+    while ((match = regex.exec(template)) !== null) {
+        if (match.index > currentIndex) {
+            segments.push({
+                type: 'literal',
+                text: template.slice(currentIndex, match.index),
+            });
+        }
+        segments.push({
+            type: 'variable',
+            name: match[1].trim(),
+        });
+        currentIndex = regex.lastIndex;
+    }
+    if (currentIndex < template.length) {
+        segments.push({
+            type: 'literal',
+            text: template.slice(currentIndex),
+        });
+    }
+    return segments;
+}
+exports.parseVariablesFromTemplateString = parseVariablesFromTemplateString;

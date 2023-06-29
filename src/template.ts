@@ -29,3 +29,47 @@ export function templatizeString(
 
   return result;
 }
+
+interface LiteralSegment {
+  type: 'literal';
+  text: string;
+}
+
+interface VariableSegment {
+  type: 'variable';
+  name: string;
+}
+
+type Segment = LiteralSegment | VariableSegment;
+
+export function parseVariablesFromTemplateString(template: string): Segment[] {
+  const segments: Segment[] = [];
+  let currentIndex = 0;
+  const regex = new RegExp('\\{([^{}]*?)}', 'g');
+  let match;
+
+  while ((match = regex.exec(template)) !== null) {
+    if (match.index > currentIndex) {
+      segments.push({
+        type: 'literal',
+        text: template.slice(currentIndex, match.index),
+      });
+    }
+
+    segments.push({
+      type: 'variable',
+      name: match[1].trim(),
+    });
+
+    currentIndex = regex.lastIndex;
+  }
+
+  if (currentIndex < template.length) {
+    segments.push({
+      type: 'literal',
+      text: template.slice(currentIndex),
+    });
+  }
+
+  return segments;
+}

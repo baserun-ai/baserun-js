@@ -2,6 +2,7 @@ import {
   OpenAIChatMessage,
   OpenAIChatRequestInput,
   OpenAIChatRequestOutput,
+  OpenAIChatRole,
   OpenAICompletionPrompt,
   OpenAICompletionRequestInput,
   OpenAICompletionRequestOutput,
@@ -12,6 +13,7 @@ import { pickKeys, templatizeString } from './template';
 
 export {
   OpenAIChatMessage,
+  OpenAIChatRole,
   OpenAICompletionPrompt,
   OpenAIRequestInput,
   BaserunProvider,

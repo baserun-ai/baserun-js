@@ -11,13 +11,14 @@ var __rest = (this && this.__rest) || function (s, e) {
     return t;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Baserun = exports.BaserunType = exports.BaserunProvider = exports.OpenAIChatRole = void 0;
+exports.Baserun = exports.parseVariablesFromTemplateString = exports.BaserunType = exports.BaserunProvider = exports.OpenAIChatRole = void 0;
 const openai_1 = require("./openai");
 Object.defineProperty(exports, "OpenAIChatRole", { enumerable: true, get: function () { return openai_1.OpenAIChatRole; } });
 const types_1 = require("./types");
 Object.defineProperty(exports, "BaserunProvider", { enumerable: true, get: function () { return types_1.BaserunProvider; } });
 Object.defineProperty(exports, "BaserunType", { enumerable: true, get: function () { return types_1.BaserunType; } });
 const template_1 = require("./template");
+Object.defineProperty(exports, "parseVariablesFromTemplateString", { enumerable: true, get: function () { return template_1.parseVariablesFromTemplateString; } });
 class Baserun {
     buildChatPrompt(input, providedVariables) {
         const { config, messages } = input;

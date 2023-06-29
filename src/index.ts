@@ -10,7 +10,13 @@ import {
 import { BaserunProvider, BaserunType } from './types';
 import { pickKeys, templatizeString } from './template';
 
-export { OpenAIChatMessage, OpenAICompletionPrompt, OpenAIRequestInput, BaserunProvider, BaserunType };
+export {
+  OpenAIChatMessage,
+  OpenAICompletionPrompt,
+  OpenAIRequestInput,
+  BaserunProvider,
+  BaserunType,
+};
 
 export class Baserun {
   buildChatPrompt(

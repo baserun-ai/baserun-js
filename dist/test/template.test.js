@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const template_1 = require("../template");
-describe('templateString', () => {
+describe('templateizeString', () => {
     test('replaces single variable correctly', () => {
         const template = 'Hello, {name}!';
         const variables = { name: 'Alice' };
@@ -26,5 +26,62 @@ describe('templateString', () => {
         const template = 'Hello, {name}! Today is {day}.';
         const variables = { name: 'Alice', month: 'May' };
         expect(() => (0, template_1.templatizeString)(template, variables)).toThrowError(new Error("Variable 'month' not found"));
+    });
+});
+describe('parseVariablesFromTemplateString', () => {
+    it('should parse single variable correctly', () => {
+        const template = 'Hello, {name}!';
+        const result = (0, template_1.parseVariablesFromTemplateString)(template);
+        expect(result).toEqual([
+            { type: 'literal', text: 'Hello, ' },
+            { type: 'variable', name: 'name' },
+            { type: 'literal', text: '!' },
+        ]);
+    });
+    it('should parse multiple variables correctly', () => {
+        const template = 'Hello, {firstName} {lastName}!';
+        const result = (0, template_1.parseVariablesFromTemplateString)(template);
+        expect(result).toEqual([
+            { type: 'literal', text: 'Hello, ' },
+            { type: 'variable', name: 'firstName' },
+            { type: 'literal', text: ' ' },
+            { type: 'variable', name: 'lastName' },
+            { type: 'literal', text: '!' },
+        ]);
+    });
+    it('should ignore unmatched curly braces', () => {
+        const template = 'Hello, {firstName, {lastName}';
+        const result = (0, template_1.parseVariablesFromTemplateString)(template);
+        expect(result).toEqual([
+            { type: 'literal', text: 'Hello, {firstName, ' },
+            { type: 'variable', name: 'lastName' },
+        ]);
+    });
+    it('should return an empty array if there are no variables', () => {
+        const template = 'Hello, world!';
+        const result = (0, template_1.parseVariablesFromTemplateString)(template);
+        expect(result).toEqual([{ type: 'literal', text: 'Hello, world!' }]);
+    });
+    it('should handle spaces within braces', () => {
+        const template = 'Hello, { first name } { last name }!';
+        const result = (0, template_1.parseVariablesFromTemplateString)(template);
+        expect(result).toEqual([
+            { type: 'literal', text: 'Hello, ' },
+            { type: 'variable', name: 'first name' },
+            { type: 'literal', text: ' ' },
+            { type: 'variable', name: 'last name' },
+            { type: 'literal', text: '!' },
+        ]);
+    });
+    it('should ignore spaces outside braces', () => {
+        const template = 'Hello, {firstName} {lastName}!';
+        const result = (0, template_1.parseVariablesFromTemplateString)(template);
+        expect(result).toEqual([
+            { type: 'literal', text: 'Hello, ' },
+            { type: 'variable', name: 'firstName' },
+            { type: 'literal', text: ' ' },
+            { type: 'variable', name: 'lastName' },
+            { type: 'literal', text: '!' },
+        ]);
     });
 });

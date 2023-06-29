@@ -17,7 +17,7 @@ export interface OpenAICompletionRequestInput {
     provider: BaserunProvider.OpenAI;
     type: BaserunType.Completion;
 }
-export type OpenAIChatRole = ChatCompletionRequestMessageRoleEnum;
+export { ChatCompletionRequestMessageRoleEnum as OpenAIChatRole };
 export type OpenAIChatRequestOutput = CreateChatCompletionRequest;
 export type OpenAICompletionRequestOutput = CreateCompletionRequest;
 export type OpenAIRequestInput = OpenAIChatRequestInput | OpenAICompletionRequestInput;

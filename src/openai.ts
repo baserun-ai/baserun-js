@@ -6,7 +6,7 @@ import {
 import { BaserunProvider, BaserunType, Variables } from './types';
 
 export type OpenAIChatMessage = ChatCompletionRequestMessage & Variables;
-type OpenAICompletionPrompt = { content: string } & Variables;
+export type OpenAICompletionPrompt = { content: string } & Variables;
 
 export interface OpenAIChatRequestInput {
   config: Omit<CreateChatCompletionRequest, 'messages'>;

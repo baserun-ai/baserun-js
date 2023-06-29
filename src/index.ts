@@ -1,6 +1,8 @@
 import {
+  OpenAIChatMessage,
   OpenAIChatRequestInput,
   OpenAIChatRequestOutput,
+  OpenAICompletionPrompt,
   OpenAICompletionRequestInput,
   OpenAICompletionRequestOutput,
   OpenAIRequestInput,
@@ -8,9 +10,7 @@ import {
 import { BaserunProvider, BaserunType } from './types';
 import { pickKeys, templatizeString } from './template';
 
-export { OpenAIRequestInput };
-export { BaserunProvider };
-export { BaserunType };
+export { OpenAIChatMessage, OpenAICompletionPrompt, OpenAIRequestInput, BaserunProvider, BaserunType };
 
 export class Baserun {
   buildChatPrompt(

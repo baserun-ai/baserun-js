@@ -12,6 +12,7 @@ import { BaserunProvider, BaserunType } from './types';
 import {
   parseVariablesFromTemplateString,
   pickKeys,
+  Segment,
   templatizeString,
 } from './template';
 
@@ -22,6 +23,7 @@ export {
   OpenAIRequestInput,
   BaserunProvider,
   BaserunType,
+  Segment,
   parseVariablesFromTemplateString,
 };
 

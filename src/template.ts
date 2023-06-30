@@ -40,7 +40,7 @@ interface VariableSegment {
   name: string;
 }
 
-type Segment = LiteralSegment | VariableSegment;
+export type Segment = LiteralSegment | VariableSegment;
 
 export function parseVariablesFromTemplateString(template: string): Segment[] {
   const segments: Segment[] = [];

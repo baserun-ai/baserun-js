@@ -8,6 +8,6 @@ interface VariableSegment {
     type: 'variable';
     name: string;
 }
-type Segment = LiteralSegment | VariableSegment;
+export type Segment = LiteralSegment | VariableSegment;
 export declare function parseVariablesFromTemplateString(template: string): Segment[];
 export {};

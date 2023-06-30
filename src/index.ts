@@ -9,7 +9,11 @@ import {
   OpenAIRequestInput,
 } from './openai';
 import { BaserunProvider, BaserunType } from './types';
-import { pickKeys, templatizeString } from './template';
+import {
+  parseVariablesFromTemplateString,
+  pickKeys,
+  templatizeString,
+} from './template';
 
 export {
   OpenAIChatMessage,
@@ -18,6 +22,7 @@ export {
   OpenAIRequestInput,
   BaserunProvider,
   BaserunType,
+  parseVariablesFromTemplateString,
 };
 
 export class Baserun {

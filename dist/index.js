@@ -26,7 +26,7 @@ class Baserun {
                 var { content, variables } = _a, rest = __rest(_a, ["content", "variables"]);
                 return Object.assign(Object.assign({}, rest), { content: content
                         ? (0, template_1.templatizeString)(content, (0, template_1.pickKeys)(variables, providedVariables))
-                        : undefined });
+                        : '' });
             }) });
     }
     buildCompletionPrompt(input, providedVariables) {

@@ -40,7 +40,7 @@ export class Baserun {
           ...rest,
           content: content
             ? templatizeString(content, pickKeys(variables, providedVariables))
-            : undefined,
+            : '',
         };
       }),
     };

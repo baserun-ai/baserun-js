@@ -26,7 +26,8 @@ export const ChatPrompts: Record<string, OpenAIChatRequestInput> = {
     messages: [
       {
         role: 'system',
-        content: 'You are a helpful customer support assistant for {{company}}.',
+        content:
+          'You are a helpful customer support assistant for {{company}}.',
         variables: ['company'],
       },
       {

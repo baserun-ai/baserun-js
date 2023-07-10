@@ -3,34 +3,34 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const template_1 = require("../template");
 describe('templateizeString', () => {
     test('replaces single variable correctly', () => {
-        const template = 'Hello, {name}!';
+        const template = 'Hello, {{name}}!';
         const variables = { name: 'Alice' };
         expect((0, template_1.templatizeString)(template, variables)).toBe('Hello, Alice!');
     });
     test('replaces single variable correctly with white space', () => {
-        const template = 'Hello, {  name  }!';
+        const template = 'Hello, {{  name  }}!';
         const variables = { name: 'Alice' };
         expect((0, template_1.templatizeString)(template, variables)).toBe('Hello, Alice!');
     });
     test('replaces multiple variables correctly', () => {
-        const template = 'Hello, {name}! Today is {day}.';
+        const template = 'Hello, {{name}}! Today is {{day}}.';
         const variables = { name: 'Alice', day: 'Monday' };
         expect((0, template_1.templatizeString)(template, variables)).toBe('Hello, Alice! Today is Monday.');
     });
     test('replaces multiple occurrences of the same variable correctly', () => {
-        const template = 'Hello, {name}! How are you, {name}?';
+        const template = 'Hello, {{name}}! How are you, {{name}}?';
         const variables = { name: 'Alice' };
         expect((0, template_1.templatizeString)(template, variables)).toBe('Hello, Alice! How are you, Alice?');
     });
     test('throws error when variable is not found', () => {
-        const template = 'Hello, {name}! Today is {day}.';
+        const template = 'Hello, {{name}}! Today is {{day}}.';
         const variables = { name: 'Alice', month: 'May' };
         expect(() => (0, template_1.templatizeString)(template, variables)).toThrowError(new Error("Variable 'month' not found"));
     });
 });
 describe('parseVariablesFromTemplateString', () => {
     it('should parse single variable correctly', () => {
-        const template = 'Hello, {name}!';
+        const template = 'Hello, {{name}}!';
         const result = (0, template_1.parseVariablesFromTemplateString)(template);
         expect(result).toEqual([
             { type: 'literal', text: 'Hello, ' },
@@ -39,7 +39,7 @@ describe('parseVariablesFromTemplateString', () => {
         ]);
     });
     it('should parse multiple variables correctly', () => {
-        const template = 'Hello, {firstName} {lastName}!';
+        const template = 'Hello, {{firstName}} {{lastName}}!';
         const result = (0, template_1.parseVariablesFromTemplateString)(template);
         expect(result).toEqual([
             { type: 'literal', text: 'Hello, ' },
@@ -50,10 +50,10 @@ describe('parseVariablesFromTemplateString', () => {
         ]);
     });
     it('should ignore unmatched curly braces', () => {
-        const template = 'Hello, {firstName, {lastName}';
+        const template = 'Hello, {{firstName, {{lastName}}';
         const result = (0, template_1.parseVariablesFromTemplateString)(template);
         expect(result).toEqual([
-            { type: 'literal', text: 'Hello, {firstName, ' },
+            { type: 'literal', text: 'Hello, {{firstName, ' },
             { type: 'variable', name: 'lastName' },
         ]);
     });
@@ -63,7 +63,7 @@ describe('parseVariablesFromTemplateString', () => {
         expect(result).toEqual([{ type: 'literal', text: 'Hello, world!' }]);
     });
     it('should handle spaces within braces', () => {
-        const template = 'Hello, { first name } { last name }!';
+        const template = 'Hello, {{ first name }} {{ last name }}!';
         const result = (0, template_1.parseVariablesFromTemplateString)(template);
         expect(result).toEqual([
             { type: 'literal', text: 'Hello, ' },
@@ -74,7 +74,7 @@ describe('parseVariablesFromTemplateString', () => {
         ]);
     });
     it('should ignore spaces outside braces', () => {
-        const template = 'Hello, {firstName} {lastName}!';
+        const template = 'Hello, {{firstName}} {{lastName}}!';
         const result = (0, template_1.parseVariablesFromTemplateString)(template);
         expect(result).toEqual([
             { type: 'literal', text: 'Hello, ' },

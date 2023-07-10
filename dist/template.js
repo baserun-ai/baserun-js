@@ -14,7 +14,7 @@ exports.pickKeys = pickKeys;
 function templatizeString(template, variables = {}) {
     let result = template;
     for (const [key, value] of Object.entries(variables)) {
-        const regex = new RegExp('\\{\\s*' + key + '\\s*}', 'g');
+        const regex = new RegExp('\\{\\{\\s*' + key + '\\s*\\}\\}', 'g');
         if (!regex.test(result)) {
             throw new Error(`Variable '${key}' not found`);
         }
@@ -26,7 +26,7 @@ exports.templatizeString = templatizeString;
 function parseVariablesFromTemplateString(template) {
     const segments = [];
     let currentIndex = 0;
-    const regex = new RegExp('\\{([^{}]*?)}', 'g');
+    const regex = new RegExp('\\{\\{([^{}]*?)}}', 'g');
     let match;
     while ((match = regex.exec(template)) !== null) {
         if (match.index > currentIndex) {

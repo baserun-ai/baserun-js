@@ -10,7 +10,7 @@ export const CompletionPrompts: Record<string, OpenAICompletionRequestInput> = {
       model: 'text-davinci-003',
     },
     prompt: {
-      content: 'What is the capital of {country}?',
+      content: 'What is the capital of {{country}}?',
       variables: ['country'],
     },
     provider: BaserunProvider.OpenAI,
@@ -26,12 +26,12 @@ export const ChatPrompts: Record<string, OpenAIChatRequestInput> = {
     messages: [
       {
         role: 'system',
-        content: 'You are a helpful customer support assistant for {company}.',
+        content: 'You are a helpful customer support assistant for {{company}}.',
         variables: ['company'],
       },
       {
         role: 'user',
-        content: '{question}',
+        content: '{{question}}',
         variables: ['question'],
       },
     ],
@@ -47,7 +47,7 @@ export const ChatPrompts: Record<string, OpenAIChatRequestInput> = {
     messages: [
       {
         role: 'user',
-        content: 'What is the capital of {country}?',
+        content: 'What is the capital of {{country}}?',
         variables: ['country'],
       },
     ],
@@ -62,7 +62,7 @@ export const ChatPrompts: Record<string, OpenAIChatRequestInput> = {
       {
         role: 'user',
         content:
-          'Generate a shopping list of the ingredients in {appetizer}, {entree}, and {dessert}.',
+          'Generate a shopping list of the ingredients in {{appetizer}}, {{entree}}, and {{dessert}}.',
         variables: ['appetizer', 'entree', 'dessert'],
       },
     ],

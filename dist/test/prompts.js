@@ -8,7 +8,7 @@ exports.CompletionPrompts = {
             model: 'text-davinci-003',
         },
         prompt: {
-            content: 'What is the capital of {country}?',
+            content: 'What is the capital of {{country}}?',
             variables: ['country'],
         },
         provider: types_1.BaserunProvider.OpenAI,
@@ -23,12 +23,12 @@ exports.ChatPrompts = {
         messages: [
             {
                 role: 'system',
-                content: 'You are a helpful customer support assistant for {company}.',
+                content: 'You are a helpful customer support assistant for {{company}}.',
                 variables: ['company'],
             },
             {
                 role: 'user',
-                content: '{question}',
+                content: '{{question}}',
                 variables: ['question'],
             },
         ],
@@ -44,7 +44,7 @@ exports.ChatPrompts = {
         messages: [
             {
                 role: 'user',
-                content: 'What is the capital of {country}?',
+                content: 'What is the capital of {{country}}?',
                 variables: ['country'],
             },
         ],
@@ -58,7 +58,7 @@ exports.ChatPrompts = {
         messages: [
             {
                 role: 'user',
-                content: 'Generate a shopping list of the ingredients in {appetizer}, {entree}, and {dessert}.',
+                content: 'Generate a shopping list of the ingredients in {{appetizer}}, {{entree}}, and {{dessert}}.',
                 variables: ['appetizer', 'entree', 'dessert'],
             },
         ],

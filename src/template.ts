@@ -3,11 +3,7 @@ export function pickKeys(
   variables: Record<string, string> = {},
 ): Record<string, string> {
   return keys.reduce((acc: Record<string, string>, key: string) => {
-    if (!(key in variables)) {
-      throw new Error(`Variable '${key}' was not provided`);
-    }
-
-    acc[key] = variables[key];
+    acc[key] = variables[key] ?? '';
     return acc;
   }, {});
 }

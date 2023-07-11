@@ -35,7 +35,17 @@ describe('Baserun', () => {
             });
         });
         test('missing variable', () => {
-            expect(() => baserun.buildChatPrompt(prompts_1.ChatPrompts.country)).toThrowError(new Error("Variable 'country' was not provided"));
+            expect(baserun.buildChatPrompt(prompts_1.ChatPrompts.country)).toEqual({
+                model: 'gpt-3.5-turbo',
+                max_tokens: 100,
+                temperature: 0.3,
+                messages: [
+                    {
+                        role: 'user',
+                        content: 'What is the capital of ?',
+                    },
+                ],
+            });
         });
         test('multiple variables in single message', () => {
             expect(baserun.buildChatPrompt(prompts_1.ChatPrompts.ingredients, {

@@ -3,10 +3,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.parseVariablesFromTemplateString = exports.templatizeString = exports.pickKeys = void 0;
 function pickKeys(keys = [], variables = {}) {
     return keys.reduce((acc, key) => {
-        if (!(key in variables)) {
-            throw new Error(`Variable '${key}' was not provided`);
-        }
-        acc[key] = variables[key];
+        var _a;
+        acc[key] = (_a = variables[key]) !== null && _a !== void 0 ? _a : '';
         return acc;
     }, {});
 }

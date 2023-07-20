@@ -1,5 +1,6 @@
 export enum BaserunProvider {
   OpenAI = 'openai',
+  Google = 'google',
 }
 
 export enum BaserunType {

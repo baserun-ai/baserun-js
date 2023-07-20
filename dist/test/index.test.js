@@ -9,7 +9,7 @@ describe('Baserun', () => {
     });
     describe('chat', () => {
         test('single non template message', () => {
-            expect(baserun.buildChatPrompt(prompts_1.ChatPrompts.static)).toEqual({
+            expect(baserun.buildOpenAIChatPrompt(prompts_1.ChatPrompts.static)).toEqual({
                 model: 'gpt-4',
                 messages: [
                     {
@@ -20,7 +20,7 @@ describe('Baserun', () => {
             });
         });
         test('single variable in single message', () => {
-            expect(baserun.buildChatPrompt(prompts_1.ChatPrompts.country, {
+            expect(baserun.buildOpenAIChatPrompt(prompts_1.ChatPrompts.country, {
                 country: 'France',
             })).toEqual({
                 model: 'gpt-3.5-turbo',
@@ -35,7 +35,7 @@ describe('Baserun', () => {
             });
         });
         test('missing variable', () => {
-            expect(baserun.buildChatPrompt(prompts_1.ChatPrompts.country)).toEqual({
+            expect(baserun.buildOpenAIChatPrompt(prompts_1.ChatPrompts.country)).toEqual({
                 model: 'gpt-3.5-turbo',
                 max_tokens: 100,
                 temperature: 0.3,
@@ -48,7 +48,7 @@ describe('Baserun', () => {
             });
         });
         test('multiple variables in single message', () => {
-            expect(baserun.buildChatPrompt(prompts_1.ChatPrompts.ingredients, {
+            expect(baserun.buildOpenAIChatPrompt(prompts_1.ChatPrompts.ingredients, {
                 appetizer: 'caesar salad',
                 entree: 'spaghetti and meatballs',
                 dessert: 'cheesecake',
@@ -63,7 +63,7 @@ describe('Baserun', () => {
             });
         });
         test('multiple messages', () => {
-            expect(baserun.buildChatPrompt(prompts_1.ChatPrompts.assistant, {
+            expect(baserun.buildOpenAIChatPrompt(prompts_1.ChatPrompts.assistant, {
                 company: 'xfinity',
                 question: 'Is there an outage in San Francisco?',
             })).toEqual({
@@ -82,12 +82,21 @@ describe('Baserun', () => {
         });
     });
     describe('completion', () => {
-        test('single variable in prompt', () => {
-            expect(baserun.buildCompletionPrompt(prompts_1.CompletionPrompts.completion, {
+        test('single variable in prompt openai', () => {
+            expect(baserun.buildOpenAICompletionPrompt(prompts_1.OpenAICompletionPrompts.openai, {
                 country: 'France',
             })).toEqual({
                 model: 'text-davinci-003',
                 prompt: 'What is the capital of France?',
+            });
+        });
+        test('single variable in prompt google', () => {
+            expect(baserun.buildGoogleCompletionPrompt(prompts_1.GoogleCompletionPrompts.google, {
+                country: 'France',
+            })).toEqual({
+                model: 'text-bison@001',
+                parameters: { temperature: 0.5 },
+                instances: [{ prompt: 'What is the capital of France?' }],
             });
         });
     });

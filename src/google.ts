@@ -1,9 +1,9 @@
-import { BaserunProvider, BaserunType, Variables } from './types';
-
-export type GoogleCompletionPrompt = { content: string } & Variables;
-export type GoogleChatMessages = Array<
-  { content: string; role: string } & Variables
->;
+import {
+  BaserunChatMessage,
+  BaserunPrompt,
+  BaserunProvider,
+  BaserunType,
+} from './types';
 
 interface GoogleChatConfig {
   model: 'chat-bison@001';
@@ -16,7 +16,7 @@ interface GoogleChatConfig {
 /* TODO add support for context & examples */
 export interface GoogleChatRequestInput {
   config: GoogleChatConfig;
-  messages: GoogleChatMessages;
+  messages: BaserunChatMessage[];
   provider: BaserunProvider.Google;
   type: BaserunType.Chat;
 }
@@ -31,7 +31,7 @@ interface GoogleCompletionConfig {
 
 export interface GoogleCompletionRequestInput {
   config: GoogleCompletionConfig;
-  prompt: GoogleCompletionPrompt;
+  prompt: BaserunPrompt;
   provider: BaserunProvider.Google;
   type: BaserunType.Completion;
 }

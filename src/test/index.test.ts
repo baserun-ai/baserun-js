@@ -3,6 +3,7 @@ import {
   OpenAIChatPrompts,
   GoogleCompletionPrompts,
   OpenAICompletionPrompts,
+  GoogleChatPrompts,
 } from './prompts';
 
 describe('Baserun', () => {
@@ -92,6 +93,33 @@ describe('Baserun', () => {
           {
             role: 'user',
             content: 'Is there an outage in San Francisco?',
+          },
+        ],
+      });
+    });
+
+    test('multiple messages google', () => {
+      expect(
+        baserun.buildGoogleChatPrompt(GoogleChatPrompts.chat, {
+          company: 'xfinity',
+          question: 'Is there an outage in San Francisco?',
+        }),
+      ).toEqual({
+        model: 'chat-bison@001',
+        parameters: {},
+        instances: [
+          {
+            messages: [
+              {
+                author: 'system',
+                content:
+                  'You are a helpful customer support assistant for xfinity.',
+              },
+              {
+                author: 'user',
+                content: 'Is there an outage in San Francisco?',
+              },
+            ],
           },
         ],
       });

@@ -1,16 +1,12 @@
 import {
-  OpenAIChatMessage,
   OpenAIChatRequestInput,
   OpenAIChatRequestOutput,
   OpenAIChatRole,
-  OpenAICompletionPrompt,
   OpenAICompletionRequestInput,
   OpenAICompletionRequestOutput,
   OpenAIRequestInput,
 } from './openai';
 import {
-  GoogleChatMessages,
-  GoogleCompletionPrompt,
   GoogleCompletionRequestInput,
   GoogleRequestInput,
   GoogleCompletionRequestOutput,
@@ -18,7 +14,12 @@ import {
   GoogleChatRequestOutput,
   GoogleRequestOutput,
 } from './google';
-import { BaserunProvider, BaserunType } from './types';
+import {
+  BaserunProvider,
+  BaserunType,
+  BaserunChatMessage,
+  BaserunPrompt,
+} from './types';
 import {
   parseVariablesFromTemplateString,
   pickKeys,
@@ -30,20 +31,18 @@ type AIRequestInput = OpenAIRequestInput | GoogleRequestInput;
 
 export {
   AIRequestInput,
-  GoogleChatMessages,
   GoogleChatRequestInput,
-  GoogleCompletionPrompt,
   GoogleCompletionRequestInput,
   GoogleRequestInput,
   GoogleCompletionRequestOutput,
   GoogleChatRequestOutput,
   GoogleRequestOutput,
-  OpenAIChatMessage,
   OpenAIChatRole,
-  OpenAICompletionPrompt,
   OpenAIRequestInput,
   BaserunProvider,
   BaserunType,
+  BaserunPrompt,
+  BaserunChatMessage,
   Segment,
   parseVariablesFromTemplateString,
 };

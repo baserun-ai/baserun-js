@@ -1,24 +1,22 @@
+import { CreateCompletionRequest, CreateChatCompletionRequest } from 'openai';
 import {
-  ChatCompletionRequestMessage,
-  CreateCompletionRequest,
-  CreateChatCompletionRequest,
-} from 'openai';
-import { BaserunProvider, BaserunType, Variables } from './types';
+  BaserunChatMessage,
+  BaserunPrompt,
+  BaserunProvider,
+  BaserunType,
+} from './types';
 import { ChatCompletionRequestMessageRoleEnum } from 'openai';
-
-export type OpenAIChatMessage = ChatCompletionRequestMessage & Variables;
-export type OpenAICompletionPrompt = { content: string } & Variables;
 
 export interface OpenAIChatRequestInput {
   config: Omit<CreateChatCompletionRequest, 'messages'>;
-  messages: OpenAIChatMessage[];
+  messages: BaserunChatMessage[];
   provider: BaserunProvider.OpenAI;
   type: BaserunType.Chat;
 }
 
 export interface OpenAICompletionRequestInput {
   config: Omit<CreateCompletionRequest, 'prompt'>;
-  prompt: OpenAICompletionPrompt;
+  prompt: BaserunPrompt;
   provider: BaserunProvider.OpenAI;
   type: BaserunType.Completion;
 }

@@ -38,7 +38,30 @@ class Baserun {
         return {
             model,
             parameters: config,
-            instances: [{ prompt: (0, template_1.templatizeString)(content, (0, template_1.pickKeys)(variables, providedVariables)) }],
+            instances: [
+                {
+                    prompt: (0, template_1.templatizeString)(content, (0, template_1.pickKeys)(variables, providedVariables)),
+                },
+            ],
+        };
+    }
+    buildGoogleChatPrompt(input, providedVariables) {
+        const _a = input.config, { model } = _a, config = __rest(_a, ["model"]), { messages } = input;
+        return {
+            model,
+            parameters: config,
+            instances: [
+                {
+                    messages: messages.map(({ content, variables, role }) => {
+                        return {
+                            author: role,
+                            content: content
+                                ? (0, template_1.templatizeString)(content, (0, template_1.pickKeys)(variables, providedVariables))
+                                : '',
+                        };
+                    }),
+                },
+            ],
         };
     }
 }

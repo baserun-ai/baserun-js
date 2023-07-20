@@ -1,6 +1,6 @@
 import { Baserun } from '../index';
 import {
-  ChatPrompts,
+  OpenAIChatPrompts,
   GoogleCompletionPrompts,
   OpenAICompletionPrompts,
 } from './prompts';
@@ -13,7 +13,7 @@ describe('Baserun', () => {
 
   describe('chat', () => {
     test('single non template message', () => {
-      expect(baserun.buildOpenAIChatPrompt(ChatPrompts.static)).toEqual({
+      expect(baserun.buildOpenAIChatPrompt(OpenAIChatPrompts.static)).toEqual({
         model: 'gpt-4',
         messages: [
           {
@@ -26,7 +26,7 @@ describe('Baserun', () => {
 
     test('single variable in single message', () => {
       expect(
-        baserun.buildOpenAIChatPrompt(ChatPrompts.country, {
+        baserun.buildOpenAIChatPrompt(OpenAIChatPrompts.country, {
           country: 'France',
         }),
       ).toEqual({
@@ -43,7 +43,7 @@ describe('Baserun', () => {
     });
 
     test('missing variable', () => {
-      expect(baserun.buildOpenAIChatPrompt(ChatPrompts.country)).toEqual({
+      expect(baserun.buildOpenAIChatPrompt(OpenAIChatPrompts.country)).toEqual({
         model: 'gpt-3.5-turbo',
         max_tokens: 100,
         temperature: 0.3,
@@ -58,7 +58,7 @@ describe('Baserun', () => {
 
     test('multiple variables in single message', () => {
       expect(
-        baserun.buildOpenAIChatPrompt(ChatPrompts.ingredients, {
+        baserun.buildOpenAIChatPrompt(OpenAIChatPrompts.ingredients, {
           appetizer: 'caesar salad',
           entree: 'spaghetti and meatballs',
           dessert: 'cheesecake',
@@ -77,7 +77,7 @@ describe('Baserun', () => {
 
     test('multiple messages', () => {
       expect(
-        baserun.buildOpenAIChatPrompt(ChatPrompts.assistant, {
+        baserun.buildOpenAIChatPrompt(OpenAIChatPrompts.assistant, {
           company: 'xfinity',
           question: 'Is there an outage in San Francisco?',
         }),

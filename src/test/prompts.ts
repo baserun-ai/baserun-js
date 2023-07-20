@@ -1,5 +1,8 @@
 import { BaserunProvider, BaserunType } from '../types';
-import { GoogleCompletionRequestInput } from '../google';
+import {
+  GoogleChatRequestInput,
+  GoogleCompletionRequestInput,
+} from '../google';
 import {
   OpenAIChatRequestInput,
   OpenAICompletionRequestInput,
@@ -40,7 +43,7 @@ export const GoogleCompletionPrompts: Record<
   },
 };
 
-export const ChatPrompts: Record<string, OpenAIChatRequestInput> = {
+export const OpenAIChatPrompts: Record<string, OpenAIChatRequestInput> = {
   assistant: {
     config: {
       model: 'gpt-4',
@@ -103,6 +106,29 @@ export const ChatPrompts: Record<string, OpenAIChatRequestInput> = {
       },
     ],
     provider: BaserunProvider.OpenAI,
+    type: BaserunType.Chat,
+  },
+};
+
+export const GoogleChatPrompts: Record<string, GoogleChatRequestInput> = {
+  chat: {
+    config: {
+      model: 'chat-bison@001',
+    },
+    messages: [
+      {
+        role: 'system',
+        content:
+          'You are a helpful customer support assistant for {{company}}.',
+        variables: ['company'],
+      },
+      {
+        role: 'user',
+        content: '{{question}}',
+        variables: ['question'],
+      },
+    ],
+    provider: BaserunProvider.Google,
     type: BaserunType.Chat,
   },
 };

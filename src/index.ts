@@ -9,9 +9,13 @@ import {
   OpenAIRequestInput,
 } from './openai';
 import {
+  GoogleChatMessages,
   GoogleCompletionPrompt,
   GoogleCompletionRequestInput,
   GoogleRequestInput,
+  GoogleCompletionRequestOutput,
+  GoogleChatRequestInput,
+  GoogleChatRequestOutput,
   GoogleRequestOutput,
 } from './google';
 import { BaserunProvider, BaserunType } from './types';
@@ -26,9 +30,13 @@ type AIRequestInput = OpenAIRequestInput | GoogleRequestInput;
 
 export {
   AIRequestInput,
+  GoogleChatMessages,
+  GoogleChatRequestInput,
   GoogleCompletionPrompt,
   GoogleCompletionRequestInput,
   GoogleRequestInput,
+  GoogleCompletionRequestOutput,
+  GoogleChatRequestOutput,
   GoogleRequestOutput,
   OpenAIChatMessage,
   OpenAIChatRole,
@@ -76,7 +84,7 @@ export class Baserun {
   buildGoogleCompletionPrompt(
     input: GoogleCompletionRequestInput,
     providedVariables?: Record<string, string>,
-  ): GoogleRequestOutput {
+  ): GoogleCompletionRequestOutput {
     const {
       config: { model, ...config },
       prompt: { content, variables },
@@ -90,6 +98,35 @@ export class Baserun {
             content,
             pickKeys(variables, providedVariables),
           ),
+        },
+      ],
+    };
+  }
+
+  buildGoogleChatPrompt(
+    input: GoogleChatRequestInput,
+    providedVariables?: Record<string, string>,
+  ): GoogleChatRequestOutput {
+    const {
+      config: { model, ...config },
+      messages,
+    } = input;
+    return {
+      model,
+      parameters: config,
+      instances: [
+        {
+          messages: messages.map(({ content, variables, role }) => {
+            return {
+              author: role,
+              content: content
+                ? templatizeString(
+                    content,
+                    pickKeys(variables, providedVariables),
+                  )
+                : '',
+            };
+          }),
         },
       ],
     };

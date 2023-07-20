@@ -1,5 +1,9 @@
 import { Baserun } from '../index';
-import { ChatPrompts, CompletionPrompts } from './prompts';
+import {
+  ChatPrompts,
+  GoogleCompletionPrompts,
+  OpenAICompletionPrompts,
+} from './prompts';
 
 describe('Baserun', () => {
   let baserun: Baserun;
@@ -9,7 +13,7 @@ describe('Baserun', () => {
 
   describe('chat', () => {
     test('single non template message', () => {
-      expect(baserun.buildChatPrompt(ChatPrompts.static)).toEqual({
+      expect(baserun.buildOpenAIChatPrompt(ChatPrompts.static)).toEqual({
         model: 'gpt-4',
         messages: [
           {
@@ -22,7 +26,7 @@ describe('Baserun', () => {
 
     test('single variable in single message', () => {
       expect(
-        baserun.buildChatPrompt(ChatPrompts.country, {
+        baserun.buildOpenAIChatPrompt(ChatPrompts.country, {
           country: 'France',
         }),
       ).toEqual({
@@ -39,7 +43,7 @@ describe('Baserun', () => {
     });
 
     test('missing variable', () => {
-      expect(baserun.buildChatPrompt(ChatPrompts.country)).toEqual({
+      expect(baserun.buildOpenAIChatPrompt(ChatPrompts.country)).toEqual({
         model: 'gpt-3.5-turbo',
         max_tokens: 100,
         temperature: 0.3,
@@ -54,7 +58,7 @@ describe('Baserun', () => {
 
     test('multiple variables in single message', () => {
       expect(
-        baserun.buildChatPrompt(ChatPrompts.ingredients, {
+        baserun.buildOpenAIChatPrompt(ChatPrompts.ingredients, {
           appetizer: 'caesar salad',
           entree: 'spaghetti and meatballs',
           dessert: 'cheesecake',
@@ -73,7 +77,7 @@ describe('Baserun', () => {
 
     test('multiple messages', () => {
       expect(
-        baserun.buildChatPrompt(ChatPrompts.assistant, {
+        baserun.buildOpenAIChatPrompt(ChatPrompts.assistant, {
           company: 'xfinity',
           question: 'Is there an outage in San Francisco?',
         }),
@@ -95,14 +99,26 @@ describe('Baserun', () => {
   });
 
   describe('completion', () => {
-    test('single variable in prompt', () => {
+    test('single variable in prompt openai', () => {
       expect(
-        baserun.buildCompletionPrompt(CompletionPrompts.completion, {
+        baserun.buildOpenAICompletionPrompt(OpenAICompletionPrompts.openai, {
           country: 'France',
         }),
       ).toEqual({
         model: 'text-davinci-003',
         prompt: 'What is the capital of France?',
+      });
+    });
+
+    test('single variable in prompt google', () => {
+      expect(
+        baserun.buildGoogleCompletionPrompt(GoogleCompletionPrompts.google, {
+          country: 'France',
+        }),
+      ).toEqual({
+        model: 'text-bison@001',
+        parameters: { temperature: 0.5 },
+        instances: [{ prompt: 'What is the capital of France?' }],
       });
     });
   });

@@ -4,6 +4,7 @@ exports.BaserunType = exports.BaserunProvider = void 0;
 var BaserunProvider;
 (function (BaserunProvider) {
     BaserunProvider["OpenAI"] = "openai";
+    BaserunProvider["Google"] = "google";
 })(BaserunProvider || (exports.BaserunProvider = BaserunProvider = {}));
 var BaserunType;
 (function (BaserunType) {

@@ -1,9 +1,9 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ChatPrompts = exports.CompletionPrompts = void 0;
+exports.ChatPrompts = exports.GoogleCompletionPrompts = exports.OpenAICompletionPrompts = void 0;
 const types_1 = require("../types");
-exports.CompletionPrompts = {
-    completion: {
+exports.OpenAICompletionPrompts = {
+    openai: {
         config: {
             model: 'text-davinci-003',
         },
@@ -14,6 +14,20 @@ exports.CompletionPrompts = {
         provider: types_1.BaserunProvider.OpenAI,
         type: types_1.BaserunType.Completion,
     },
+};
+exports.GoogleCompletionPrompts = {
+    google: {
+        config: {
+            model: 'text-bison@001',
+            temperature: 0.5,
+        },
+        prompt: {
+            content: "What is the capital of {{country}}?",
+            variables: ['country'],
+        },
+        provider: types_1.BaserunProvider.Google,
+        type: types_1.BaserunType.Completion,
+    }
 };
 exports.ChatPrompts = {
     assistant: {

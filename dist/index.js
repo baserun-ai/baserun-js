@@ -20,7 +20,7 @@ Object.defineProperty(exports, "BaserunType", { enumerable: true, get: function 
 const template_1 = require("./template");
 Object.defineProperty(exports, "parseVariablesFromTemplateString", { enumerable: true, get: function () { return template_1.parseVariablesFromTemplateString; } });
 class Baserun {
-    buildChatPrompt(input, providedVariables) {
+    buildOpenAIChatPrompt(input, providedVariables) {
         const { config, messages } = input;
         return Object.assign(Object.assign({}, config), { messages: messages.map((_a) => {
                 var { content, variables } = _a, rest = __rest(_a, ["content", "variables"]);
@@ -29,9 +29,17 @@ class Baserun {
                         : '' });
             }) });
     }
-    buildCompletionPrompt(input, providedVariables) {
+    buildOpenAICompletionPrompt(input, providedVariables) {
         const { config, prompt: { content, variables }, } = input;
         return Object.assign(Object.assign({}, config), { prompt: (0, template_1.templatizeString)(content, (0, template_1.pickKeys)(variables, providedVariables)) });
+    }
+    buildGoogleCompletionPrompt(input, providedVariables) {
+        const _a = input.config, { model } = _a, config = __rest(_a, ["model"]), { prompt: { content, variables } } = input;
+        return {
+            model,
+            parameters: config,
+            instances: [{ prompt: (0, template_1.templatizeString)(content, (0, template_1.pickKeys)(variables, providedVariables)) }],
+        };
     }
 }
 exports.Baserun = Baserun;

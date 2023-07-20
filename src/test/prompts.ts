@@ -1,11 +1,15 @@
+import { BaserunProvider, BaserunType } from '../types';
+import { GoogleCompletionRequestInput } from '../google';
 import {
   OpenAIChatRequestInput,
   OpenAICompletionRequestInput,
 } from '../openai';
-import { BaserunProvider, BaserunType } from '../types';
 
-export const CompletionPrompts: Record<string, OpenAICompletionRequestInput> = {
-  completion: {
+export const OpenAICompletionPrompts: Record<
+  string,
+  OpenAICompletionRequestInput
+> = {
+  openai: {
     config: {
       model: 'text-davinci-003',
     },
@@ -14,6 +18,24 @@ export const CompletionPrompts: Record<string, OpenAICompletionRequestInput> = {
       variables: ['country'],
     },
     provider: BaserunProvider.OpenAI,
+    type: BaserunType.Completion,
+  },
+};
+
+export const GoogleCompletionPrompts: Record<
+  string,
+  GoogleCompletionRequestInput
+> = {
+  google: {
+    config: {
+      model: 'text-bison@001',
+      temperature: 0.5,
+    },
+    prompt: {
+      content: 'What is the capital of {{country}}?',
+      variables: ['country'],
+    },
+    provider: BaserunProvider.Google,
     type: BaserunType.Completion,
   },
 };

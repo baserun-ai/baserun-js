@@ -8,6 +8,12 @@ import {
   OpenAICompletionRequestOutput,
   OpenAIRequestInput,
 } from './openai';
+import {
+  GoogleCompletionPrompt,
+  GoogleCompletionRequestInput,
+  GoogleRequestInput,
+  GoogleRequestOutput,
+} from './google';
 import { BaserunProvider, BaserunType } from './types';
 import {
   parseVariablesFromTemplateString,
@@ -16,7 +22,14 @@ import {
   templatizeString,
 } from './template';
 
+type AIRequestInput = OpenAIRequestInput | GoogleRequestInput;
+
 export {
+  AIRequestInput,
+  GoogleCompletionPrompt,
+  GoogleCompletionRequestInput,
+  GoogleRequestInput,
+  GoogleRequestOutput,
   OpenAIChatMessage,
   OpenAIChatRole,
   OpenAICompletionPrompt,
@@ -28,7 +41,7 @@ export {
 };
 
 export class Baserun {
-  buildChatPrompt(
+  buildOpenAIChatPrompt(
     input: OpenAIChatRequestInput,
     providedVariables?: Record<string, string>,
   ): OpenAIChatRequestOutput {
@@ -46,7 +59,7 @@ export class Baserun {
     };
   }
 
-  buildCompletionPrompt(
+  buildOpenAICompletionPrompt(
     input: OpenAICompletionRequestInput,
     providedVariables?: Record<string, string>,
   ): OpenAICompletionRequestOutput {
@@ -57,6 +70,28 @@ export class Baserun {
     return {
       ...config,
       prompt: templatizeString(content, pickKeys(variables, providedVariables)),
+    };
+  }
+
+  buildGoogleCompletionPrompt(
+    input: GoogleCompletionRequestInput,
+    providedVariables?: Record<string, string>,
+  ): GoogleRequestOutput {
+    const {
+      config: { model, ...config },
+      prompt: { content, variables },
+    } = input;
+    return {
+      model,
+      parameters: config,
+      instances: [
+        {
+          prompt: templatizeString(
+            content,
+            pickKeys(variables, providedVariables),
+          ),
+        },
+      ],
     };
   }
 }

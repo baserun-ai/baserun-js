@@ -1,5 +1,6 @@
 export declare enum BaserunProvider {
-    OpenAI = "openai"
+    OpenAI = "openai",
+    Google = "google"
 }
 export declare enum BaserunType {
     Chat = "chat",

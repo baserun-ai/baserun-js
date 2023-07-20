@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ChatPrompts = exports.GoogleCompletionPrompts = exports.OpenAICompletionPrompts = void 0;
+exports.GoogleChatPrompts = exports.OpenAIChatPrompts = exports.GoogleCompletionPrompts = exports.OpenAICompletionPrompts = void 0;
 const types_1 = require("../types");
 exports.OpenAICompletionPrompts = {
     openai: {
@@ -22,14 +22,14 @@ exports.GoogleCompletionPrompts = {
             temperature: 0.5,
         },
         prompt: {
-            content: "What is the capital of {{country}}?",
+            content: 'What is the capital of {{country}}?',
             variables: ['country'],
         },
         provider: types_1.BaserunProvider.Google,
         type: types_1.BaserunType.Completion,
-    }
+    },
 };
-exports.ChatPrompts = {
+exports.OpenAIChatPrompts = {
     assistant: {
         config: {
             model: 'gpt-4',
@@ -90,6 +90,27 @@ exports.ChatPrompts = {
             },
         ],
         provider: types_1.BaserunProvider.OpenAI,
+        type: types_1.BaserunType.Chat,
+    },
+};
+exports.GoogleChatPrompts = {
+    chat: {
+        config: {
+            model: 'chat-bison@001',
+        },
+        messages: [
+            {
+                role: 'system',
+                content: 'You are a helpful customer support assistant for {{company}}.',
+                variables: ['company'],
+            },
+            {
+                role: 'user',
+                content: '{{question}}',
+                variables: ['question'],
+            },
+        ],
+        provider: types_1.BaserunProvider.Google,
         type: types_1.BaserunType.Chat,
     },
 };

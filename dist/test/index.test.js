@@ -9,7 +9,7 @@ describe('Baserun', () => {
     });
     describe('chat', () => {
         test('single non template message', () => {
-            expect(baserun.buildOpenAIChatPrompt(prompts_1.ChatPrompts.static)).toEqual({
+            expect(baserun.buildOpenAIChatPrompt(prompts_1.OpenAIChatPrompts.static)).toEqual({
                 model: 'gpt-4',
                 messages: [
                     {
@@ -20,7 +20,7 @@ describe('Baserun', () => {
             });
         });
         test('single variable in single message', () => {
-            expect(baserun.buildOpenAIChatPrompt(prompts_1.ChatPrompts.country, {
+            expect(baserun.buildOpenAIChatPrompt(prompts_1.OpenAIChatPrompts.country, {
                 country: 'France',
             })).toEqual({
                 model: 'gpt-3.5-turbo',
@@ -35,7 +35,7 @@ describe('Baserun', () => {
             });
         });
         test('missing variable', () => {
-            expect(baserun.buildOpenAIChatPrompt(prompts_1.ChatPrompts.country)).toEqual({
+            expect(baserun.buildOpenAIChatPrompt(prompts_1.OpenAIChatPrompts.country)).toEqual({
                 model: 'gpt-3.5-turbo',
                 max_tokens: 100,
                 temperature: 0.3,
@@ -48,7 +48,7 @@ describe('Baserun', () => {
             });
         });
         test('multiple variables in single message', () => {
-            expect(baserun.buildOpenAIChatPrompt(prompts_1.ChatPrompts.ingredients, {
+            expect(baserun.buildOpenAIChatPrompt(prompts_1.OpenAIChatPrompts.ingredients, {
                 appetizer: 'caesar salad',
                 entree: 'spaghetti and meatballs',
                 dessert: 'cheesecake',
@@ -63,7 +63,7 @@ describe('Baserun', () => {
             });
         });
         test('multiple messages', () => {
-            expect(baserun.buildOpenAIChatPrompt(prompts_1.ChatPrompts.assistant, {
+            expect(baserun.buildOpenAIChatPrompt(prompts_1.OpenAIChatPrompts.assistant, {
                 company: 'xfinity',
                 question: 'Is there an outage in San Francisco?',
             })).toEqual({

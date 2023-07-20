@@ -1,3 +1,5 @@
+import { ChatCompletionRequestMessage } from 'openai';
+
 export enum BaserunProvider {
   OpenAI = 'openai',
   Google = 'google',
@@ -11,3 +13,6 @@ export enum BaserunType {
 export interface Variables {
   variables?: string[];
 }
+
+export type BaserunChatMessage = ChatCompletionRequestMessage & Variables;
+export type BaserunPrompt = { content: string } & Variables;

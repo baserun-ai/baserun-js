@@ -5,6 +5,7 @@ var BaserunProvider;
 (function (BaserunProvider) {
     BaserunProvider["OpenAI"] = "openai";
     BaserunProvider["Google"] = "google";
+    BaserunProvider["Llama"] = "llama";
 })(BaserunProvider || (exports.BaserunProvider = BaserunProvider = {}));
 var BaserunType;
 (function (BaserunType) {

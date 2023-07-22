@@ -64,5 +64,35 @@ class Baserun {
             ],
         };
     }
+    buildLlamaChatPrompt(input, providedVariables) {
+        const _a = input.config, { model } = _a, config = __rest(_a, ["model"]), { messages } = input;
+        const systemPrompt = messages
+            .filter((message) => message.role === openai_1.OpenAIChatRole.System)
+            .map((message) => {
+            return message.content
+                ? (0, template_1.templatizeString)(message.content, (0, template_1.pickKeys)(message.variables, providedVariables))
+                : undefined;
+        })
+            .join('\n');
+        const userAndAssistantMessages = messages
+            .filter((message) => message.role === openai_1.OpenAIChatRole.User ||
+            message.role === openai_1.OpenAIChatRole.Assistant);
+        const prompt = userAndAssistantMessages
+            .map((message) => {
+            var _a;
+            const templatedMessage = (0, template_1.templatizeString)((_a = message.content) !== null && _a !== void 0 ? _a : '', (0, template_1.pickKeys)(message.variables, providedVariables));
+            if (userAndAssistantMessages.length === 1 ||
+                userAndAssistantMessages.every(message => message.role === openai_1.OpenAIChatRole.User)) {
+                return templatedMessage;
+            }
+            const prefix = message.role === openai_1.OpenAIChatRole.User ? 'User' : 'Assistant';
+            return `${prefix}: ${templatedMessage}`;
+        })
+            .join('\n');
+        return {
+            model,
+            input: Object.assign(Object.assign({}, config), { prompt, system_prompt: systemPrompt }),
+        };
+    }
 }
 exports.Baserun = Baserun;

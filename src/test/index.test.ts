@@ -4,6 +4,7 @@ import {
   GoogleCompletionPrompts,
   OpenAICompletionPrompts,
   GoogleChatPrompts,
+  LlamaChatPrompts,
 } from './prompts';
 
 describe('Baserun', () => {
@@ -122,6 +123,39 @@ describe('Baserun', () => {
             ],
           },
         ],
+      });
+    });
+
+    test('system message llama', () => {
+      expect(
+        baserun.buildLlamaChatPrompt(LlamaChatPrompts.chat, {
+          company: 'xfinity',
+          question: 'Is there an outage in San Francisco?',
+        }),
+      ).toEqual({
+        model: 'llama13b-v2-chat',
+        input: {
+          prompt: 'Is there an outage in San Francisco?',
+          system_prompt:
+            'You are a helpful customer support assistant for xfinity.',
+        },
+      });
+    });
+
+    test('assistant and user messages llama', () => {
+      expect(
+        baserun.buildLlamaChatPrompt(LlamaChatPrompts.assistant, {
+          company: 'xfinity',
+          question: 'Is there an outage in San Francisco?',
+        }),
+      ).toEqual({
+        model: 'llama13b-v2-chat',
+        input: {
+          prompt:
+            'User: Is there an outage in San Francisco?\nAssistant: Not too my knowledge\nUser: Can you check again?',
+          system_prompt:
+            'You are a helpful customer support assistant for xfinity.',
+        },
       });
     });
   });

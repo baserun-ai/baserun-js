@@ -15,6 +15,13 @@ import {
   GoogleRequestOutput,
 } from './google';
 import {
+  LlamaRequestInput,
+  LlamaChatRequestOutput,
+  LlamaChatRequestInput,
+  LlamaRequestOutput,
+} from './llama';
+
+import {
   BaserunProvider,
   BaserunType,
   BaserunChatMessage,
@@ -27,7 +34,10 @@ import {
   templatizeString,
 } from './template';
 
-type AIRequestInput = OpenAIRequestInput | GoogleRequestInput;
+type AIRequestInput =
+  | OpenAIRequestInput
+  | GoogleRequestInput
+  | LlamaRequestInput;
 
 export {
   AIRequestInput,
@@ -37,6 +47,10 @@ export {
   GoogleCompletionRequestOutput,
   GoogleChatRequestOutput,
   GoogleRequestOutput,
+  LlamaChatRequestInput,
+  LlamaRequestInput,
+  LlamaChatRequestOutput,
+  LlamaRequestOutput,
   OpenAIChatRole,
   OpenAIRequestInput,
   BaserunProvider,
@@ -128,6 +142,65 @@ export class Baserun {
           }),
         },
       ],
+    };
+  }
+
+  buildLlamaChatPrompt(
+    input: LlamaChatRequestInput,
+    providedVariables?: Record<string, string>,
+  ): LlamaChatRequestOutput {
+    const {
+      config: { model, ...config },
+      messages,
+    } = input;
+
+    const systemPrompt = messages
+      .filter((message) => message.role === OpenAIChatRole.System)
+      .map((message) => {
+        return message.content
+          ? templatizeString(
+              message.content,
+              pickKeys(message.variables, providedVariables),
+            )
+          : undefined;
+      })
+      .join('\n');
+
+    const userAndAssistantMessages = messages.filter(
+      (message) =>
+        message.role === OpenAIChatRole.User ||
+        message.role === OpenAIChatRole.Assistant,
+    );
+
+    const prompt = userAndAssistantMessages
+      .map((message) => {
+        const templatedMessage = templatizeString(
+          message.content ?? '',
+          pickKeys(message.variables, providedVariables),
+        );
+
+        if (
+          userAndAssistantMessages.length === 1 ||
+          userAndAssistantMessages.every(
+            (message) => message.role === OpenAIChatRole.User,
+          )
+        ) {
+          return templatedMessage;
+        }
+
+        const prefix =
+          message.role === OpenAIChatRole.User ? 'User' : 'Assistant';
+        return `${prefix}: ${templatedMessage}`;
+      })
+      .join('\n');
+
+    return {
+      model,
+      input: {
+        ...config,
+        prompt,
+        system_prompt: systemPrompt,
+      },
     };
   }
 }

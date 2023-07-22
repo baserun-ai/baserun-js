@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.GoogleChatPrompts = exports.OpenAIChatPrompts = exports.GoogleCompletionPrompts = exports.OpenAICompletionPrompts = void 0;
+exports.LlamaChatPrompts = exports.GoogleChatPrompts = exports.OpenAIChatPrompts = exports.GoogleCompletionPrompts = exports.OpenAICompletionPrompts = void 0;
 const types_1 = require("../types");
 exports.OpenAICompletionPrompts = {
     openai: {
@@ -111,6 +111,54 @@ exports.GoogleChatPrompts = {
             },
         ],
         provider: types_1.BaserunProvider.Google,
+        type: types_1.BaserunType.Chat,
+    },
+};
+exports.LlamaChatPrompts = {
+    chat: {
+        config: {
+            model: 'llama13b-v2-chat',
+        },
+        messages: [
+            {
+                role: 'system',
+                content: 'You are a helpful customer support assistant for {{company}}.',
+                variables: ['company'],
+            },
+            {
+                role: 'user',
+                content: '{{question}}',
+                variables: ['question'],
+            },
+        ],
+        provider: types_1.BaserunProvider.Llama,
+        type: types_1.BaserunType.Chat,
+    },
+    assistant: {
+        config: {
+            model: 'llama13b-v2-chat',
+        },
+        messages: [
+            {
+                role: 'system',
+                content: 'You are a helpful customer support assistant for {{company}}.',
+                variables: ['company'],
+            },
+            {
+                role: 'user',
+                content: '{{question}}',
+                variables: ['question'],
+            },
+            {
+                role: 'assistant',
+                content: 'Not too my knowledge',
+            },
+            {
+                role: 'user',
+                content: 'Can you check again?',
+            },
+        ],
+        provider: types_1.BaserunProvider.Llama,
         type: types_1.BaserunType.Chat,
     },
 };

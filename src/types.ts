@@ -3,6 +3,7 @@ import { ChatCompletionRequestMessage } from 'openai';
 export enum BaserunProvider {
   OpenAI = 'openai',
   Google = 'google',
+  Llama = 'llama',
 }
 
 export enum BaserunType {

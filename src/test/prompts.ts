@@ -7,6 +7,7 @@ import {
   OpenAIChatRequestInput,
   OpenAICompletionRequestInput,
 } from '../openai';
+import { LlamaChatRequestInput } from '../llama';
 
 export const OpenAICompletionPrompts: Record<
   string,
@@ -129,6 +130,57 @@ export const GoogleChatPrompts: Record<string, GoogleChatRequestInput> = {
       },
     ],
     provider: BaserunProvider.Google,
+    type: BaserunType.Chat,
+  },
+};
+
+export const LlamaChatPrompts: Record<string, LlamaChatRequestInput> = {
+  chat: {
+    config: {
+      model: 'llama13b-v2-chat',
+    },
+    messages: [
+      {
+        role: 'system',
+        content:
+          'You are a helpful customer support assistant for {{company}}.',
+        variables: ['company'],
+      },
+      {
+        role: 'user',
+        content: '{{question}}',
+        variables: ['question'],
+      },
+    ],
+    provider: BaserunProvider.Llama,
+    type: BaserunType.Chat,
+  },
+  assistant: {
+    config: {
+      model: 'llama13b-v2-chat',
+    },
+    messages: [
+      {
+        role: 'system',
+        content:
+          'You are a helpful customer support assistant for {{company}}.',
+        variables: ['company'],
+      },
+      {
+        role: 'user',
+        content: '{{question}}',
+        variables: ['question'],
+      },
+      {
+        role: 'assistant',
+        content: 'Not too my knowledge',
+      },
+      {
+        role: 'user',
+        content: 'Can you check again?',
+      },
+    ],
+    provider: BaserunProvider.Llama,
     type: BaserunType.Chat,
   },
 };

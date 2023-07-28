@@ -1,0 +1,5 @@
+{
+  "globalSetup": "./jest/setup.ts",
+  "globalTeardown": "./jest/teardown.ts",
+  "testEnvironment": "./jest/environment.ts"
+}

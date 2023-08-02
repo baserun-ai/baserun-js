@@ -9,6 +9,12 @@ export enum BaserunType {
   Completion = 'completion',
 }
 
+export enum BaserunStepType {
+  Log = 'log',
+  AutoLLM = 'auto_llm',
+  CustomLLM = 'custom_llm',
+}
+
 interface LLMChatLog {
   type: BaserunType;
   provider: BaserunProvider;
@@ -49,6 +55,7 @@ export type Log = StandardLog | LLMChatLog | LLMCompletionLog;
 
 interface TestSuccess {
   testName: string;
+  testInputs: string[];
   id: string;
   result: string;
   startTimestamp: number;
@@ -58,6 +65,7 @@ interface TestSuccess {
 
 interface TestError {
   testName: string;
+  testInputs: string[];
   id: string;
   error: string;
   startTimestamp: number;

@@ -1,30 +1,36 @@
-import { BaserunProvider, BaserunType, Log } from './types';
+import { BaserunProvider, BaserunStepType, BaserunType, Log } from './types';
+import { getTimestamp } from './helpers';
 
 export function monkeyPatchOpenAI(log: (entry: Log) => void) {
   try {
     /* eslint-disable-next-line @typescript-eslint/no-var-requires */
     const openai = require('openai');
 
-    const originalCompletionCreate = openai.Completion.create;
-    const originalChatCompletionCreate = openai.ChatCompletion.create;
+    const originalCompletion = openai.OpenAIApi.prototype.createCompletion;
+    const originalChatCompletion =
+      openai.OpenAIApi.prototype.createChatCompletion;
 
-    /* eslint-disable-next-line  @typescript-eslint/no-explicit-any */
-    openai.Completion.create = function (...args: any[]): any {
-      const startTime = Date.now();
-      const response = originalCompletionCreate(...args);
+    openai.OpenAIApi.prototype.createCompletion = function (
+      /* eslint-disable-next-line  @typescript-eslint/no-explicit-any */
+      ...args: any[]
+    ): /* eslint-disable-next-line  @typescript-eslint/no-explicit-any */
+    any {
+      const startTime = getTimestamp();
+      const response = originalCompletion(...args);
 
       const { prompt = '', ...config } = args[0] ?? {};
       const output = response.choices[0].text;
       const usage = response.usage;
 
       const logEntry = {
+        stepType: BaserunStepType.AutoLLM,
         type: BaserunType.Completion,
         provider: BaserunProvider.OpenAI,
         config,
         prompt: { content: prompt },
         output,
         startTimestamp: startTime,
-        completionTimestamp: Date.now(),
+        completionTimestamp: getTimestamp(),
         usage,
       };
 
@@ -33,23 +39,27 @@ export function monkeyPatchOpenAI(log: (entry: Log) => void) {
       return response;
     };
 
-    /* eslint-disable-next-line  @typescript-eslint/no-explicit-any */
-    openai.ChatCompletion.create = function (...args: any[]): any {
-      const startTime = Date.now();
-      const response = originalChatCompletionCreate(...args);
+    openai.OpenAIApi.prototype.createChatCompletion = function (
+      /* eslint-disable-next-line  @typescript-eslint/no-explicit-any */
+      ...args: any[]
+    ): /* eslint-disable-next-line  @typescript-eslint/no-explicit-any */
+    any {
+      const startTime = getTimestamp();
+      const response = originalChatCompletion(...args);
 
       const { messages = [], ...config } = args[0] ?? {};
       const output = response.choices[0].message.content;
       const usage = response.usage;
 
       const logEntry = {
+        stepType: BaserunStepType.AutoLLM,
         type: BaserunType.Chat,
         provider: BaserunProvider.OpenAI,
         config,
         messages,
         output,
         startTimestamp: startTime,
-        completionTimestamp: Date.now(),
+        completionTimestamp: getTimestamp(),
         usage,
       };
 

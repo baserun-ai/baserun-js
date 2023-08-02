@@ -1,7 +1,8 @@
 import { v4 } from 'uuid';
 import axios from 'axios';
-import { Log, Test } from './types';
+import { BaserunStepType, Log, Test } from './types';
 import { monkeyPatchOpenAI } from './openai';
+import { getTimestamp } from './helpers';
 
 export const TestExecutionIdKey = 'baserun_test_execution_id';
 export const TestNameKey = 'baserun_test_name';
@@ -40,23 +41,26 @@ export class Baserun {
     const testStore = new Map();
     testStore.set(TestExecutionIdKey, v4());
     testStore.set(TestNameKey, testName);
-    testStore.set(TestStartTimestampKey, Date.now());
+    testStore.set(TestStartTimestampKey, getTimestamp());
     testStore.set(TestBufferKey, []);
     return testStore;
   }
 
-  static markTestEnd({
-    error,
-    result,
-  }: {
-    error?: Error;
-    result?: string | null;
-  }): void {
+  static markTestEnd(
+    {
+      error,
+      result,
+    }: {
+      error?: Error;
+      result?: string | null;
+    },
+    /* eslint-disable-next-line  @typescript-eslint/no-explicit-any */
+    testStore?: Map<string, any>,
+  ): void {
     if (!global.baserunInitialized) {
       return;
     }
 
-    const testStore = global.baserunTestStore;
     if (!testStore) {
       return;
     }
@@ -65,10 +69,11 @@ export class Baserun {
     const name = testStore.get(TestNameKey);
     const startTimestamp = testStore.get(TestStartTimestampKey);
     const buffer = testStore.get(TestBufferKey);
-    const completionTimestamp = Date.now();
+    const completionTimestamp = getTimestamp();
     if (error) {
       Baserun._storeTest({
         testName: name,
+        testInputs: [],
         id: testExecutionId,
         error: String(error),
         startTimestamp,
@@ -78,6 +83,7 @@ export class Baserun {
     } else {
       Baserun._storeTest({
         testName: name,
+        testInputs: [],
         id: testExecutionId,
         result: result ?? '',
         startTimestamp,
@@ -125,9 +131,10 @@ export class Baserun {
       return;
     }
     const logEntry = {
+      stepType: BaserunStepType.Log,
       name,
       payload,
-      timestamp: Date.now(),
+      timestamp: getTimestamp(),
     };
 
     Baserun._appendToBuffer(logEntry);

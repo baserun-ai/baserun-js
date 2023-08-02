@@ -1,5 +1,5 @@
 {
-  "name": "@baserun-ai/baserun",
+  "name": "baserun",
   "version": "1.0.15",
   "description": "",
   "main": "dist/index.js",

@@ -133,7 +133,7 @@ export class Baserun {
     Baserun._appendToBuffer(logEntry);
   }
 
-  static async flush(): Promise<void> {
+  static async flush(): Promise<string | undefined> {
     if (!global.baserunInitialized) {
       console.warn(
         'Baserun has not been initialized. No data will be flushed.',
@@ -143,9 +143,11 @@ export class Baserun {
 
     if (global.baserunTestExecutions.length === 0) return;
 
+    const apiUrl = 'https://baserun.ai/api/v1/runs';
+
     try {
-      await axios.post(
-        'https://baserun.ai/api/v1/runs',
+      const response = await axios.post(
+        apiUrl,
         { testExecutions: global.baserunTestExecutions },
         {
           headers: {
@@ -153,6 +155,10 @@ export class Baserun {
           },
         },
       );
+
+      const testRunId = response.data.id;
+      const url = new URL(apiUrl);
+      return `${url.protocol}//${url.host}/runs/${testRunId}`;
     } catch (error) {
       console.warn(`Failed to upload results to Baserun: `, error);
     }

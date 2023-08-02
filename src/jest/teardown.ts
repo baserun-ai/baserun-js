@@ -6,6 +6,12 @@ export default async function teardown(
   projectConfig: { testEnvironmentOptions?: { skipFlush: boolean } },
 ) {
   if (!projectConfig.testEnvironmentOptions?.skipFlush) {
-    await flush();
+    const url = await flush();
+    if (url) {
+      const width = process.stdout.columns || 80;
+      const line = '\x1b[34m' + '='.repeat(width) + '\x1b[0m';
+      console.log(line);
+      console.log(`Test results available at: ${url}`);
+    }
   }
 }

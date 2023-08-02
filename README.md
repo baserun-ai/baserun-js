@@ -43,7 +43,7 @@ describe('Baserun end-to-end', () => {
       ],
     });
 
-    expect(chatCompletion.data.choices[0].message.content).stringContaining('Eiffel Tower');
+    expect(chatCompletion.data.choices[0].message).toContain('Eiffel Tower');
   });
 });
 ```

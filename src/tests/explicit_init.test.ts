@@ -15,10 +15,6 @@ describe('BaserunExplicitInit', () => {
     baserun.init();
   });
 
-  afterAll(() => {
-    baserun.flush();
-  });
-
   beforeEach(() => {
     storeTestSpy = jest.spyOn(Baserun, '_storeTest');
   });

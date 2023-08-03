@@ -12,6 +12,10 @@ export const TestBufferKey = 'baserun_test_buffer';
 export class Baserun {
   static _apiKey: string | undefined = process.env.BASERUN_API_KEY;
 
+  static monkeyPatchOpenAI(): void {
+    monkeyPatchOpenAI(Baserun._appendToBuffer);
+  }
+
   static init(): void {
     if (!Baserun._apiKey) {
       throw new Error(
@@ -29,7 +33,7 @@ export class Baserun {
     global.baserunInitialized = true;
     global.baserunTestExecutions = [];
 
-    monkeyPatchOpenAI(Baserun._appendToBuffer);
+    Baserun.monkeyPatchOpenAI();
   }
 
   /* eslint-disable-next-line  @typescript-eslint/no-explicit-any */
@@ -108,9 +112,9 @@ export class Baserun {
       global.baserunTestStore = Baserun.markTestStart(originalMethod.name);
       try {
         const result = originalMethod.apply(this, args);
-        Baserun.markTestEnd({ result });
+        Baserun.markTestEnd({ result }, global.baserunTestStore);
       } catch (e) {
-        Baserun.markTestEnd({ error: e as Error });
+        Baserun.markTestEnd({ error: e as Error }, global.baserunTestStore);
       } finally {
         global.baserunTestStore = undefined;
       }

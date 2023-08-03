@@ -10,17 +10,17 @@ export function monkeyPatchOpenAI(log: (entry: Log) => void) {
     const originalChatCompletion =
       openai.OpenAIApi.prototype.createChatCompletion;
 
-    openai.OpenAIApi.prototype.createCompletion = function (
+    openai.OpenAIApi.prototype.createCompletion = async function (
       /* eslint-disable-next-line  @typescript-eslint/no-explicit-any */
       ...args: any[]
     ): /* eslint-disable-next-line  @typescript-eslint/no-explicit-any */
-    any {
+    Promise<any> {
       const startTime = getTimestamp();
-      const response = originalCompletion(...args);
+      const response = await originalCompletion.bind(this)(...args);
 
       const { prompt = '', ...config } = args[0] ?? {};
-      const output = response.choices[0].text;
-      const usage = response.usage;
+      const output = response.data.choices[0].text;
+      const usage = response.data.usage;
 
       const logEntry = {
         stepType: BaserunStepType.AutoLLM,
@@ -39,17 +39,17 @@ export function monkeyPatchOpenAI(log: (entry: Log) => void) {
       return response;
     };
 
-    openai.OpenAIApi.prototype.createChatCompletion = function (
+    openai.OpenAIApi.prototype.createChatCompletion = async function (
       /* eslint-disable-next-line  @typescript-eslint/no-explicit-any */
       ...args: any[]
     ): /* eslint-disable-next-line  @typescript-eslint/no-explicit-any */
-    any {
+    Promise<any> {
       const startTime = getTimestamp();
-      const response = originalChatCompletion(...args);
+      const response = await originalChatCompletion.bind(this)(...args);
 
       const { messages = [], ...config } = args[0] ?? {};
-      const output = response.choices[0].message.content;
-      const usage = response.usage;
+      const output = response.data.choices[0].message.content;
+      const usage = response.data.usage;
 
       const logEntry = {
         stepType: BaserunStepType.AutoLLM,

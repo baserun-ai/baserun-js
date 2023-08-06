@@ -1,7 +1,7 @@
 import { v4 } from 'uuid';
 import axios from 'axios';
 import { BaserunStepType, Log, Test } from './types';
-import { monkeyPatchOpenAI } from './openai';
+import { monkeyPatchOpenAI, monkeyPatchOpenAIEdge } from './openai';
 import { getTimestamp } from './helpers';
 
 export const TestExecutionIdKey = 'baserun_test_execution_id';
@@ -14,6 +14,7 @@ export class Baserun {
 
   static monkeyPatchOpenAI(): void {
     monkeyPatchOpenAI(Baserun._appendToBuffer);
+    monkeyPatchOpenAIEdge(Baserun._appendToBuffer);
   }
 
   static init(): void {

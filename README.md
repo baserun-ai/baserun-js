@@ -58,6 +58,34 @@ Test results available at: https://baserun.ai/runs/<id>
 =======================================================
 ```
 
+### Existing presets
+
+If you are already using a Jest preset such as ts-jest you will need to merge the presets in a Jest config
+
+```js
+// jest.config.js or jest.config.baserun.js
+
+const tsPreset = require('ts-jest/jest-preset')
+const baserunPreset = require('baserun/jest-preset')
+
+module.exports = {
+    ...tsPreset,
+    ...baserunPreset,
+    testTimeout: 10000,
+}
+```
+
+Then to run a test and log to baserun:
+
+```bash
+jest test_modules.spec.ts
+...
+========================Baserun========================
+Test results available at: https://baserun.ai/runs/<id>
+=======================================================
+```
+
+
 ## Custom logs
 
 ### log

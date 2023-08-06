@@ -1,4 +1,4 @@
-import { flush } from '../index';
+import baserun from '../index';
 
 export default async function teardown(
   /* eslint-disable-next-line  @typescript-eslint/no-explicit-any */
@@ -6,7 +6,7 @@ export default async function teardown(
   projectConfig: { testEnvironmentOptions?: { skipFlush: boolean } },
 ) {
   if (!projectConfig.testEnvironmentOptions?.skipFlush) {
-    const url = await flush();
+    const url = await baserun.flush();
     if (url) {
       const width = process.stdout.columns || 80;
       const word = ' Baserun summary ';

@@ -1,7 +1,7 @@
 process.env.BASERUN_API_KEY = 'test-key';
 
 import { Baserun } from '../baserun';
-import * as baserun from '../index';
+import baserun from '../index';
 
 jest.mock('axios');
 

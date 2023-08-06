@@ -1,5 +1,5 @@
-import { init } from '../index';
+import baserun from '../index';
 
 export default function baserunSetup() {
-  init();
+  baserun.init();
 }

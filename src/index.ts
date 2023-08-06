@@ -5,4 +5,4 @@ const test = Baserun.test;
 const log = Baserun.log;
 const flush = Baserun.flush;
 
-export { init, test, log, flush };
+export default { init, test, log, flush };

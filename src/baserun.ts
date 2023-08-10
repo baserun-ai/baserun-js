@@ -1,13 +1,16 @@
 import { v4 } from 'uuid';
 import axios from 'axios';
-import { BaserunStepType, Log, Test } from './types';
+import { BaserunStepType, Log, Trace, TraceType } from './types';
 import { monkeyPatchOpenAI, monkeyPatchOpenAIEdge } from './openai';
 import { getTimestamp } from './helpers';
 
-export const TestExecutionIdKey = 'baserun_test_execution_id';
-export const TestNameKey = 'baserun_test_name';
-export const TestStartTimestampKey = 'baserun_test_start_timestamp';
-export const TestBufferKey = 'baserun_test_buffer';
+const TraceExecutionIdKey = 'baserun_trace_execution_id';
+const TraceNameKey = 'baserun_trace_name';
+const TraceInputsKey = 'baserun_trace_inputs';
+const TraceStartTimestampKey = 'baserun_trace_start_timestamp';
+const TraceBufferKey = 'baserun_trace_buffer';
+const TraceTypeKey = 'baserun_trace_type';
+const TraceMetadataKey = 'baserun_trace_metadata';
 
 export class Baserun {
   static _apiKey: string | undefined = process.env.BASERUN_API_KEY;
@@ -32,26 +35,37 @@ export class Baserun {
     }
 
     global.baserunInitialized = true;
-    global.baserunTestExecutions = [];
+    global.baserunTraces = [];
 
     Baserun.monkeyPatchOpenAI();
   }
 
-  /* eslint-disable-next-line  @typescript-eslint/no-explicit-any */
-  static markTestStart(testName: string): Map<string, any> | undefined {
+  static markTraceStart(
+    type: TraceType,
+    name: string,
+    inputs: string[] = [],
+    metadata?: object,
+    /* eslint-disable-next-line  @typescript-eslint/no-explicit-any */
+  ): Map<string, any> | undefined {
     if (!global.baserunInitialized) {
       return;
     }
 
-    const testStore = new Map();
-    testStore.set(TestExecutionIdKey, v4());
-    testStore.set(TestNameKey, testName);
-    testStore.set(TestStartTimestampKey, getTimestamp());
-    testStore.set(TestBufferKey, []);
-    return testStore;
+    const traceStore = new Map();
+    traceStore.set(TraceExecutionIdKey, v4());
+    traceStore.set(TraceNameKey, name);
+    traceStore.set(
+      TraceInputsKey,
+      inputs.map((input) => JSON.stringify(input)),
+    );
+    traceStore.set(TraceStartTimestampKey, getTimestamp());
+    traceStore.set(TraceTypeKey, type);
+    traceStore.set(TraceBufferKey, []);
+    traceStore.set(TraceMetadataKey, metadata);
+    return traceStore;
   }
 
-  static markTestEnd(
+  static markTraceEnd(
     {
       error,
       result,
@@ -60,40 +74,47 @@ export class Baserun {
       result?: string | null;
     },
     /* eslint-disable-next-line  @typescript-eslint/no-explicit-any */
-    testStore?: Map<string, any>,
+    traceStore?: Map<string, any>,
   ): void {
     if (!global.baserunInitialized) {
       return;
     }
 
-    if (!testStore) {
+    if (!traceStore) {
       return;
     }
 
-    const testExecutionId = testStore.get(TestExecutionIdKey);
-    const name = testStore.get(TestNameKey);
-    const startTimestamp = testStore.get(TestStartTimestampKey);
-    const buffer = testStore.get(TestBufferKey);
+    const traceExecutionId = traceStore.get(TraceExecutionIdKey);
+    const name = traceStore.get(TraceNameKey);
+    const inputs = traceStore.get(TraceInputsKey);
+    const startTimestamp = traceStore.get(TraceStartTimestampKey);
+    const buffer = traceStore.get(TraceBufferKey);
+    const type = traceStore.get(TraceTypeKey);
+    const metadata = traceStore.get(TraceMetadataKey);
     const completionTimestamp = getTimestamp();
     if (error) {
-      Baserun._storeTest({
+      Baserun._storeTrace({
+        type,
         testName: name,
-        testInputs: [],
-        id: testExecutionId,
+        testInputs: inputs,
+        id: traceExecutionId,
         error: String(error),
         startTimestamp,
         completionTimestamp,
         steps: buffer || [],
+        metadata,
       });
     } else {
-      Baserun._storeTest({
+      Baserun._storeTrace({
+        type,
         testName: name,
-        testInputs: [],
-        id: testExecutionId,
+        testInputs: inputs,
+        id: traceExecutionId,
         result: result ?? '',
         startTimestamp,
         completionTimestamp,
         steps: buffer || [],
+        metadata,
       });
     }
   }
@@ -110,14 +131,17 @@ export class Baserun {
     descriptor.value = function (...args: any[]): any {
       if (!global.baserunInitialized) return originalMethod.apply(this, args);
 
-      global.baserunTestStore = Baserun.markTestStart(originalMethod.name);
+      global.baserunTraceStore = Baserun.markTraceStart(
+        TraceType.Test,
+        originalMethod.name,
+      );
       try {
         const result = originalMethod.apply(this, args);
-        Baserun.markTestEnd({ result }, global.baserunTestStore);
+        Baserun.markTraceEnd({ result }, global.baserunTraceStore);
       } catch (e) {
-        Baserun.markTestEnd({ error: e as Error }, global.baserunTestStore);
+        Baserun.markTraceEnd({ error: e as Error }, global.baserunTraceStore);
       } finally {
-        global.baserunTestStore = undefined;
+        global.baserunTraceStore = undefined;
       }
     };
 
@@ -127,14 +151,15 @@ export class Baserun {
   static log(name: string, payload: object | string): void {
     if (!global.baserunInitialized) return;
 
-    const store = global.baserunTestStore;
+    const store = global.baserunTraceStore;
 
-    if (!store || !store.has(TestExecutionIdKey)) {
-      console.warn(
-        'baserun.log was called outside of a Baserun decorated test. The log will be ignored.',
+    if (!store || !store.has(TraceExecutionIdKey)) {
+      console.info(
+        'baserun.log was called outside of a Baserun decorated trace. The log will be ignored.',
       );
       return;
     }
+
     const logEntry = {
       stepType: BaserunStepType.Log,
       name,
@@ -145,6 +170,46 @@ export class Baserun {
     Baserun._appendToBuffer(logEntry);
   }
 
+  /* eslint-disable-next-line  @typescript-eslint/no-explicit-any */
+  static trace<T extends (...args: any[]) => any>(
+    fn: T,
+    metadata?: object,
+  ): (...args: Parameters<T>) => Promise<ReturnType<T>> {
+    if (!global.baserunInitialized) return fn;
+
+    const store = global.baserunTraceStore;
+    if (store && store.has(TraceExecutionIdKey)) {
+      console.info(
+        'baserun.trace was called inside of an existing Baserun decorated trace. The new trace will be ignored.',
+      );
+      return fn;
+    }
+
+    return async (...args: Parameters<T>): Promise<ReturnType<T>> => {
+      global.baserunTraceStore = Baserun.markTraceStart(
+        TraceType.Production,
+        fn.name,
+        args,
+        metadata,
+      );
+      try {
+        const result = await fn(...args);
+        Baserun.markTraceEnd(
+          { result: result != null ? JSON.stringify(result) : '' },
+          global.baserunTraceStore,
+        );
+        return result;
+      } catch (err) {
+        Baserun.markTraceEnd({ error: err as Error }, global.baserunTraceStore);
+        throw err;
+      } finally {
+        global.baserunTraceStore = undefined;
+        /* Already silently catches all errors and warns */
+        await Baserun.flush();
+      }
+    };
+  }
+
   static async flush(): Promise<string | undefined> {
     if (!global.baserunInitialized) {
       console.warn(
@@ -153,43 +218,63 @@ export class Baserun {
       return;
     }
 
-    if (global.baserunTestExecutions.length === 0) return;
-
-    const apiUrl = 'https://baserun.ai/api/v1/runs';
+    if (global.baserunTraces.length === 0) return;
 
     try {
-      const response = await axios.post(
-        apiUrl,
-        { testExecutions: global.baserunTestExecutions },
-        {
-          headers: {
-            Authorization: `Bearer ${Baserun._apiKey}`,
+      if (
+        global.baserunTraces.every((trace) => trace.type === TraceType.Test)
+      ) {
+        const apiUrl = 'https://baserun.ai/api/v1/runs';
+        const response = await axios.post(
+          apiUrl,
+          { testExecutions: global.baserunTraces },
+          {
+            headers: {
+              Authorization: `Bearer ${Baserun._apiKey}`,
+            },
           },
-        },
-      );
+        );
 
-      const testRunId = response.data.id;
-      const url = new URL(apiUrl);
-      return `${url.protocol}//${url.host}/runs/${testRunId}`;
+        const testRunId = response.data.id;
+        const url = new URL(apiUrl);
+        return `${url.protocol}//${url.host}/runs/${testRunId}`;
+      } else if (
+        global.baserunTraces.every(
+          (trace) => trace.type === TraceType.Production,
+        )
+      ) {
+        const apiUrl = 'https://baserun.ai/api/v1/traces';
+        await axios.post(
+          apiUrl,
+          { traces: global.baserunTraces },
+          {
+            headers: {
+              Authorization: `Bearer ${Baserun._apiKey}`,
+            },
+          },
+        );
+      } else {
+        console.warn('Inconsistent trace types, skipping Baserun upload');
+      }
     } catch (error) {
       console.warn(`Failed to upload results to Baserun: `, error);
+    } finally {
+      global.baserunTraces = [];
     }
-
-    global.baserunTestExecutions = [];
   }
 
-  static _storeTest(testData: Test): void {
-    global.baserunTestExecutions.push(testData);
+  static _storeTrace(traceData: Trace): void {
+    global.baserunTraces.push(traceData);
   }
 
   static _appendToBuffer(logEntry: Log): void {
-    const store = global.baserunTestStore;
+    const store = global.baserunTraceStore;
     if (!store) {
       return;
     }
 
-    const buffer = store.get(TestBufferKey) || [];
+    const buffer = store.get(TraceBufferKey) || [];
     buffer.push(logEntry);
-    store.set(TestBufferKey, buffer);
+    store.set(TraceBufferKey, buffer);
   }
 }

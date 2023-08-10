@@ -1,5 +1,5 @@
-import baserun from '../index';
+import { Baserun } from '../baserun';
 
 export default function baserunSetup() {
-  baserun.init();
+  Baserun.init();
 }

@@ -1,7 +1,7 @@
 process.env.BASERUN_API_KEY = 'test-key';
 
 import { Baserun } from '../baserun';
-import baserun from '../index';
+import { baserun } from '../index';
 
 jest.mock('axios');
 
@@ -16,7 +16,7 @@ describe('BaserunExplicitInit', () => {
   });
 
   beforeEach(() => {
-    storeTestSpy = jest.spyOn(Baserun, '_storeTest');
+    storeTestSpy = jest.spyOn(Baserun, '_storeTrace');
   });
 
   afterEach(() => {
@@ -25,7 +25,7 @@ describe('BaserunExplicitInit', () => {
 
   it('test_explicit_log', () => {
     class Test {
-      @baserun.test
+      @Baserun.test
       static sample() {
         baserun.log('TestEvent', 'whatever');
       }
@@ -45,7 +45,7 @@ describe('BaserunExplicitInit', () => {
     };
 
     class Test {
-      @baserun.test
+      @Baserun.test
       static sample() {
         baserun.log(logName, logPayload);
       }

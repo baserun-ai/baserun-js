@@ -1,5 +1,5 @@
 import { Baserun } from '../../baserun';
-import baserun from '../../index';
+import { baserun } from '../../index';
 
 jest.mock('axios');
 

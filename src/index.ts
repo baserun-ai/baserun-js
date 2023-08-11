@@ -1,8 +1,6 @@
 import { Baserun } from './baserun';
 
 const init = Baserun.init;
-const test = Baserun.test;
+const trace = Baserun.trace;
 const log = Baserun.log;
-const flush = Baserun.flush;
-
-export default { init, test, log, flush };
+export const baserun = { init, log, trace };

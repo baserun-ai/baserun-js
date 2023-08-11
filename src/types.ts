@@ -53,24 +53,28 @@ interface StandardLog {
 
 export type Log = StandardLog | LLMChatLog | LLMCompletionLog;
 
-interface TestSuccess {
+export enum TraceType {
+  Test = 'Test',
+  Production = 'Production',
+}
+
+interface BaseTrace {
+  type: TraceType;
   testName: string;
   testInputs: string[];
   id: string;
+  startTimestamp: number;
+  completionTimestamp: number;
+  steps: Log[];
+  metadata?: object;
+}
+
+interface TraceSuccess extends BaseTrace {
   result: string;
-  startTimestamp: number;
-  completionTimestamp: number;
-  steps: Log[];
 }
 
-interface TestError {
-  testName: string;
-  testInputs: string[];
-  id: string;
+interface TraceError extends BaseTrace {
   error: string;
-  startTimestamp: number;
-  completionTimestamp: number;
-  steps: Log[];
 }
 
-export type Test = TestSuccess | TestError;
+export type Trace = TraceSuccess | TraceError;

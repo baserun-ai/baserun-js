@@ -23,16 +23,15 @@ Use our Jest preset and start immediately logging to Baserun. By default all Ope
 ```typescript
 // test_module.spec.ts
 
-import { Configuration, OpenAIApi } from "openai";
+import OpenAI from "openai";
 
-const configuration = new Configuration({
+const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
-const openai = new OpenAIApi(configuration);
 
 describe('Baserun end-to-end', () => {
   it('should suggest the Eiffel Tower', async () => {
-    const chatCompletion = await openai.createChatCompletion({
+    const chatCompletion = await openai.chat.completions.create({
       model: "gpt-3.5-turbo",
       temperature: 0.7,
       messages: [
@@ -43,7 +42,7 @@ describe('Baserun end-to-end', () => {
       ],
     });
 
-    expect(chatCompletion.data.choices[0].message!.content!).toContain('Eiffel Tower');
+    expect(chatCompletion.choices[0].message!.content!).toContain('Eiffel Tower');
   });
 });
 ```

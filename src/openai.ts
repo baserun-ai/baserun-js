@@ -7,8 +7,12 @@ const DEFAULT_USAGE = {
   total_tokens: 0,
 };
 
-interface OpenAIError {
+interface OldOpenAIError {
   response?: { data?: { error?: { message?: string } } };
+}
+
+interface NewOpenAIError {
+  response?: { error?: { message?: string } };
 }
 
 export function monkeyPatchOpenAIEdge(log: (entry: Log) => void) {
@@ -117,91 +121,181 @@ export function monkeyPatchOpenAI(log: (entry: Log) => void) {
   try {
     /* eslint-disable-next-line @typescript-eslint/no-var-requires */
     const openai = require('openai');
-    const originalCompletion = openai.OpenAIApi.prototype.createCompletion;
-    const originalChatCompletion =
-      openai.OpenAIApi.prototype.createChatCompletion;
 
-    openai.OpenAIApi.prototype.createCompletion = async function (
-      /* eslint-disable-next-line  @typescript-eslint/no-explicit-any */
-      ...args: any[]
-    ): /* eslint-disable-next-line  @typescript-eslint/no-explicit-any */
-    Promise<any> {
-      const startTime = getTimestamp();
-      let usage;
-      let output = '';
+    const isV4 = Boolean(openai?.OpenAI?.Chat?.Completions);
 
-      try {
-        const response = await originalCompletion.bind(this)(...args);
-        output = response.data.choices[0]?.text ?? '';
-        usage = response.data.usage;
-        return response;
-      } catch (err) {
-        const maybeOpenAIError = err as OpenAIError;
-        if (maybeOpenAIError?.response?.data?.error?.message) {
-          output = `Error: ${maybeOpenAIError.response.data.error.message}`;
-        } else {
-          output = `Error: ${err}`;
+    const originalCompletion = isV4
+      ? openai.OpenAI.Completions.prototype.create
+      : openai.OpenAIApi.prototype.createCompletion;
+    const originalChatCompletion = isV4
+      ? openai.OpenAI.Chat.Completions.prototype.create
+      : openai.OpenAIApi.prototype.createChatCompletion;
+
+    if (isV4) {
+      openai.OpenAI.Completions.prototype.create = async function (
+        /* eslint-disable-next-line  @typescript-eslint/no-explicit-any */
+        ...args: any[]
+      ): /* eslint-disable-next-line  @typescript-eslint/no-explicit-any */
+      Promise<any> {
+        const startTime = getTimestamp();
+        let usage;
+        let output = '';
+
+        try {
+          const response = await originalCompletion.bind(this)(...args);
+          output = response.choices[0]?.text ?? '';
+          usage = response.usage;
+          return response;
+        } catch (err) {
+          const maybeOpenAIError = err as NewOpenAIError;
+          if (maybeOpenAIError?.response?.error?.message) {
+            output = `Error: ${maybeOpenAIError.response.error.message}`;
+          } else {
+            output = `Error: ${err}`;
+          }
+          throw err;
+        } finally {
+          const { prompt = '', ...config } = args[0] ?? {};
+
+          const logEntry = {
+            stepType: BaserunStepType.AutoLLM,
+            type: BaserunType.Completion,
+            provider: BaserunProvider.OpenAI,
+            config,
+            prompt: { content: prompt },
+            output,
+            startTimestamp: startTime,
+            completionTimestamp: getTimestamp(),
+            usage: usage ?? DEFAULT_USAGE,
+          };
+
+          log(logEntry);
         }
-        throw err;
-      } finally {
-        const { prompt = '', ...config } = args[0] ?? {};
+      };
 
-        const logEntry = {
-          stepType: BaserunStepType.AutoLLM,
-          type: BaserunType.Completion,
-          provider: BaserunProvider.OpenAI,
-          config,
-          prompt: { content: prompt },
-          output,
-          startTimestamp: startTime,
-          completionTimestamp: getTimestamp(),
-          usage: usage ?? DEFAULT_USAGE,
-        };
+      openai.OpenAI.Chat.Completions.prototype.create = async function (
+        /* eslint-disable-next-line  @typescript-eslint/no-explicit-any */
+        ...args: any[]
+      ): /* eslint-disable-next-line  @typescript-eslint/no-explicit-any */
+      Promise<any> {
+        const startTime = getTimestamp();
+        let usage;
+        let output = '';
 
-        log(logEntry);
-      }
-    };
+        try {
+          const response = await originalChatCompletion.bind(this)(...args);
+          output = response.choices[0]?.message?.content ?? '';
+          usage = response.usage;
+          return response;
+        } catch (err) {
+          const maybeOpenAIError = err as NewOpenAIError;
+          if (maybeOpenAIError?.response?.error?.message) {
+            output = `Error: ${maybeOpenAIError.response.error.message}`;
+          } else {
+            output = `Error: ${err}`;
+          }
+          throw err;
+        } finally {
+          const { messages = [], ...config } = args[0] ?? {};
 
-    openai.OpenAIApi.prototype.createChatCompletion = async function (
-      /* eslint-disable-next-line  @typescript-eslint/no-explicit-any */
-      ...args: any[]
-    ): /* eslint-disable-next-line  @typescript-eslint/no-explicit-any */
-    Promise<any> {
-      const startTime = getTimestamp();
-      let usage;
-      let output = '';
+          const logEntry = {
+            stepType: BaserunStepType.AutoLLM,
+            type: BaserunType.Chat,
+            provider: BaserunProvider.OpenAI,
+            config,
+            messages,
+            output,
+            startTimestamp: startTime,
+            completionTimestamp: getTimestamp(),
+            usage: usage ?? DEFAULT_USAGE,
+          };
 
-      try {
-        const response = await originalChatCompletion.bind(this)(...args);
-        output = response.data.choices[0]?.message?.content ?? '';
-        usage = response.data.usage;
-        return response;
-      } catch (err) {
-        const maybeOpenAIError = err as OpenAIError;
-        if (maybeOpenAIError?.response?.data?.error?.message) {
-          output = `Error: ${maybeOpenAIError.response.data.error.message}`;
-        } else {
-          output = `Error: ${err}`;
+          log(logEntry);
         }
-        throw err;
-      } finally {
-        const { messages = [], ...config } = args[0] ?? {};
+      };
+    } else {
+      openai.OpenAIApi.prototype.createCompletion = async function (
+        /* eslint-disable-next-line  @typescript-eslint/no-explicit-any */
+        ...args: any[]
+      ): /* eslint-disable-next-line  @typescript-eslint/no-explicit-any */
+      Promise<any> {
+        const startTime = getTimestamp();
+        let usage;
+        let output = '';
 
-        const logEntry = {
-          stepType: BaserunStepType.AutoLLM,
-          type: BaserunType.Chat,
-          provider: BaserunProvider.OpenAI,
-          config,
-          messages,
-          output,
-          startTimestamp: startTime,
-          completionTimestamp: getTimestamp(),
-          usage: usage ?? DEFAULT_USAGE,
-        };
+        try {
+          const response = await originalCompletion.bind(this)(...args);
+          output = response.data.choices[0]?.text ?? '';
+          usage = response.data.usage;
+          return response;
+        } catch (err) {
+          const maybeOpenAIError = err as OldOpenAIError;
+          if (maybeOpenAIError?.response?.data?.error?.message) {
+            output = `Error: ${maybeOpenAIError.response.data.error.message}`;
+          } else {
+            output = `Error: ${err}`;
+          }
+          throw err;
+        } finally {
+          const { prompt = '', ...config } = args[0] ?? {};
 
-        log(logEntry);
-      }
-    };
+          const logEntry = {
+            stepType: BaserunStepType.AutoLLM,
+            type: BaserunType.Completion,
+            provider: BaserunProvider.OpenAI,
+            config,
+            prompt: { content: prompt },
+            output,
+            startTimestamp: startTime,
+            completionTimestamp: getTimestamp(),
+            usage: usage ?? DEFAULT_USAGE,
+          };
+
+          log(logEntry);
+        }
+      };
+
+      openai.OpenAIApi.prototype.createChatCompletion = async function (
+        /* eslint-disable-next-line  @typescript-eslint/no-explicit-any */
+        ...args: any[]
+      ): /* eslint-disable-next-line  @typescript-eslint/no-explicit-any */
+      Promise<any> {
+        const startTime = getTimestamp();
+        let usage;
+        let output = '';
+
+        try {
+          const response = await originalChatCompletion.bind(this)(...args);
+          output = response.data.choices[0]?.message?.content ?? '';
+          usage = response.data.usage;
+          return response;
+        } catch (err) {
+          const maybeOpenAIError = err as OldOpenAIError;
+          if (maybeOpenAIError?.response?.data?.error?.message) {
+            output = `Error: ${maybeOpenAIError.response.data.error.message}`;
+          } else {
+            output = `Error: ${err}`;
+          }
+          throw err;
+        } finally {
+          const { messages = [], ...config } = args[0] ?? {};
+
+          const logEntry = {
+            stepType: BaserunStepType.AutoLLM,
+            type: BaserunType.Chat,
+            provider: BaserunProvider.OpenAI,
+            config,
+            messages,
+            output,
+            startTimestamp: startTime,
+            completionTimestamp: getTimestamp(),
+            usage: usage ?? DEFAULT_USAGE,
+          };
+
+          log(logEntry);
+        }
+      };
+    }
   } catch (error) {
     /* openai isn't used */
     if (

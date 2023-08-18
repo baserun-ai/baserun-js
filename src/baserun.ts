@@ -3,6 +3,8 @@ import axios from 'axios';
 import { BaserunStepType, Log, Trace, TraceType } from './types';
 import { monkeyPatchOpenAI, monkeyPatchOpenAIEdge } from './openai';
 import { getTimestamp } from './helpers';
+import { Evals } from './evals/evals';
+import { Eval } from './evals/types';
 
 const TraceExecutionIdKey = 'baserun_trace_execution_id';
 const TraceNameKey = 'baserun_trace_name';
@@ -11,8 +13,10 @@ const TraceStartTimestampKey = 'baserun_trace_start_timestamp';
 const TraceBufferKey = 'baserun_trace_buffer';
 const TraceTypeKey = 'baserun_trace_type';
 const TraceMetadataKey = 'baserun_trace_metadata';
+const TraceEvalsKey = 'baserun_trace_evals';
 
 export class Baserun {
+  static evals = Evals;
   static _apiKey: string | undefined = process.env.BASERUN_API_KEY;
 
   static monkeyPatchOpenAI(): void {
@@ -37,6 +41,7 @@ export class Baserun {
     global.baserunInitialized = true;
     global.baserunTraces = [];
 
+    Baserun.evals.init(Baserun._appendToEvals);
     Baserun.monkeyPatchOpenAI();
   }
 
@@ -91,6 +96,7 @@ export class Baserun {
     const buffer = traceStore.get(TraceBufferKey);
     const type = traceStore.get(TraceTypeKey);
     const metadata = traceStore.get(TraceMetadataKey);
+    const evals = traceStore.get(TraceEvalsKey);
     const completionTimestamp = getTimestamp();
     if (error) {
       Baserun._storeTrace({
@@ -103,6 +109,7 @@ export class Baserun {
         completionTimestamp,
         steps: buffer || [],
         metadata,
+        evals,
       });
     } else {
       Baserun._storeTrace({
@@ -115,6 +122,7 @@ export class Baserun {
         completionTimestamp,
         steps: buffer || [],
         metadata,
+        evals,
       });
     }
   }
@@ -128,7 +136,7 @@ export class Baserun {
     const originalMethod = descriptor.value;
 
     /* eslint-disable-next-line  @typescript-eslint/no-explicit-any */
-    descriptor.value = function (...args: any[]): any {
+    descriptor.value = async function (...args: any[]): Promise<any> {
       if (!global.baserunInitialized) return originalMethod.apply(this, args);
 
       global.baserunTraceStore = Baserun.markTraceStart(
@@ -136,7 +144,10 @@ export class Baserun {
         originalMethod.name,
       );
       try {
-        const result = originalMethod.apply(this, args);
+        let result = originalMethod.apply(this, args);
+        if (result instanceof Promise) {
+          result = await result;
+        }
         Baserun.markTraceEnd({ result }, global.baserunTraceStore);
       } catch (e) {
         Baserun.markTraceEnd({ error: e as Error }, global.baserunTraceStore);
@@ -276,5 +287,16 @@ export class Baserun {
     const buffer = store.get(TraceBufferKey) || [];
     buffer.push(logEntry);
     store.set(TraceBufferKey, buffer);
+  }
+
+  static _appendToEvals(evalEntry: Eval): void {
+    const store = global.baserunTraceStore;
+    if (!store) {
+      return;
+    }
+
+    const evals = store.get(TraceEvalsKey) || [];
+    evals.push(evalEntry);
+    store.set(TraceEvalsKey, evals);
   }
 }

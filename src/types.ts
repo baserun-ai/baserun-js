@@ -1,3 +1,5 @@
+import { Eval } from './evals/types';
+
 export enum BaserunProvider {
   Google = 'google',
   Llama = 'llama',
@@ -67,6 +69,7 @@ interface BaseTrace {
   completionTimestamp: number;
   steps: Log[];
   metadata?: object;
+  evals?: Eval[];
 }
 
 interface TraceSuccess extends BaseTrace {

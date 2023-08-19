@@ -15,9 +15,53 @@ export enum EvalType {
   ModelGradedSecurity = 'model_graded_security',
 }
 
-export interface Eval {
+interface EqualsPayload {
+  submission: string;
+  expected: string;
+}
+
+interface MembershipPayload {
+  submission: string;
+  expected: string[];
+}
+
+interface SubmissionPayload {
+  submission: string;
+}
+
+interface ModelGradedFactPayload {
+  question: string;
+  expert: string;
+  submission: string;
+}
+
+interface ModelGradedClosedQAPayload {
+  task: string;
+  submission: string;
+  criterion: string;
+}
+
+export interface EvalPayload {
+  [EvalType.Equals]: EqualsPayload;
+  [EvalType.Match]: MembershipPayload;
+  [EvalType.Includes]: MembershipPayload;
+  [EvalType.FuzzyMatch]: MembershipPayload;
+  [EvalType.NotEquals]: EqualsPayload;
+  [EvalType.NotMatch]: MembershipPayload;
+  [EvalType.NotIncludes]: MembershipPayload;
+  [EvalType.NotFuzzyMatch]: MembershipPayload;
+  [EvalType.ValidJson]: SubmissionPayload;
+  [EvalType.Custom]: SubmissionPayload;
+  [EvalType.CustomAsync]: SubmissionPayload;
+  [EvalType.ModelGradedFact]: ModelGradedFactPayload;
+  [EvalType.ModelGradedClosedQA]: ModelGradedClosedQAPayload;
+  [EvalType.ModelGradedSecurity]: SubmissionPayload;
+}
+
+export interface Eval<T extends EvalType> {
   name: string;
-  type: EvalType;
+  type: T;
   eval: string;
-  payload: object;
+  score?: number;
+  payload: EvalPayload[T];
 }

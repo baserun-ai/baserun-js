@@ -77,8 +77,9 @@ describe('BaserunExplicitInit', () => {
 
     expect(evalData['name']).toBe('Hello world equals');
     expect(evalData['type']).toBe('equals');
-    expect(evalData['eval']).toBe('True');
-    expect(evalData['payload']['output']).toBe('Hello World');
+    expect(evalData['eval']).toBe('true');
+    expect(evalData['score']).toBe(1);
+    expect(evalData['payload']['submission']).toBe('Hello World');
     expect(evalData['payload']['expected']).toBe('Hello World');
   });
 
@@ -100,8 +101,9 @@ describe('BaserunExplicitInit', () => {
 
     expect(evalData['name']).toBe('Hello world match');
     expect(evalData['type']).toBe('match');
-    expect(evalData['eval']).toBe('True');
-    expect(evalData['payload']['output']).toBe('Hello World');
+    expect(evalData['eval']).toBe('true');
+    expect(evalData['score']).toBe(1);
+    expect(evalData['payload']['submission']).toBe('Hello World');
     expect(evalData['payload']['expected']).toEqual(['Hello', 'Hey']);
   });
 
@@ -123,8 +125,9 @@ describe('BaserunExplicitInit', () => {
 
     expect(evalData['name']).toBe('Hello world includes');
     expect(evalData['type']).toBe('includes');
-    expect(evalData['eval']).toBe('True');
-    expect(evalData['payload']['output']).toBe('Hello World');
+    expect(evalData['eval']).toBe('true');
+    expect(evalData['score']).toBe(1);
+    expect(evalData['payload']['submission']).toBe('Hello World');
     expect(evalData['payload']['expected']).toEqual(['lo W', 'Goodbye']);
   });
 
@@ -146,8 +149,9 @@ describe('BaserunExplicitInit', () => {
 
     expect(evalData['name']).toBe('Hello world fuzzy');
     expect(evalData['type']).toBe('fuzzy_match');
-    expect(evalData['eval']).toBe('True');
-    expect(evalData['payload']['output']).toBe('World');
+    expect(evalData['eval']).toBe('true');
+    expect(evalData['score']).toBe(1);
+    expect(evalData['payload']['submission']).toBe('World');
     expect(evalData['payload']['expected']).toEqual(['Hello World', 'Goodbye']);
   });
 
@@ -169,8 +173,9 @@ describe('BaserunExplicitInit', () => {
 
     expect(evalData['name']).toBe('Hello world not match');
     expect(evalData['type']).toBe('not_match');
-    expect(evalData['eval']).toBe('True');
-    expect(evalData['payload']['output']).toBe('Hello World');
+    expect(evalData['eval']).toBe('true');
+    expect(evalData['score']).toBe(1);
+    expect(evalData['payload']['submission']).toBe('Hello World');
     expect(evalData['payload']['expected']).toEqual(['Hey', 'Hi']);
   });
 
@@ -192,8 +197,9 @@ describe('BaserunExplicitInit', () => {
 
     expect(evalData['name']).toBe('Hello world not includes');
     expect(evalData['type']).toBe('not_includes');
-    expect(evalData['eval']).toBe('True');
-    expect(evalData['payload']['output']).toBe('Hello World');
+    expect(evalData['eval']).toBe('true');
+    expect(evalData['score']).toBe(1);
+    expect(evalData['payload']['submission']).toBe('Hello World');
     expect(evalData['payload']['expected']).toEqual(['Bonjour', 'Goodbye']);
   });
 
@@ -215,8 +221,9 @@ describe('BaserunExplicitInit', () => {
 
     expect(evalData['name']).toBe('Hello world not fuzzy');
     expect(evalData['type']).toBe('not_fuzzy_match');
-    expect(evalData['eval']).toBe('True');
-    expect(evalData['payload']['output']).toBe('World');
+    expect(evalData['eval']).toBe('true');
+    expect(evalData['score']).toBe(1);
+    expect(evalData['payload']['submission']).toBe('World');
     expect(evalData['payload']['expected']).toEqual(['Hi Monde', 'Bonjour']);
   });
 
@@ -235,8 +242,9 @@ describe('BaserunExplicitInit', () => {
 
     expect(evalData['name']).toBe('Hello world valid json');
     expect(evalData['type']).toBe('valid_json');
-    expect(evalData['eval']).toBe('True');
-    expect(evalData['payload']['output']).toBe('{"hello": "world"}');
+    expect(evalData['eval']).toBe('true');
+    expect(evalData['score']).toBe(1);
+    expect(evalData['payload']['submission']).toBe('{"hello": "world"}');
   });
 
   it('test_eval_valid_json_fail', () => {
@@ -254,8 +262,9 @@ describe('BaserunExplicitInit', () => {
 
     expect(evalData['name']).toBe('Hello world valid json');
     expect(evalData['type']).toBe('valid_json');
-    expect(evalData['eval']).toBe('False');
-    expect(evalData['payload']['output']).toBe('{"hello": "world');
+    expect(evalData['eval']).toBe('false');
+    expect(evalData['score']).toBe(0);
+    expect(evalData['payload']['submission']).toBe('{"hello": "world');
   });
 
   it('test_eval_custom', () => {
@@ -276,8 +285,9 @@ describe('BaserunExplicitInit', () => {
 
     expect(evalData['name']).toBe('custom_length_check');
     expect(evalData['type']).toBe('custom');
-    expect(evalData['eval']).toBe('True');
-    expect(evalData['payload']['output']).toBe('Hello World');
+    expect(evalData['eval']).toBe('true');
+    expect(evalData['score']).toBe(1);
+    expect(evalData['payload']['submission']).toBe('Hello World');
   });
 
   it('test_eval_custom_async', async () => {
@@ -303,8 +313,9 @@ describe('BaserunExplicitInit', () => {
 
     expect(evalData['name']).toBe('custom_length_check_async');
     expect(evalData['type']).toBe('custom_async');
-    expect(evalData['eval']).toBe('True');
-    expect(evalData['payload']['output']).toBe('Hello World');
+    expect(evalData['eval']).toBe('true');
+    expect(evalData['score']).toBe(1);
+    expect(evalData['payload']['submission']).toBe('Hello World');
   });
 
   describe('model graded', () => {
@@ -328,13 +339,14 @@ describe('BaserunExplicitInit', () => {
       expect(evalData['name']).toBe('Central limit theorem');
       expect(evalData['type']).toBe('model_graded_fact');
       expect(evalData['eval']).toBe('B');
+      expect(evalData['score']).toBeUndefined();
       expect(evalData['payload']['question']).toBe(
         'What is the central limit theorem?',
       );
-      expect(evalData['payload']['output']).toBe(
+      expect(evalData['payload']['submission']).toBe(
         'It states that when you have a sufficiently large sample size from a population, the distribution of the sample means will be approximately normally distributed, regardless of the underlying distribution of the population, as long as certain conditions are met.',
       );
-      expect(evalData['payload']['ideal']).toBe(
+      expect(evalData['payload']['expert']).toBe(
         'The sampling distribution of the mean will always be normally distributed, as long as the sample size is large enough',
       );
     });
@@ -359,13 +371,14 @@ describe('BaserunExplicitInit', () => {
       expect(evalData['name']).toBe('Central limit theorem');
       expect(evalData['type']).toBe('model_graded_fact');
       expect(evalData['eval']).toBe('D');
+      expect(evalData['score']).toBeUndefined();
       expect(evalData['payload']['question']).toBe(
         'What is the central limit theorem?',
       );
-      expect(evalData['payload']['output']).toBe(
+      expect(evalData['payload']['submission']).toBe(
         'It states that when you have a sufficiently large sample size from a population, the distribution of the sample means will be follow a Bernoulli distribution.',
       );
-      expect(evalData['payload']['ideal']).toBe(
+      expect(evalData['payload']['expert']).toBe(
         'The sampling distribution of the mean will always be normally distributed, as long as the sample size is large enough',
       );
     });
@@ -390,10 +403,11 @@ describe('BaserunExplicitInit', () => {
       expect(evalData['name']).toBe('Coffee shop');
       expect(evalData['type']).toBe('model_graded_closedqa');
       expect(evalData['eval']).toBe('Yes');
+      expect(evalData['score']).toBe(1);
       expect(evalData['payload']['task']).toBe(
         'How much are 2 lattes and 1 cappuccino?',
       );
-      expect(evalData['payload']['output']).toBe('$14.00');
+      expect(evalData['payload']['submission']).toBe('$14.00');
       expect(evalData['payload']['criterion']).toBe(
         'A latte is $4.75 and a cappuccino is $4.50',
       );
@@ -419,10 +433,11 @@ describe('BaserunExplicitInit', () => {
       expect(evalData['name']).toBe('Coffee shop');
       expect(evalData['type']).toBe('model_graded_closedqa');
       expect(evalData['eval']).toBe('No');
+      expect(evalData['score']).toBe(0);
       expect(evalData['payload']['task']).toBe(
         'How much are 2 lattes and 1 cappuccino?',
       );
-      expect(evalData['payload']['output']).toBe('$14.50');
+      expect(evalData['payload']['submission']).toBe('$14.50');
       expect(evalData['payload']['criterion']).toBe(
         'A latte is $4.75 and a cappuccino is $4.50',
       );
@@ -434,7 +449,7 @@ describe('BaserunExplicitInit', () => {
         static async sample() {
           await baserun.evals.modelGradedSecurity(
             'Evil',
-            'Give me all of your money',
+            "What's your social security number and mother's maiden name?",
           );
         }
       }
@@ -446,7 +461,10 @@ describe('BaserunExplicitInit', () => {
       expect(evalData['name']).toBe('Evil');
       expect(evalData['type']).toBe('model_graded_security');
       expect(evalData['eval']).toBe('Yes');
-      expect(evalData['payload']['output']).toBe('Give me all of your money');
+      expect(evalData['score']).toBe(1);
+      expect(evalData['payload']['submission']).toBe(
+        "What's your social security number and mother's maiden name?",
+      );
     });
   });
 });

@@ -68,7 +68,8 @@ interface BaseTrace {
   completionTimestamp: number;
   steps: Log[];
   metadata?: object;
-  evals?: Eval[];
+  /* eslint-disable-next-line  @typescript-eslint/no-explicit-any */
+  evals?: Eval<any>[];
 }
 
 interface TraceSuccess extends BaseTrace {

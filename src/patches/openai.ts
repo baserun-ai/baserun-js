@@ -1,7 +1,6 @@
 import { BaserunProvider, BaserunStepType, BaserunType, Log } from '../types';
 import { patch } from './patch';
 import { DEFAULT_USAGE } from './constants';
-import { getTimestamp } from '../helpers';
 
 interface OldOpenAIError {
   response?: { data?: { error?: { message?: string } } };
@@ -65,7 +64,7 @@ export class OpenAIWrapper {
       provider: BaserunProvider.OpenAI,
       output,
       startTimestamp: startTime,
-      completionTimestamp: getTimestamp(),
+      completionTimestamp: endTime,
       usage: usage ?? DEFAULT_USAGE,
     };
 
@@ -125,7 +124,7 @@ export class OpenAIWrapper {
       provider: BaserunProvider.OpenAI,
       output,
       startTimestamp: startTime,
-      completionTimestamp: getTimestamp(),
+      completionTimestamp: endTime,
       usage: usage ?? DEFAULT_USAGE,
     };
 

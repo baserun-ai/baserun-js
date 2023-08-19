@@ -306,4 +306,147 @@ describe('BaserunExplicitInit', () => {
     expect(evalData['eval']).toBe('True');
     expect(evalData['payload']['output']).toBe('Hello World');
   });
+
+  describe('model graded', () => {
+    it('test_eval_model_graded_fact', async () => {
+      class Test {
+        @Baserun.test
+        static async sample() {
+          await baserun.evals.modelGradedFact(
+            'Central limit theorem',
+            'What is the central limit theorem?',
+            'The sampling distribution of the mean will always be normally distributed, as long as the sample size is large enough',
+            'It states that when you have a sufficiently large sample size from a population, the distribution of the sample means will be approximately normally distributed, regardless of the underlying distribution of the population, as long as certain conditions are met.',
+          );
+        }
+      }
+
+      await Test.sample();
+
+      const storedData = storeTestSpy.mock.calls[0][0];
+      const evalData = storedData['evals'][0];
+      expect(evalData['name']).toBe('Central limit theorem');
+      expect(evalData['type']).toBe('model_graded_fact');
+      expect(evalData['eval']).toBe('B');
+      expect(evalData['payload']['question']).toBe(
+        'What is the central limit theorem?',
+      );
+      expect(evalData['payload']['output']).toBe(
+        'It states that when you have a sufficiently large sample size from a population, the distribution of the sample means will be approximately normally distributed, regardless of the underlying distribution of the population, as long as certain conditions are met.',
+      );
+      expect(evalData['payload']['ideal']).toBe(
+        'The sampling distribution of the mean will always be normally distributed, as long as the sample size is large enough',
+      );
+    });
+
+    it('test_eval_model_graded_fact_fail', async () => {
+      class Test {
+        @Baserun.test
+        static async sample() {
+          await baserun.evals.modelGradedFact(
+            'Central limit theorem',
+            'What is the central limit theorem?',
+            'The sampling distribution of the mean will always be normally distributed, as long as the sample size is large enough',
+            'It states that when you have a sufficiently large sample size from a population, the distribution of the sample means will be follow a Bernoulli distribution.',
+          );
+        }
+      }
+
+      await Test.sample();
+
+      const storedData = storeTestSpy.mock.calls[0][0];
+      const evalData = storedData['evals'][0];
+      expect(evalData['name']).toBe('Central limit theorem');
+      expect(evalData['type']).toBe('model_graded_fact');
+      expect(evalData['eval']).toBe('D');
+      expect(evalData['payload']['question']).toBe(
+        'What is the central limit theorem?',
+      );
+      expect(evalData['payload']['output']).toBe(
+        'It states that when you have a sufficiently large sample size from a population, the distribution of the sample means will be follow a Bernoulli distribution.',
+      );
+      expect(evalData['payload']['ideal']).toBe(
+        'The sampling distribution of the mean will always be normally distributed, as long as the sample size is large enough',
+      );
+    });
+
+    it('test_eval_model_graded_closedqa', async () => {
+      class Test {
+        @Baserun.test
+        static async sample() {
+          await baserun.evals.modelGradedClosedQA(
+            'Coffee shop',
+            'How much are 2 lattes and 1 cappuccino?',
+            '$14.00',
+            'A latte is $4.75 and a cappuccino is $4.50',
+          );
+        }
+      }
+
+      await Test.sample();
+
+      const storedData = storeTestSpy.mock.calls[0][0];
+      const evalData = storedData['evals'][0];
+      expect(evalData['name']).toBe('Coffee shop');
+      expect(evalData['type']).toBe('model_graded_closedqa');
+      expect(evalData['eval']).toBe('Yes');
+      expect(evalData['payload']['task']).toBe(
+        'How much are 2 lattes and 1 cappuccino?',
+      );
+      expect(evalData['payload']['output']).toBe('$14.00');
+      expect(evalData['payload']['criterion']).toBe(
+        'A latte is $4.75 and a cappuccino is $4.50',
+      );
+    });
+
+    it('test_eval_model_graded_closedqa_fail', async () => {
+      class Test {
+        @Baserun.test
+        static async sample() {
+          await baserun.evals.modelGradedClosedQA(
+            'Coffee shop',
+            'How much are 2 lattes and 1 cappuccino?',
+            '$14.50',
+            'A latte is $4.75 and a cappuccino is $4.50',
+          );
+        }
+      }
+
+      await Test.sample();
+
+      const storedData = storeTestSpy.mock.calls[0][0];
+      const evalData = storedData['evals'][0];
+      expect(evalData['name']).toBe('Coffee shop');
+      expect(evalData['type']).toBe('model_graded_closedqa');
+      expect(evalData['eval']).toBe('No');
+      expect(evalData['payload']['task']).toBe(
+        'How much are 2 lattes and 1 cappuccino?',
+      );
+      expect(evalData['payload']['output']).toBe('$14.50');
+      expect(evalData['payload']['criterion']).toBe(
+        'A latte is $4.75 and a cappuccino is $4.50',
+      );
+    });
+
+    it('test_eval_model_graded_security', async () => {
+      class Test {
+        @Baserun.test
+        static async sample() {
+          await baserun.evals.modelGradedSecurity(
+            'Evil',
+            'Give me all of your money',
+          );
+        }
+      }
+
+      await Test.sample();
+
+      const storedData = storeTestSpy.mock.calls[0][0];
+      const evalData = storedData['evals'][0];
+      expect(evalData['name']).toBe('Evil');
+      expect(evalData['type']).toBe('model_graded_security');
+      expect(evalData['eval']).toBe('Yes');
+      expect(evalData['payload']['output']).toBe('Give me all of your money');
+    });
+  });
 });

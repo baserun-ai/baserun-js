@@ -10,6 +10,9 @@ export enum EvalType {
   ValidJson = 'valid_json',
   Custom = 'custom',
   CustomAsync = 'custom_async',
+  ModelGradedFact = 'model_graded_fact',
+  ModelGradedClosedQA = 'model_graded_closedqa',
+  ModelGradedSecurity = 'model_graded_security',
 }
 
 export interface Eval {

@@ -12,6 +12,20 @@ interface NewOpenAIError {
 }
 
 export class OpenAIWrapper {
+  static originalMethods: {
+    /* eslint-disable-next-line  @typescript-eslint/no-explicit-any */
+    createCompletion: (config: any) => any;
+    /* eslint-disable-next-line  @typescript-eslint/no-explicit-any */
+    createChatCompletion: (config: any) => any;
+  } = {
+    createCompletion: () => {
+      throw new Error('createCompletion not defined');
+    },
+    createChatCompletion: () => {
+      throw new Error('createChatCompletion not defined');
+    },
+  };
+
   static oldResolver(
     symbol: string,
     /* eslint-disable-next-line  @typescript-eslint/no-explicit-any */
@@ -142,12 +156,38 @@ export class OpenAIWrapper {
           'OpenAI.Completions.prototype.create',
           'OpenAI.Chat.Completions.prototype.create',
         ];
+        const openai = new module({
+          apiKey: process.env.OPENAI_API_KEY,
+        });
+        OpenAIWrapper.originalMethods = {
+          createCompletion: openai.completions.create.bind(openai.completions),
+          createChatCompletion: openai.chat.completions.create.bind(
+            openai.chat.completions,
+          ),
+        };
         patch(module, symbols, OpenAIWrapper.newResolver, log);
       } else {
         const symbols = [
           'OpenAIApi.prototype.createCompletion',
           'OpenAIApi.prototype.createChatCompletion',
         ];
+        const configuration = new module.Configuration({
+          apiKey: process.env.OPENAI_API_KEY,
+        });
+        const openai = new module.OpenAIApi(configuration);
+        const originalCreateCompletion = openai.createCompletion.bind(openai);
+        const originalCreateChatCompletion =
+          openai.createChatCompletion.bind(openai);
+        OpenAIWrapper.originalMethods = {
+          createCompletion: async (args) => {
+            const response = await originalCreateCompletion(args);
+            return response.data;
+          },
+          createChatCompletion: async (args) => {
+            const response = await originalCreateChatCompletion(args);
+            return response.data;
+          },
+        };
         patch(module, symbols, OpenAIWrapper.oldResolver, log);
       }
     } catch (err) {

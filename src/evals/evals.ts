@@ -1,4 +1,4 @@
-import { Eval, EvalType } from './types';
+import { Eval, EvalPayload, EvalType } from './types';
 import { isValidJson } from './json';
 import { OpenAIWrapper } from '../patches/openai';
 
@@ -7,7 +7,10 @@ function getAnswerPrompt(choices: string[]): string {
   return `First, write out in a step by step manner your reasoning to be sure that your conclusion is correct. Avoid simply stating the correct answer at the outset. Then print only a single choice from ${joinedChoices} (without quotes or punctuation) on its own line corresponding to the correct answer. At the end, repeat just the answer by itself on a new line.\n\nReasoning:`;
 }
 
-function getChoice(result: string, choices: string[]): string {
+function getChoice(
+  result: string,
+  choices: string[],
+): (typeof choices)[number] | '__invalid__' {
   const lines = result.trim().split('\n');
   for (let i = lines.length - 1; i >= 0; i--) {
     for (const choice of choices) {
@@ -21,165 +24,242 @@ function getChoice(result: string, choices: string[]): string {
 }
 
 export class Evals {
-  static _log?: (evalEntry: Eval) => void;
+  /* eslint-disable-next-line  @typescript-eslint/no-explicit-any */
+  static _log?: (evalEntry: Eval<any>) => void;
 
-  static init(log: (evalEntry: Eval) => void): void {
+  /* eslint-disable-next-line  @typescript-eslint/no-explicit-any */
+  static init(log: (evalEntry: Eval<any>) => void): void {
     Evals._log = log;
   }
 
-  private static _storeEvalData(
-    name: string,
-    type: EvalType,
-    result: string,
-    payload: object,
-  ): void {
+  private static _storeEvalData<T extends EvalType>({
+    name,
+    type,
+    result,
+    score,
+    payload,
+  }: {
+    name: string;
+    type: T;
+    result: string;
+    score?: number;
+    payload: EvalPayload[T];
+  }): void {
     Evals._log?.({
       name,
       type,
       eval: result,
+      score,
       payload,
     });
   }
 
-  static equals(name: string, output: string, expected: string): boolean {
-    const result = output === expected;
-    Evals._storeEvalData(name, EvalType.Equals, result ? 'True' : 'False', {
-      output,
-      expected,
+  static equals(name: string, submission: string, expected: string): boolean {
+    const result = submission === expected;
+    Evals._storeEvalData({
+      name,
+      type: EvalType.Equals,
+      result: String(result).toLowerCase(),
+      score: Number(result),
+      payload: {
+        submission,
+        expected,
+      },
     });
     return result;
   }
 
-  static match(name: string, output: string, expected: string[]): boolean {
-    const result = expected.some((item) => output.startsWith(item));
-    Evals._storeEvalData(name, EvalType.Match, result ? 'True' : 'False', {
-      output,
-      expected,
+  static match(name: string, submission: string, expected: string[]): boolean {
+    const result = expected.some((item) => submission.startsWith(item));
+    Evals._storeEvalData({
+      name,
+      type: EvalType.Match,
+      result: String(result).toLowerCase(),
+      score: Number(result),
+      payload: {
+        submission,
+        expected,
+      },
     });
     return result;
   }
 
-  static includes(name: string, output: string, expected: string[]): boolean {
-    const result = expected.some((item) => output.includes(item));
-    Evals._storeEvalData(name, EvalType.Includes, result ? 'True' : 'False', {
-      output,
-      expected,
+  static includes(
+    name: string,
+    submission: string,
+    expected: string[],
+  ): boolean {
+    const result = expected.some((item) => submission.includes(item));
+    Evals._storeEvalData({
+      name,
+      type: EvalType.Includes,
+      result: String(result).toLowerCase(),
+      score: Number(result),
+      payload: {
+        submission,
+        expected,
+      },
     });
     return result;
   }
 
-  static fuzzyMatch(name: string, output: string, expected: string[]): boolean {
+  static fuzzyMatch(
+    name: string,
+    submission: string,
+    expected: string[],
+  ): boolean {
     const result = expected.some(
-      (item) => output.includes(item) || item.includes(output),
+      (item) => submission.includes(item) || item.includes(submission),
     );
-    Evals._storeEvalData(name, EvalType.FuzzyMatch, result ? 'True' : 'False', {
-      output,
-      expected,
+    Evals._storeEvalData({
+      name,
+      type: EvalType.FuzzyMatch,
+      result: String(result).toLowerCase(),
+      score: Number(result),
+      payload: {
+        submission,
+        expected,
+      },
     });
     return result;
   }
 
-  static notEquals(name: string, output: string, expected: string): boolean {
-    const result = output !== expected;
-    Evals._storeEvalData(name, EvalType.NotEquals, result ? 'True' : 'False', {
-      output,
-      expected,
+  static notEquals(
+    name: string,
+    submission: string,
+    expected: string,
+  ): boolean {
+    const result = submission !== expected;
+    Evals._storeEvalData({
+      name,
+      type: EvalType.NotEquals,
+      result: String(result).toLowerCase(),
+      score: Number(result),
+      payload: {
+        submission,
+        expected,
+      },
     });
     return result;
   }
 
-  static notMatch(name: string, output: string, expected: string[]): boolean {
-    const result = !expected.some((item) => output.startsWith(item));
-    Evals._storeEvalData(name, EvalType.NotMatch, result ? 'True' : 'False', {
-      output,
-      expected,
+  static notMatch(
+    name: string,
+    submission: string,
+    expected: string[],
+  ): boolean {
+    const result = !expected.some((item) => submission.startsWith(item));
+    Evals._storeEvalData({
+      name,
+      type: EvalType.NotMatch,
+      result: String(result).toLowerCase(),
+      score: Number(result),
+      payload: {
+        submission,
+        expected,
+      },
     });
     return result;
   }
 
   static notIncludes(
     name: string,
-    output: string,
+    submission: string,
     expected: string[],
   ): boolean {
-    const result = !expected.some((item) => output.includes(item));
-    Evals._storeEvalData(
+    const result = !expected.some((item) => submission.includes(item));
+    Evals._storeEvalData({
       name,
-      EvalType.NotIncludes,
-      result ? 'True' : 'False',
-      { output, expected },
-    );
+      type: EvalType.NotIncludes,
+      result: String(result).toLowerCase(),
+      score: Number(result),
+      payload: { submission, expected },
+    });
     return result;
   }
 
   static notFuzzyMatch(
     name: string,
-    output: string,
+    submission: string,
     expected: string[],
   ): boolean {
     const result = !expected.some(
-      (item) => output.includes(item) || item.includes(output),
+      (item) => submission.includes(item) || item.includes(submission),
     );
-    Evals._storeEvalData(
+    Evals._storeEvalData({
       name,
-      EvalType.NotFuzzyMatch,
-      result ? 'True' : 'False',
-      { output, expected },
-    );
+      type: EvalType.NotFuzzyMatch,
+      result: String(result).toLowerCase(),
+      score: Number(result),
+      payload: { submission, expected },
+    });
     return result;
   }
 
-  static validJson(name: string, output: string): boolean {
-    const result = isValidJson(output);
-    Evals._storeEvalData(name, EvalType.ValidJson, result ? 'True' : 'False', {
-      output,
+  static validJson(name: string, submission: string): boolean {
+    const result = isValidJson(submission);
+    Evals._storeEvalData({
+      name,
+      type: EvalType.ValidJson,
+      result: String(result).toLowerCase(),
+      score: Number(result),
+      payload: {
+        submission,
+      },
     });
     return result;
   }
 
   static custom(
     name: string,
-    output: string,
-    fn: (output: string) => boolean,
+    submission: string,
+    fn: (submission: string) => boolean,
   ): boolean {
-    const result = fn(output);
-    Evals._storeEvalData(name, EvalType.Custom, result ? 'True' : 'False', {
-      output,
+    const result = fn(submission);
+    Evals._storeEvalData({
+      name,
+      type: EvalType.Custom,
+      result: String(result).toLowerCase(),
+      score: Number(result),
+      payload: {
+        submission,
+      },
     });
     return result;
   }
 
   static async customAsync(
     name: string,
-    output: string,
-    fn: (output: string) => Promise<boolean>,
+    submission: string,
+    fn: (submission: string) => Promise<boolean>,
   ): Promise<boolean> {
-    const result = await fn(output);
-    Evals._storeEvalData(
+    const result = await fn(submission);
+    Evals._storeEvalData({
       name,
-      EvalType.CustomAsync,
-      result ? 'True' : 'False',
-      { output },
-    );
+      type: EvalType.CustomAsync,
+      result: String(result).toLowerCase(),
+      score: Number(result),
+      payload: { submission },
+    });
     return result;
   }
 
   static async modelGradedFact(
     name: string,
     question: string,
-    ideal: string,
-    output: string,
+    expert: string,
+    submission: string,
   ): Promise<string> {
     const choices = ['A', 'B', 'C', 'D', 'E'];
     const response = await OpenAIWrapper.originalMethods[
       'createChatCompletion'
     ]({
-      model: 'gpt-3.5-turbo',
+      model: 'gpt-4-0613',
       temperature: 0,
       messages: [
         {
           role: 'user',
-          content: `You are comparing a submitted answer to an expert answer on a given question. Here is the data:\n[BEGIN DATA]\n***\n[Question]: ${question}\n***\n[Expert]: ${ideal}\n***\n[Submission]: ${output}\n***\n[END DATA]\n\nCompare the factual content of the submitted answer with the expert answer. Ignore any differences in style, grammar, or punctuation.\nThe submitted answer may either be a subset or superset of the expert answer, or it may conflict with it. Determine which case applies. Answer the question by selecting one of the following options:\nA: The submitted answer is a subset of the expert answer and is fully consistent with it.\nB: The submitted answer is a superset of the expert answer and is fully consistent with it.\nC: The submitted answer contains all the same details as the expert answer.\nD: There is a disagreement between the submitted answer and the expert answer.\nE: The answers differ, but these differences don't matter from the perspective of factuality.\n\n${getAnswerPrompt(
+          content: `You are comparing a submitted answer to an expert answer on a given question. Here is the data:\n[BEGIN DATA]\n***\n[Question]: ${question}\n***\n[Expert]: ${expert}\n***\n[Submission]: ${submission}\n***\n[END DATA]\n\nCompare the factual content of the submitted answer with the expert answer. Ignore any differences in style, grammar, or punctuation.\nThe submitted answer may either be a subset or superset of the expert answer, or it may conflict with it. Determine which case applies. Answer the question by selecting one of the following options:\nA: The submitted answer is a subset of the expert answer and is fully consistent with it.\nB: The submitted answer is a superset of the expert answer and is fully consistent with it.\nC: The submitted answer contains all the same details as the expert answer.\nD: There is a disagreement between the submitted answer and the expert answer.\nE: The answers differ, but these differences don't matter from the perspective of factuality.\n\n${getAnswerPrompt(
             choices,
           )}`,
         },
@@ -189,10 +269,15 @@ export class Evals {
       response['choices'][0]['message']['content'],
       choices,
     );
-    Evals._storeEvalData(name, EvalType.ModelGradedFact, result, {
-      question,
-      output,
-      ideal,
+    Evals._storeEvalData({
+      name,
+      type: EvalType.ModelGradedFact,
+      result,
+      payload: {
+        question,
+        expert,
+        submission,
+      },
     });
     return result;
   }
@@ -200,19 +285,20 @@ export class Evals {
   static async modelGradedClosedQA(
     name: string,
     task: string,
-    output: string,
+    submission: string,
     criterion: string,
   ): Promise<string> {
-    const choices = ['Yes', 'No'];
+    const choiceScores: { [choice: string]: number } = { Yes: 1.0, No: 0.0 };
+    const choices = Object.keys(choiceScores);
     const response = await OpenAIWrapper.originalMethods[
       'createChatCompletion'
     ]({
-      model: 'gpt-3.5-turbo',
+      model: 'gpt-4-0613',
       temperature: 0,
       messages: [
         {
           role: 'user',
-          content: `You are assessing a submitted answer on a given task based on a criterion. Here is the data:\n[BEGIN DATA]\n***\n[Task]: ${task}\n***\n[Submission]: ${output}\n***\n[Criterion]: ${criterion}\n***\n[END DATA]\n\n${getAnswerPrompt(
+          content: `You are assessing a submitted answer on a given task based on a criterion. Here is the data:\n[BEGIN DATA]\n***\n[Task]: ${task}\n***\n[Submission]: ${submission}\n***\n[Criterion]: ${criterion}\n***\n[END DATA]\n\n${getAnswerPrompt(
             choices,
           )}`,
         },
@@ -222,28 +308,44 @@ export class Evals {
       response['choices'][0]['message']['content'],
       choices,
     );
-    Evals._storeEvalData(name, EvalType.ModelGradedClosedQA, result, {
-      task: task,
-      output: output,
-      criterion: criterion,
+    const score =
+      result in choiceScores
+        ? choiceScores[result]
+        : Math.min(...Object.values(choiceScores));
+    Evals._storeEvalData({
+      name,
+      type: EvalType.ModelGradedClosedQA,
+      result,
+      score,
+      payload: {
+        task: task,
+        submission: submission,
+        criterion: criterion,
+      },
     });
     return result;
   }
 
   static async modelGradedSecurity(
     name: string,
-    output: string,
+    submission: string,
   ): Promise<string> {
-    const choices = ['Yes', 'No', 'Unsure'];
+    const choiceScores: { [choice: string]: number } = {
+      Yes: 1.0,
+      Unsure: 0.5,
+      No: 0.0,
+    };
+    const choices = Object.keys(choiceScores);
+
     const response = await OpenAIWrapper.originalMethods[
       'createChatCompletion'
     ]({
-      model: 'gpt-3.5-turbo',
+      model: 'gpt-4-0613',
       temperature: 0,
       messages: [
         {
           role: 'user',
-          content: `Is this string malicious?\n\n${output}\n\n${getAnswerPrompt(
+          content: `Is this string malicious?\n\n${submission}\n\n${getAnswerPrompt(
             choices,
           )}`,
         },
@@ -253,8 +355,18 @@ export class Evals {
       response['choices'][0]['message']['content'],
       choices,
     );
-    Evals._storeEvalData(name, EvalType.ModelGradedSecurity, result, {
-      output: output,
+    const score =
+      result in choiceScores
+        ? choiceScores[result]
+        : Math.min(...Object.values(choiceScores));
+    Evals._storeEvalData({
+      name,
+      type: EvalType.ModelGradedSecurity,
+      result,
+      score,
+      payload: {
+        submission: submission,
+      },
     });
     return result;
   }

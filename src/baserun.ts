@@ -294,7 +294,8 @@ export class Baserun {
     store.set(TraceBufferKey, buffer);
   }
 
-  static _appendToEvals(evalEntry: Eval): void {
+  /* eslint-disable-next-line  @typescript-eslint/no-explicit-any */
+  static _appendToEvals(evalEntry: Eval<any>): void {
     const store = global.baserunTraceStore;
     if (!store) {
       return;

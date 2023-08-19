@@ -6,6 +6,7 @@ import { getTimestamp } from './helpers';
 import { Evals } from './evals/evals';
 import { Eval } from './evals/types';
 import { OpenAIWrapper } from './patches/openai';
+import { AnthropicWrapper } from './patches/anthropic';
 
 const TraceExecutionIdKey = 'baserun_trace_execution_id';
 const TraceNameKey = 'baserun_trace_name';
@@ -19,10 +20,13 @@ const TraceEvalsKey = 'baserun_trace_evals';
 export class Baserun {
   static evals = Evals;
   static _apiKey: string | undefined = process.env.BASERUN_API_KEY;
+  static _apiUrl: string =
+    process.env.BASERUN_API_URL ?? 'https://baserun.ai/api/v1';
 
   static monkeyPatch(): void {
     OpenAIEdgeWrapper.init(Baserun._appendToBuffer);
     OpenAIWrapper.init(Baserun._appendToBuffer);
+    AnthropicWrapper.init(Baserun._appendToBuffer);
   }
 
   static init(): void {
@@ -237,7 +241,7 @@ export class Baserun {
       if (
         global.baserunTraces.every((trace) => trace.type === TraceType.Test)
       ) {
-        const apiUrl = 'https://baserun.ai/api/v1/runs';
+        const apiUrl = `${Baserun._apiUrl}/runs`;
         const response = await axios.post(
           apiUrl,
           { testExecutions: global.baserunTraces },
@@ -256,9 +260,8 @@ export class Baserun {
           (trace) => trace.type === TraceType.Production,
         )
       ) {
-        const apiUrl = 'https://baserun.ai/api/v1/traces';
         await axios.post(
-          apiUrl,
+          `${Baserun._apiUrl}/traces`,
           { traces: global.baserunTraces },
           {
             headers: {

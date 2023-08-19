@@ -1,5 +1,4 @@
 import { BaserunProvider, BaserunStepType, BaserunType, Log } from '../types';
-import { getTimestamp } from '../helpers';
 import { DEFAULT_USAGE } from './constants';
 import { patch } from './patch';
 
@@ -43,7 +42,7 @@ export class OpenAIEdgeWrapper {
       provider: BaserunProvider.OpenAI,
       output,
       startTimestamp: startTime,
-      completionTimestamp: getTimestamp(),
+      completionTimestamp: endTime,
       usage: usage ?? DEFAULT_USAGE,
     };
 

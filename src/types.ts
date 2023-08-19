@@ -1,8 +1,7 @@
 import { Eval } from './evals/types';
 
 export enum BaserunProvider {
-  Google = 'google',
-  Llama = 'llama',
+  Anthropic = 'anthropic',
   OpenAI = 'openai',
 }
 

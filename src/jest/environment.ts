@@ -9,9 +9,19 @@ export default class BaserunJestEnvironment extends NodeEnvironment {
 
   handleTestEvent = (event: Circus.Event) => {
     if (event.name === 'test_start' && event.test) {
+      const namePath = [event.test.name];
+      let parent: Circus.DescribeBlock | undefined = event.test.parent;
+      while (
+        parent?.type === 'describeBlock' &&
+        parent.name !== 'ROOT_DESCRIBE_BLOCK'
+      ) {
+        namePath.unshift(parent.name);
+        parent = parent.parent;
+      }
+
       this._baserunTraceStore = Baserun.markTraceStart(
         TraceType.Test,
-        event.test.name,
+        namePath.join(' • '),
       );
       this.global.baserunTraceStore = this._baserunTraceStore;
     }

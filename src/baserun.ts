@@ -1,10 +1,11 @@
 import { v4 } from 'uuid';
 import axios from 'axios';
 import { BaserunStepType, Log, Trace, TraceType } from './types';
-import { monkeyPatchOpenAI, monkeyPatchOpenAIEdge } from './openai';
+import { OpenAIEdgeWrapper } from './patches/openai_edge';
 import { getTimestamp } from './helpers';
 import { Evals } from './evals/evals';
 import { Eval } from './evals/types';
+import { OpenAIWrapper } from './patches/openai';
 
 const TraceExecutionIdKey = 'baserun_trace_execution_id';
 const TraceNameKey = 'baserun_trace_name';
@@ -19,9 +20,9 @@ export class Baserun {
   static evals = Evals;
   static _apiKey: string | undefined = process.env.BASERUN_API_KEY;
 
-  static monkeyPatchOpenAI(): void {
-    monkeyPatchOpenAI(Baserun._appendToBuffer);
-    monkeyPatchOpenAIEdge(Baserun._appendToBuffer);
+  static monkeyPatch(): void {
+    OpenAIEdgeWrapper.init(Baserun._appendToBuffer);
+    OpenAIWrapper.init(Baserun._appendToBuffer);
   }
 
   static init(): void {
@@ -42,7 +43,8 @@ export class Baserun {
     global.baserunTraces = [];
 
     Baserun.evals.init(Baserun._appendToEvals);
-    Baserun.monkeyPatchOpenAI();
+
+    Baserun.monkeyPatch();
   }
 
   static markTraceStart(

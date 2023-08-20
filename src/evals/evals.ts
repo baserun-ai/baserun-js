@@ -25,14 +25,14 @@ function getChoice(
 
 export class Evals {
   /* eslint-disable-next-line  @typescript-eslint/no-explicit-any */
-  static _log?: (evalEntry: Eval<any>) => void;
+  private _log: (evalEntry: Eval<any>) => void;
 
   /* eslint-disable-next-line  @typescript-eslint/no-explicit-any */
-  static init(log: (evalEntry: Eval<any>) => void): void {
-    Evals._log = log;
+  constructor(log: (evalEntry: Eval<any>) => void) {
+    this._log = log;
   }
 
-  private static _storeEvalData<T extends EvalType>({
+  private _storeEvalData<T extends EvalType>({
     name,
     type,
     result,
@@ -45,7 +45,7 @@ export class Evals {
     score?: number;
     payload: EvalPayload[T];
   }): void {
-    Evals._log?.({
+    this._log({
       name,
       type,
       eval: result,
@@ -54,9 +54,9 @@ export class Evals {
     });
   }
 
-  static equals(name: string, submission: string, expected: string): boolean {
+  equals(name: string, submission: string, expected: string): boolean {
     const result = submission === expected;
-    Evals._storeEvalData({
+    this._storeEvalData({
       name,
       type: EvalType.Equals,
       result: String(result).toLowerCase(),
@@ -69,9 +69,9 @@ export class Evals {
     return result;
   }
 
-  static match(name: string, submission: string, expected: string[]): boolean {
+  match(name: string, submission: string, expected: string[]): boolean {
     const result = expected.some((item) => submission.startsWith(item));
-    Evals._storeEvalData({
+    this._storeEvalData({
       name,
       type: EvalType.Match,
       result: String(result).toLowerCase(),
@@ -84,13 +84,9 @@ export class Evals {
     return result;
   }
 
-  static includes(
-    name: string,
-    submission: string,
-    expected: string[],
-  ): boolean {
+  includes(name: string, submission: string, expected: string[]): boolean {
     const result = expected.some((item) => submission.includes(item));
-    Evals._storeEvalData({
+    this._storeEvalData({
       name,
       type: EvalType.Includes,
       result: String(result).toLowerCase(),
@@ -103,15 +99,11 @@ export class Evals {
     return result;
   }
 
-  static fuzzyMatch(
-    name: string,
-    submission: string,
-    expected: string[],
-  ): boolean {
+  fuzzyMatch(name: string, submission: string, expected: string[]): boolean {
     const result = expected.some(
       (item) => submission.includes(item) || item.includes(submission),
     );
-    Evals._storeEvalData({
+    this._storeEvalData({
       name,
       type: EvalType.FuzzyMatch,
       result: String(result).toLowerCase(),
@@ -124,13 +116,9 @@ export class Evals {
     return result;
   }
 
-  static notEquals(
-    name: string,
-    submission: string,
-    expected: string,
-  ): boolean {
+  notEquals(name: string, submission: string, expected: string): boolean {
     const result = submission !== expected;
-    Evals._storeEvalData({
+    this._storeEvalData({
       name,
       type: EvalType.NotEquals,
       result: String(result).toLowerCase(),
@@ -143,13 +131,9 @@ export class Evals {
     return result;
   }
 
-  static notMatch(
-    name: string,
-    submission: string,
-    expected: string[],
-  ): boolean {
+  notMatch(name: string, submission: string, expected: string[]): boolean {
     const result = !expected.some((item) => submission.startsWith(item));
-    Evals._storeEvalData({
+    this._storeEvalData({
       name,
       type: EvalType.NotMatch,
       result: String(result).toLowerCase(),
@@ -162,13 +146,9 @@ export class Evals {
     return result;
   }
 
-  static notIncludes(
-    name: string,
-    submission: string,
-    expected: string[],
-  ): boolean {
+  notIncludes(name: string, submission: string, expected: string[]): boolean {
     const result = !expected.some((item) => submission.includes(item));
-    Evals._storeEvalData({
+    this._storeEvalData({
       name,
       type: EvalType.NotIncludes,
       result: String(result).toLowerCase(),
@@ -178,15 +158,11 @@ export class Evals {
     return result;
   }
 
-  static notFuzzyMatch(
-    name: string,
-    submission: string,
-    expected: string[],
-  ): boolean {
+  notFuzzyMatch(name: string, submission: string, expected: string[]): boolean {
     const result = !expected.some(
       (item) => submission.includes(item) || item.includes(submission),
     );
-    Evals._storeEvalData({
+    this._storeEvalData({
       name,
       type: EvalType.NotFuzzyMatch,
       result: String(result).toLowerCase(),
@@ -196,9 +172,9 @@ export class Evals {
     return result;
   }
 
-  static validJson(name: string, submission: string): boolean {
+  validJson(name: string, submission: string): boolean {
     const result = isValidJson(submission);
-    Evals._storeEvalData({
+    this._storeEvalData({
       name,
       type: EvalType.ValidJson,
       result: String(result).toLowerCase(),
@@ -210,13 +186,13 @@ export class Evals {
     return result;
   }
 
-  static custom(
+  custom(
     name: string,
     submission: string,
     fn: (submission: string) => boolean,
   ): boolean {
     const result = fn(submission);
-    Evals._storeEvalData({
+    this._storeEvalData({
       name,
       type: EvalType.Custom,
       result: String(result).toLowerCase(),
@@ -228,13 +204,13 @@ export class Evals {
     return result;
   }
 
-  static async customAsync(
+  async customAsync(
     name: string,
     submission: string,
     fn: (submission: string) => Promise<boolean>,
   ): Promise<boolean> {
     const result = await fn(submission);
-    Evals._storeEvalData({
+    this._storeEvalData({
       name,
       type: EvalType.CustomAsync,
       result: String(result).toLowerCase(),
@@ -244,7 +220,7 @@ export class Evals {
     return result;
   }
 
-  static async modelGradedFact(
+  async modelGradedFact(
     name: string,
     question: string,
     expert: string,
@@ -269,7 +245,7 @@ export class Evals {
       response['choices'][0]['message']['content'],
       choices,
     );
-    Evals._storeEvalData({
+    this._storeEvalData({
       name,
       type: EvalType.ModelGradedFact,
       result,
@@ -282,7 +258,7 @@ export class Evals {
     return result;
   }
 
-  static async modelGradedClosedQA(
+  async modelGradedClosedQA(
     name: string,
     task: string,
     submission: string,
@@ -312,7 +288,7 @@ export class Evals {
       result in choiceScores
         ? choiceScores[result]
         : Math.min(...Object.values(choiceScores));
-    Evals._storeEvalData({
+    this._storeEvalData({
       name,
       type: EvalType.ModelGradedClosedQA,
       result,
@@ -326,10 +302,7 @@ export class Evals {
     return result;
   }
 
-  static async modelGradedSecurity(
-    name: string,
-    submission: string,
-  ): Promise<string> {
+  async modelGradedSecurity(name: string, submission: string): Promise<string> {
     const choiceScores: { [choice: string]: number } = {
       Yes: 1.0,
       Unsure: 0.5,
@@ -359,7 +332,7 @@ export class Evals {
       result in choiceScores
         ? choiceScores[result]
         : Math.min(...Object.values(choiceScores));
-    Evals._storeEvalData({
+    this._storeEvalData({
       name,
       type: EvalType.ModelGradedSecurity,
       result,

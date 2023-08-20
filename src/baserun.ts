@@ -18,7 +18,7 @@ const TraceMetadataKey = 'baserun_trace_metadata';
 const TraceEvalsKey = 'baserun_trace_evals';
 
 export class Baserun {
-  static evals = Evals;
+  static evals = new Evals(Baserun._appendToEvals);
   static _apiKey: string | undefined = process.env.BASERUN_API_KEY;
   static _apiUrl: string =
     process.env.BASERUN_API_URL ?? 'https://baserun.ai/api/v1';
@@ -45,8 +45,6 @@ export class Baserun {
 
     global.baserunInitialized = true;
     global.baserunTraces = [];
-
-    Baserun.evals.init(Baserun._appendToEvals);
 
     Baserun.monkeyPatch();
   }

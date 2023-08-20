@@ -1,9 +1,7 @@
 export enum EvalType {
-  Equals = 'equals',
   Match = 'match',
   Includes = 'includes',
   FuzzyMatch = 'fuzzy_match',
-  NotEquals = 'not_equals',
   NotMatch = 'not_match',
   NotIncludes = 'not_includes',
   NotFuzzyMatch = 'not_fuzzy_match',
@@ -13,11 +11,6 @@ export enum EvalType {
   ModelGradedFact = 'model_graded_fact',
   ModelGradedClosedQA = 'model_graded_closedqa',
   ModelGradedSecurity = 'model_graded_security',
-}
-
-interface EqualsPayload {
-  submission: string;
-  expected: string;
 }
 
 interface MembershipPayload {
@@ -42,11 +35,9 @@ interface ModelGradedClosedQAPayload {
 }
 
 export interface EvalPayload {
-  [EvalType.Equals]: EqualsPayload;
   [EvalType.Match]: MembershipPayload;
   [EvalType.Includes]: MembershipPayload;
   [EvalType.FuzzyMatch]: MembershipPayload;
-  [EvalType.NotEquals]: EqualsPayload;
   [EvalType.NotMatch]: MembershipPayload;
   [EvalType.NotIncludes]: MembershipPayload;
   [EvalType.NotFuzzyMatch]: MembershipPayload;

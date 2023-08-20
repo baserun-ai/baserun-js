@@ -58,31 +58,6 @@ describe('BaserunExplicitInit', () => {
     expect(storedData['steps'][0]['payload']).toEqual(logPayload);
   });
 
-  it('test_eval_equals', () => {
-    class Test {
-      @Baserun.test
-      static sample() {
-        baserun.evals.equals(
-          'Hello world equals',
-          'Hello World',
-          'Hello World',
-        );
-      }
-    }
-
-    Test.sample();
-
-    const storedData = storeTestSpy.mock.calls[0][0];
-    const evalData = storedData['evals'][0];
-
-    expect(evalData['name']).toBe('Hello world equals');
-    expect(evalData['type']).toBe('equals');
-    expect(evalData['eval']).toBe('true');
-    expect(evalData['score']).toBe(1);
-    expect(evalData['payload']['submission']).toBe('Hello World');
-    expect(evalData['payload']['expected']).toBe('Hello World');
-  });
-
   it('test_eval_match', () => {
     class Test {
       @Baserun.test

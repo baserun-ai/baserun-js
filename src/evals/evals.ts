@@ -25,7 +25,7 @@ function getChoice(
 
 export class Evals {
   /* eslint-disable-next-line  @typescript-eslint/no-explicit-any */
-  private _log: (evalEntry: Eval<any>) => void;
+  private readonly _log: (evalEntry: Eval<any>) => void;
 
   /* eslint-disable-next-line  @typescript-eslint/no-explicit-any */
   constructor(log: (evalEntry: Eval<any>) => void) {
@@ -54,23 +54,13 @@ export class Evals {
     });
   }
 
-  equals(name: string, submission: string, expected: string): boolean {
-    const result = submission === expected;
-    this._storeEvalData({
-      name,
-      type: EvalType.Equals,
-      result: String(result).toLowerCase(),
-      score: Number(result),
-      payload: {
-        submission,
-        expected,
-      },
-    });
-    return result;
-  }
-
-  match(name: string, submission: string, expected: string[]): boolean {
-    const result = expected.some((item) => submission.startsWith(item));
+  match(
+    name: string,
+    submission: string,
+    expected: string | string[],
+  ): boolean {
+    const expectedArray = Array.isArray(expected) ? expected : [expected];
+    const result = expectedArray.some((item) => submission.startsWith(item));
     this._storeEvalData({
       name,
       type: EvalType.Match,
@@ -78,14 +68,19 @@ export class Evals {
       score: Number(result),
       payload: {
         submission,
-        expected,
+        expected: expectedArray,
       },
     });
     return result;
   }
 
-  includes(name: string, submission: string, expected: string[]): boolean {
-    const result = expected.some((item) => submission.includes(item));
+  includes(
+    name: string,
+    submission: string,
+    expected: string | string[],
+  ): boolean {
+    const expectedArray = Array.isArray(expected) ? expected : [expected];
+    const result = expectedArray.some((item) => submission.includes(item));
     this._storeEvalData({
       name,
       type: EvalType.Includes,
@@ -93,14 +88,19 @@ export class Evals {
       score: Number(result),
       payload: {
         submission,
-        expected,
+        expected: expectedArray,
       },
     });
     return result;
   }
 
-  fuzzyMatch(name: string, submission: string, expected: string[]): boolean {
-    const result = expected.some(
+  fuzzyMatch(
+    name: string,
+    submission: string,
+    expected: string | string[],
+  ): boolean {
+    const expectedArray = Array.isArray(expected) ? expected : [expected];
+    const result = expectedArray.some(
       (item) => submission.includes(item) || item.includes(submission),
     );
     this._storeEvalData({
@@ -110,29 +110,19 @@ export class Evals {
       score: Number(result),
       payload: {
         submission,
-        expected,
+        expected: expectedArray,
       },
     });
     return result;
   }
 
-  notEquals(name: string, submission: string, expected: string): boolean {
-    const result = submission !== expected;
-    this._storeEvalData({
-      name,
-      type: EvalType.NotEquals,
-      result: String(result).toLowerCase(),
-      score: Number(result),
-      payload: {
-        submission,
-        expected,
-      },
-    });
-    return result;
-  }
-
-  notMatch(name: string, submission: string, expected: string[]): boolean {
-    const result = !expected.some((item) => submission.startsWith(item));
+  notMatch(
+    name: string,
+    submission: string,
+    expected: string | string[],
+  ): boolean {
+    const expectedArray = Array.isArray(expected) ? expected : [expected];
+    const result = !expectedArray.some((item) => submission.startsWith(item));
     this._storeEvalData({
       name,
       type: EvalType.NotMatch,
@@ -140,26 +130,36 @@ export class Evals {
       score: Number(result),
       payload: {
         submission,
-        expected,
+        expected: expectedArray,
       },
     });
     return result;
   }
 
-  notIncludes(name: string, submission: string, expected: string[]): boolean {
-    const result = !expected.some((item) => submission.includes(item));
+  notIncludes(
+    name: string,
+    submission: string,
+    expected: string | string[],
+  ): boolean {
+    const expectedArray = Array.isArray(expected) ? expected : [expected];
+    const result = !expectedArray.some((item) => submission.includes(item));
     this._storeEvalData({
       name,
       type: EvalType.NotIncludes,
       result: String(result).toLowerCase(),
       score: Number(result),
-      payload: { submission, expected },
+      payload: { submission, expected: expectedArray },
     });
     return result;
   }
 
-  notFuzzyMatch(name: string, submission: string, expected: string[]): boolean {
-    const result = !expected.some(
+  notFuzzyMatch(
+    name: string,
+    submission: string,
+    expected: string | string[],
+  ): boolean {
+    const expectedArray = Array.isArray(expected) ? expected : [expected];
+    const result = !expectedArray.some(
       (item) => submission.includes(item) || item.includes(submission),
     );
     this._storeEvalData({
@@ -167,7 +167,7 @@ export class Evals {
       type: EvalType.NotFuzzyMatch,
       result: String(result).toLowerCase(),
       score: Number(result),
-      payload: { submission, expected },
+      payload: { submission, expected: expectedArray },
     });
     return result;
   }

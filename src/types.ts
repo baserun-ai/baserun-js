@@ -17,6 +17,7 @@ export enum BaserunStepType {
 }
 
 interface LLMChatLog {
+  stepType: BaserunStepType.AutoLLM;
   type: BaserunType;
   provider: BaserunProvider;
   config: object;
@@ -32,6 +33,7 @@ interface LLMChatLog {
 }
 
 interface LLMCompletionLog {
+  stepType: BaserunStepType.AutoLLM;
   type: BaserunType;
   provider: BaserunProvider;
   config: object;
@@ -46,13 +48,16 @@ interface LLMCompletionLog {
   };
 }
 
-interface StandardLog {
+export type AutoLLMLog = LLMChatLog | LLMCompletionLog;
+
+export interface StandardLog {
+  stepType: BaserunStepType.Log;
   name: string;
   payload: object | string;
   timestamp: number;
 }
 
-export type Log = StandardLog | LLMChatLog | LLMCompletionLog;
+export type Log = StandardLog | AutoLLMLog;
 
 export enum TraceType {
   Test = 'Test',

@@ -1,3 +1,5 @@
+import { AutoLLMLog } from '../types';
+
 export enum EvalType {
   Match = 'match',
   Includes = 'includes',
@@ -44,9 +46,11 @@ export interface EvalPayload {
   [EvalType.ValidJson]: SubmissionPayload;
   [EvalType.Custom]: SubmissionPayload;
   [EvalType.CustomAsync]: SubmissionPayload;
-  [EvalType.ModelGradedFact]: ModelGradedFactPayload;
-  [EvalType.ModelGradedClosedQA]: ModelGradedClosedQAPayload;
-  [EvalType.ModelGradedSecurity]: SubmissionPayload;
+  [EvalType.ModelGradedFact]: ModelGradedFactPayload & { step: AutoLLMLog };
+  [EvalType.ModelGradedClosedQA]: ModelGradedClosedQAPayload & {
+    step: AutoLLMLog;
+  };
+  [EvalType.ModelGradedSecurity]: SubmissionPayload & { step: AutoLLMLog };
 }
 
 export interface Eval<T extends EvalType> {

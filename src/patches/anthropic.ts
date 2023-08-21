@@ -1,5 +1,11 @@
 import { countTokens } from '@anthropic-ai/tokenizer';
-import { BaserunProvider, BaserunStepType, BaserunType, Log } from '../types';
+import {
+  AutoLLMLog,
+  BaserunProvider,
+  BaserunStepType,
+  BaserunType,
+  Log,
+} from '../types';
 import { DEFAULT_USAGE } from './constants';
 import { patch } from './patch';
 
@@ -55,7 +61,7 @@ export class AnthropicWrapper {
       ...logEntry,
       prompt: { content: prompt },
       config,
-    };
+    } as AutoLLMLog;
   }
 
   static init(log: (entry: Log) => void) {

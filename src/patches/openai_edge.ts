@@ -1,4 +1,10 @@
-import { BaserunProvider, BaserunStepType, BaserunType, Log } from '../types';
+import {
+  AutoLLMLog,
+  BaserunProvider,
+  BaserunStepType,
+  BaserunType,
+  Log,
+} from '../types';
 import { DEFAULT_USAGE } from './constants';
 import { patch } from './patch';
 
@@ -52,7 +58,7 @@ export class OpenAIEdgeWrapper {
         ...logEntry,
         messages,
         config,
-      };
+      } as AutoLLMLog;
     }
 
     const { prompt = '', ...config } = args[0] ?? {};
@@ -60,7 +66,7 @@ export class OpenAIEdgeWrapper {
       ...logEntry,
       prompt: { content: prompt },
       config,
-    };
+    } as AutoLLMLog;
   }
 
   /* eslint-disable-next-line  @typescript-eslint/no-explicit-any */

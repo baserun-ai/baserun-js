@@ -1,4 +1,10 @@
-import { BaserunProvider, BaserunStepType, BaserunType, Log } from '../types';
+import {
+  AutoLLMLog,
+  BaserunProvider,
+  BaserunStepType,
+  BaserunType,
+  Log,
+} from '../types';
 import { patch } from './patch';
 import { DEFAULT_USAGE } from './constants';
 
@@ -74,7 +80,7 @@ export class OpenAIWrapper {
         ...logEntry,
         messages,
         config,
-      };
+      } as AutoLLMLog;
     }
 
     const { prompt = '', ...config } = args[0] ?? {};
@@ -82,7 +88,7 @@ export class OpenAIWrapper {
       ...logEntry,
       prompt: { content: prompt },
       config,
-    };
+    } as AutoLLMLog;
   }
 
   static newResolver(
@@ -134,7 +140,7 @@ export class OpenAIWrapper {
         ...logEntry,
         messages,
         config,
-      };
+      } as AutoLLMLog;
     }
 
     const { prompt = '', ...config } = args[0] ?? {};
@@ -142,7 +148,7 @@ export class OpenAIWrapper {
       ...logEntry,
       prompt: { content: prompt },
       config,
-    };
+    } as AutoLLMLog;
   }
 
   static init(log: (entry: Log) => void) {

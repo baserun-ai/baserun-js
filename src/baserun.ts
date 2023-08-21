@@ -1,6 +1,6 @@
 import { v4 } from 'uuid';
 import axios from 'axios';
-import { BaserunStepType, Log, Trace, TraceType } from './types';
+import { BaserunStepType, Log, StandardLog, Trace, TraceType } from './types';
 import { OpenAIEdgeWrapper } from './patches/openai_edge';
 import { getTimestamp } from './helpers';
 import { Evals } from './evals/evals';
@@ -175,7 +175,7 @@ export class Baserun {
       return;
     }
 
-    const logEntry = {
+    const logEntry: StandardLog = {
       stepType: BaserunStepType.Log,
       name,
       payload,

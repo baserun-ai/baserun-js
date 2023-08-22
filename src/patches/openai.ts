@@ -56,7 +56,7 @@ export class OpenAIWrapper {
         output = `Error: ${error}`;
       }
     } else if (response) {
-      usage = response.usage;
+      usage = response.data.usage;
       if (type === BaserunType.Completion) {
         output = response.data.choices[0]?.text ?? '';
       } else {

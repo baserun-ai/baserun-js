@@ -1,4 +1,3 @@
-import { countTokens } from '@anthropic-ai/tokenizer';
 import {
   AutoLLMLog,
   BaserunProvider,
@@ -25,7 +24,6 @@ export class AnthropicWrapper {
     /* eslint-disable-next-line  @typescript-eslint/no-explicit-any */
     error?: any,
   ) {
-    let usage = DEFAULT_USAGE;
     let output = '';
     const { prompt = '', ...config } = args[0] ?? {};
     const type = BaserunType.Completion;
@@ -38,13 +36,6 @@ export class AnthropicWrapper {
       }
     } else if (response) {
       output = response.completion ?? '';
-      const prompt_tokens = countTokens(prompt);
-      const completion_tokens = countTokens(response.completion);
-      usage = {
-        prompt_tokens,
-        completion_tokens,
-        total_tokens: prompt_tokens + completion_tokens,
-      };
     }
 
     const logEntry = {
@@ -54,7 +45,7 @@ export class AnthropicWrapper {
       output,
       startTimestamp: startTime,
       completionTimestamp: endTime,
-      usage: usage ?? DEFAULT_USAGE,
+      usage: DEFAULT_USAGE,
     };
 
     return {

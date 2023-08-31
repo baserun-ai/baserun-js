@@ -11,13 +11,10 @@ import { patch } from './patch';
 export class OpenAIEdgeWrapper {
   static resolver(
     symbol: string,
-    /* eslint-disable-next-line  @typescript-eslint/no-explicit-any */
     args: any[],
     startTime: number,
     endTime: number,
-    /* eslint-disable-next-line  @typescript-eslint/no-explicit-any */
     response?: any,
-    /* eslint-disable-next-line  @typescript-eslint/no-explicit-any */
     error?: any,
   ) {
     let usage = DEFAULT_USAGE;
@@ -69,7 +66,6 @@ export class OpenAIEdgeWrapper {
     } as AutoLLMLog;
   }
 
-  /* eslint-disable-next-line  @typescript-eslint/no-explicit-any */
   static async processResponse(response: any): Promise<any> {
     return await response.clone().json();
   }
@@ -82,13 +78,16 @@ export class OpenAIEdgeWrapper {
         'OpenAIApi.prototype.createCompletion',
         'OpenAIApi.prototype.createChatCompletion',
       ];
-      patch(
+      patch({
         module,
         symbols,
-        OpenAIEdgeWrapper.resolver,
+        resolver: OpenAIEdgeWrapper.resolver,
         log,
-        OpenAIEdgeWrapper.processResponse,
-      );
+        processResponse: OpenAIEdgeWrapper.processResponse,
+        /* If still streaming with openai-edge, suggest moving to openai v4. */
+        isStreaming: () => false,
+        collectStreamedResponse: () => null,
+      });
     } catch (err) {
       /* openai-edge isn't used */
       if (

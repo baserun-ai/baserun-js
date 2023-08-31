@@ -15,13 +15,10 @@ interface AnthropicError {
 export class AnthropicWrapper {
   static resolver(
     symbol: string,
-    /* eslint-disable-next-line  @typescript-eslint/no-explicit-any */
     args: any[],
     startTime: number,
     endTime: number,
-    /* eslint-disable-next-line  @typescript-eslint/no-explicit-any */
     response?: any,
-    /* eslint-disable-next-line  @typescript-eslint/no-explicit-any */
     error?: any,
   ) {
     let output = '';
@@ -55,12 +52,36 @@ export class AnthropicWrapper {
     } as AutoLLMLog;
   }
 
+  static isStreaming(_symbol: string, args: any[]): boolean {
+    return args[0].stream;
+  }
+
+  static collectStreamedResponse(
+    _symbol: string,
+    response: any,
+    chunk: any,
+  ): any {
+    if (!response) {
+      return chunk;
+    }
+
+    response.completion += chunk.completion;
+    return response;
+  }
+
   static init(log: (entry: Log) => void) {
     try {
       /* eslint-disable-next-line @typescript-eslint/no-var-requires */
       const module = require('@anthropic-ai/sdk');
       const symbols = ['Anthropic.Completions.prototype.create'];
-      patch(module, symbols, AnthropicWrapper.resolver, log);
+      patch({
+        module,
+        symbols,
+        resolver: AnthropicWrapper.resolver,
+        log,
+        isStreaming: AnthropicWrapper.isStreaming,
+        collectStreamedResponse: AnthropicWrapper.collectStreamedResponse,
+      });
     } catch (err) {
       /* @anthropic-ai/sdk isn't used */
       if (

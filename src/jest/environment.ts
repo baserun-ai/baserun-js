@@ -4,7 +4,6 @@ import { Baserun } from '../baserun';
 import { TraceType } from '../types';
 
 export default class BaserunJestEnvironment extends NodeEnvironment {
-  /* eslint-disable-next-line  @typescript-eslint/no-explicit-any */
   private _baserunTraceStore: Map<string, any> | undefined;
 
   handleTestEvent = (event: Circus.Event) => {

@@ -27,10 +27,8 @@ function getChoice(
 }
 
 export class Evals {
-  /* eslint-disable-next-line  @typescript-eslint/no-explicit-any */
   private readonly _log: (evalEntry: Eval<any>) => void;
 
-  /* eslint-disable-next-line  @typescript-eslint/no-explicit-any */
   constructor(log: (evalEntry: Eval<any>) => void) {
     this._log = log;
   }

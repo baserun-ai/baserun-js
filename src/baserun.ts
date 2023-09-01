@@ -54,7 +54,6 @@ export class Baserun {
     name: string,
     inputs: string[] = [],
     metadata?: object,
-    /* eslint-disable-next-line  @typescript-eslint/no-explicit-any */
   ): Map<string, any> | undefined {
     if (!global.baserunInitialized) {
       return;
@@ -82,7 +81,6 @@ export class Baserun {
       error?: Error;
       result?: string | null;
     },
-    /* eslint-disable-next-line  @typescript-eslint/no-explicit-any */
     traceStore?: Map<string, any>,
   ): void {
     if (!global.baserunInitialized) {
@@ -132,14 +130,12 @@ export class Baserun {
   }
 
   static test(
-    /* eslint-disable-next-line  @typescript-eslint/no-explicit-any */
     target: any,
     propertyKey: string,
     descriptor: PropertyDescriptor,
   ): PropertyDescriptor {
     const originalMethod = descriptor.value;
 
-    /* eslint-disable-next-line  @typescript-eslint/no-explicit-any */
     descriptor.value = async function (...args: any[]): Promise<any> {
       if (!global.baserunInitialized) return originalMethod.apply(this, args);
 
@@ -185,7 +181,6 @@ export class Baserun {
     Baserun._appendToBuffer(logEntry);
   }
 
-  /* eslint-disable-next-line  @typescript-eslint/no-explicit-any */
   static trace<T extends (...args: any[]) => any>(
     fn: T,
     metadata?: object,
@@ -292,7 +287,6 @@ export class Baserun {
     store.set(TraceBufferKey, buffer);
   }
 
-  /* eslint-disable-next-line  @typescript-eslint/no-explicit-any */
   static _appendToEvals(evalEntry: Eval<any>): void {
     const store = global.baserunTraceStore;
     if (!store) {

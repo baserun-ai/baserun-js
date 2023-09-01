@@ -18,9 +18,7 @@ interface NewOpenAIError {
 
 export class OpenAIWrapper {
   static originalMethods: {
-    /* eslint-disable-next-line  @typescript-eslint/no-explicit-any */
     createCompletion: (config: any) => any;
-    /* eslint-disable-next-line  @typescript-eslint/no-explicit-any */
     createChatCompletion: (config: any) => any;
   } = {
     createCompletion: () => {
@@ -33,13 +31,10 @@ export class OpenAIWrapper {
 
   static oldResolver(
     symbol: string,
-    /* eslint-disable-next-line  @typescript-eslint/no-explicit-any */
     args: any[],
     startTime: number,
     endTime: number,
-    /* eslint-disable-next-line  @typescript-eslint/no-explicit-any */
     response?: any,
-    /* eslint-disable-next-line  @typescript-eslint/no-explicit-any */
     error?: any,
   ) {
     let usage = DEFAULT_USAGE;
@@ -93,13 +88,10 @@ export class OpenAIWrapper {
 
   static newResolver(
     symbol: string,
-    /* eslint-disable-next-line  @typescript-eslint/no-explicit-any */
     args: any[],
     startTime: number,
     endTime: number,
-    /* eslint-disable-next-line  @typescript-eslint/no-explicit-any */
     response?: any,
-    /* eslint-disable-next-line  @typescript-eslint/no-explicit-any */
     error?: any,
   ) {
     let usage = DEFAULT_USAGE;
@@ -151,6 +143,111 @@ export class OpenAIWrapper {
     } as AutoLLMLog;
   }
 
+  static isStreaming(_symbol: string, args: any[]): boolean {
+    return args[0].stream;
+  }
+
+  static collectStreamedResponse(
+    symbol: string,
+    response: any,
+    chunk: any,
+  ): any {
+    if (symbol.includes('Chat')) {
+      if (response === null) {
+        response = {
+          id: chunk.id,
+          object: 'chat.completion',
+          created: chunk.created,
+          model: chunk.model,
+          choices: [],
+          usage: DEFAULT_USAGE,
+        };
+      }
+
+      const newChoices = chunk.choices || [];
+
+      for (const newChoice of newChoices) {
+        const newIndex = newChoice.index || 0;
+        const newDelta = newChoice.delta || {};
+        const newContent = newDelta.content || '';
+        const newRole = newDelta.role || 'assistant';
+        const newName = newDelta.name || null;
+        const newFunctionCall = newDelta.function_call || null;
+        const newFinishReason = newChoice.finish_reason;
+
+        const existingChoice = response.choices.find(
+          (choice: any) => choice.index === newIndex,
+        );
+
+        if (existingChoice) {
+          if (newContent) {
+            if ('content' in existingChoice.message) {
+              existingChoice.message.content += newContent;
+            } else {
+              existingChoice.message.content = newContent;
+            }
+          }
+
+          if (newFunctionCall) {
+            existingChoice.message.function_call = newFunctionCall;
+          }
+
+          if (newName) {
+            existingChoice.name = newName;
+          }
+
+          existingChoice.finish_reason = newFinishReason;
+        } else {
+          const newChoiceObj: any = {
+            index: newIndex,
+            message: {
+              role: newRole,
+            },
+            finish_reason: newFinishReason,
+          };
+
+          if (newContent) {
+            newChoiceObj.message.content = newContent;
+          }
+
+          if (newFunctionCall) {
+            newChoiceObj.message.function_call = newFunctionCall;
+          }
+
+          if (newName) {
+            newChoiceObj.message.name = newName;
+          }
+
+          response.choices.push(newChoiceObj);
+        }
+      }
+
+      return response;
+    }
+
+    if (response === null) {
+      return chunk;
+    }
+
+    const newChoices = chunk.choices || [];
+
+    for (const newChoice of newChoices) {
+      const newIndex = newChoice.index || 0;
+      const newText = newChoice.text || '';
+
+      const existingChoice = response.choices.find(
+        (choice: any) => choice.index === newIndex,
+      );
+      if (existingChoice) {
+        existingChoice.text += newText;
+      } else {
+        response.choices.push(newChoice);
+      }
+    }
+
+    return response;
+  }
+
   static init(log: (entry: Log) => void) {
     try {
       /* eslint-disable-next-line @typescript-eslint/no-var-requires */
@@ -170,7 +267,14 @@ export class OpenAIWrapper {
             openai.chat.completions,
           ),
         };
-        patch(module, symbols, OpenAIWrapper.newResolver, log);
+        patch({
+          module,
+          symbols,
+          resolver: OpenAIWrapper.newResolver,
+          log,
+          isStreaming: OpenAIWrapper.isStreaming,
+          collectStreamedResponse: OpenAIWrapper.collectStreamedResponse,
+        });
       } else {
         const symbols = [
           'OpenAIApi.prototype.createCompletion',
@@ -193,7 +297,14 @@ export class OpenAIWrapper {
             return response.data;
           },
         };
-        patch(module, symbols, OpenAIWrapper.oldResolver, log);
+        patch({
+          module,
+          symbols,
+          resolver: OpenAIWrapper.oldResolver,
+          log,
+          isStreaming: OpenAIWrapper.isStreaming,
+          collectStreamedResponse: OpenAIWrapper.collectStreamedResponse,
+        });
       }
     } catch (err) {
       /* openai isn't used */

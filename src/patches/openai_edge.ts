@@ -7,6 +7,7 @@ import {
 } from '../types';
 import { DEFAULT_USAGE } from './constants';
 import { patch } from './patch';
+import { loadModule } from '../loader';
 
 export class OpenAIEdgeWrapper {
   static resolver(
@@ -72,14 +73,13 @@ export class OpenAIEdgeWrapper {
 
   static init(log: (entry: Log) => void) {
     try {
-      /* eslint-disable-next-line @typescript-eslint/no-var-requires */
-      const module = require('openai-edge');
+      const openaiEdgeModule = loadModule(module, 'openai-edge');
       const symbols = [
         'OpenAIApi.prototype.createCompletion',
         'OpenAIApi.prototype.createChatCompletion',
       ];
       patch({
-        module,
+        module: openaiEdgeModule,
         symbols,
         resolver: OpenAIEdgeWrapper.resolver,
         log,

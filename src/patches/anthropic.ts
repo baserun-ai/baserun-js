@@ -7,6 +7,7 @@ import {
 } from '../types';
 import { DEFAULT_USAGE } from './constants';
 import { patch } from './patch';
+import { loadModule } from '../loader';
 
 interface AnthropicError {
   error?: { error?: { message?: string } };
@@ -71,11 +72,10 @@ export class AnthropicWrapper {
 
   static init(log: (entry: Log) => void) {
     try {
-      /* eslint-disable-next-line @typescript-eslint/no-var-requires */
-      const module = require('@anthropic-ai/sdk');
+      const anthropicModule = loadModule(module, '@anthropic-ai/sdk');
       const symbols = ['Anthropic.Completions.prototype.create'];
       patch({
-        module,
+        module: anthropicModule,
         symbols,
         resolver: AnthropicWrapper.resolver,
         log,

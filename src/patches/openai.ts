@@ -7,6 +7,7 @@ import {
 } from '../types';
 import { patch } from './patch';
 import { DEFAULT_USAGE } from './constants';
+import { loadModule } from '../loader';
 
 interface OldOpenAIError {
   response?: { data?: { error?: { message?: string } } };
@@ -250,15 +251,14 @@ export class OpenAIWrapper {
 
   static init(log: (entry: Log) => void) {
     try {
-      /* eslint-disable-next-line @typescript-eslint/no-var-requires */
-      const module = require('openai');
-      const isV4 = Boolean(module?.OpenAI?.Chat?.Completions);
+      const openaiModule = loadModule(module, 'openai');
+      const isV4 = Boolean(openaiModule?.OpenAI?.Chat?.Completions);
       if (isV4) {
         const symbols = [
           'OpenAI.Completions.prototype.create',
           'OpenAI.Chat.Completions.prototype.create',
         ];
-        const openai = new module({
+        const openai = new openaiModule({
           apiKey: process.env.OPENAI_API_KEY,
         });
         OpenAIWrapper.originalMethods = {
@@ -268,7 +268,7 @@ export class OpenAIWrapper {
           ),
         };
         patch({
-          module,
+          module: openaiModule,
           symbols,
           resolver: OpenAIWrapper.newResolver,
           log,
@@ -280,10 +280,10 @@ export class OpenAIWrapper {
           'OpenAIApi.prototype.createCompletion',
           'OpenAIApi.prototype.createChatCompletion',
         ];
-        const configuration = new module.Configuration({
+        const configuration = new openaiModule.Configuration({
           apiKey: process.env.OPENAI_API_KEY,
         });
-        const openai = new module.OpenAIApi(configuration);
+        const openai = new openaiModule.OpenAIApi(configuration);
         const originalCreateCompletion = openai.createCompletion.bind(openai);
         const originalCreateChatCompletion =
           openai.createChatCompletion.bind(openai);
@@ -298,7 +298,7 @@ export class OpenAIWrapper {
           },
         };
         patch({
-          module,
+          module: openaiModule,
           symbols,
           resolver: OpenAIWrapper.oldResolver,
           log,

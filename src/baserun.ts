@@ -1,5 +1,4 @@
 import { v4 } from 'uuid';
-import axios from 'axios';
 import { BaserunStepType, Log, StandardLog, Trace, TraceType } from './types';
 import { OpenAIEdgeWrapper } from './patches/openai_edge';
 import { getTimestamp } from './helpers';
@@ -7,6 +6,7 @@ import { Evals } from './evals/evals';
 import { Eval } from './evals/types';
 import { OpenAIWrapper } from './patches/openai';
 import { AnthropicWrapper } from './patches/anthropic';
+import { loadModule } from './loader';
 
 const TraceExecutionIdKey = 'baserun_trace_execution_id';
 const TraceNameKey = 'baserun_trace_name';
@@ -16,6 +16,18 @@ const TraceBufferKey = 'baserun_trace_buffer';
 const TraceTypeKey = 'baserun_trace_type';
 const TraceMetadataKey = 'baserun_trace_metadata';
 const TraceEvalsKey = 'baserun_trace_evals';
+
+type FetchInstance = (
+  input: URL | RequestInfo,
+  init?: RequestInit,
+) => Promise<Response>;
+
+let fetch: FetchInstance;
+if (typeof globalThis.fetch === 'undefined') {
+  fetch = loadModule(module, 'node-fetch');
+} else {
+  fetch = globalThis.fetch;
+}
 
 export class Baserun {
   static evals = new Evals(Baserun._appendToEvals);
@@ -231,21 +243,23 @@ export class Baserun {
     if (global.baserunTraces.length === 0) return;
 
     try {
+      const headers = {
+        Authorization: `Bearer ${Baserun._apiKey}`,
+        'Content-Type': 'application/json',
+      };
+
       if (
         global.baserunTraces.every((trace) => trace.type === TraceType.Test)
       ) {
         const apiUrl = `${Baserun._apiUrl}/runs`;
-        const response = await axios.post(
-          apiUrl,
-          { testExecutions: global.baserunTraces },
-          {
-            headers: {
-              Authorization: `Bearer ${Baserun._apiKey}`,
-            },
-          },
-        );
+        const response = await fetch(apiUrl, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ testExecutions: global.baserunTraces }),
+        });
 
-        const testRunId = response.data.id;
+        const data = await response.json();
+        const testRunId = (data as { id: string }).id;
         const url = new URL(apiUrl);
         return `${url.protocol}//${url.host}/runs/${testRunId}`;
       } else if (
@@ -253,15 +267,11 @@ export class Baserun {
           (trace) => trace.type === TraceType.Production,
         )
       ) {
-        await axios.post(
-          `${Baserun._apiUrl}/traces`,
-          { traces: global.baserunTraces },
-          {
-            headers: {
-              Authorization: `Bearer ${Baserun._apiKey}`,
-            },
-          },
-        );
+        await fetch(`${Baserun._apiUrl}/traces`, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ traces: global.baserunTraces }),
+        });
       } else {
         console.warn('Inconsistent trace types, skipping Baserun upload');
       }

@@ -36,7 +36,12 @@ interface ModelGradedClosedQAPayload {
   criterion: string;
 }
 
-export interface EvalPayload {
+export type ModelGradedEvalTypes =
+  | EvalType.ModelGradedFact
+  | EvalType.ModelGradedClosedQA
+  | EvalType.ModelGradedSecurity;
+
+export interface EvalPayloadWithStep {
   [EvalType.Match]: MembershipPayload;
   [EvalType.Includes]: MembershipPayload;
   [EvalType.FuzzyMatch]: MembershipPayload;
@@ -46,17 +51,19 @@ export interface EvalPayload {
   [EvalType.ValidJson]: SubmissionPayload;
   [EvalType.Custom]: SubmissionPayload;
   [EvalType.CustomAsync]: SubmissionPayload;
-  [EvalType.ModelGradedFact]: ModelGradedFactPayload & { step: AutoLLMLog };
-  [EvalType.ModelGradedClosedQA]: ModelGradedClosedQAPayload & {
-    step: AutoLLMLog;
-  };
-  [EvalType.ModelGradedSecurity]: SubmissionPayload & { step: AutoLLMLog };
+  [EvalType.ModelGradedFact]: ModelGradedFactPayload;
+  [EvalType.ModelGradedClosedQA]: ModelGradedClosedQAPayload;
+  [EvalType.ModelGradedSecurity]: SubmissionPayload;
 }
+
+export type EvalPayload<T extends EvalType> = T extends ModelGradedEvalTypes
+  ? EvalPayloadWithStep[T] & { step: AutoLLMLog }
+  : EvalPayloadWithStep[T];
 
 export interface Eval<T extends EvalType> {
   name: string;
   type: T;
   eval: string;
   score?: number;
-  payload: EvalPayload[T];
+  payload: EvalPayload<T>;
 }

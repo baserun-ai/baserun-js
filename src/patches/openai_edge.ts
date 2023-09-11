@@ -3,7 +3,6 @@ import {
   BaserunProvider,
   BaserunStepType,
   BaserunType,
-  Log,
 } from '../types';
 import { DEFAULT_USAGE } from './constants';
 import { patch } from './patch';
@@ -71,7 +70,7 @@ export class OpenAIEdgeWrapper {
     return await response.clone().json();
   }
 
-  static init(log: (entry: Log) => void) {
+  static init(log: (entry: AutoLLMLog) => Promise<void>) {
     try {
       const openaiEdgeModule = loadModule(module, 'openai-edge');
       const symbols = [

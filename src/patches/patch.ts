@@ -1,4 +1,4 @@
-import { Log } from '../types';
+import { AutoLLMLog } from '../types';
 import { getTimestamp } from '../helpers';
 
 export type ResolverFn = (
@@ -8,7 +8,7 @@ export type ResolverFn = (
   endTime: number,
   response?: any,
   error?: any,
-) => Log;
+) => AutoLLMLog;
 
 export function generatePatchedMethod({
   symbol,
@@ -22,7 +22,7 @@ export function generatePatchedMethod({
   symbol: string;
   original: (...args: any[]) => Promise<any>;
   resolver: ResolverFn;
-  log: (log: Log) => void;
+  log: (log: AutoLLMLog) => Promise<void>;
   isStreaming: (_symbol: string, args: any[]) => boolean;
   collectStreamedResponse: (symbol: string, response: any, chunk: any) => any;
   processResponse?: (response: any) => Promise<any>;
@@ -66,7 +66,7 @@ export function generatePatchedMethod({
             streamResponse,
             streamError,
           );
-          log(streamLogEntry);
+          await log(streamLogEntry);
         }
       }
 
@@ -90,7 +90,7 @@ export function generatePatchedMethod({
           response,
           error,
         );
-        log(logEntry);
+        await log(logEntry);
       }
     }
   };
@@ -108,7 +108,7 @@ export function patch({
   module: any;
   symbols: string[];
   resolver: ResolverFn;
-  log: (logEntry: Log) => void;
+  log: (logEntry: AutoLLMLog) => Promise<void>;
   isStreaming: (_symbol: string, args: any[]) => boolean;
   collectStreamedResponse: (symbol: string, response: any, chunk: any) => any;
   processResponse?: (response: any) => Promise<any>;

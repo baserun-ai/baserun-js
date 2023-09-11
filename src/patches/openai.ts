@@ -3,7 +3,6 @@ import {
   BaserunProvider,
   BaserunStepType,
   BaserunType,
-  Log,
 } from '../types';
 import { patch } from './patch';
 import { DEFAULT_USAGE } from './constants';
@@ -249,7 +248,7 @@ export class OpenAIWrapper {
     return response;
   }
 
-  static init(log: (entry: Log) => void) {
+  static init(log: (entry: AutoLLMLog) => Promise<void>) {
     try {
       const openaiModule = loadModule(module, 'openai');
       const isV4 = Boolean(openaiModule?.OpenAI?.Chat?.Completions);

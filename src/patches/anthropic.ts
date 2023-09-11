@@ -3,7 +3,6 @@ import {
   BaserunProvider,
   BaserunStepType,
   BaserunType,
-  Log,
 } from '../types';
 import { DEFAULT_USAGE } from './constants';
 import { patch } from './patch';
@@ -70,7 +69,7 @@ export class AnthropicWrapper {
     return response;
   }
 
-  static init(log: (entry: Log) => void) {
+  static init(log: (entry: AutoLLMLog) => Promise<void>) {
     try {
       const anthropicModule = loadModule(module, '@anthropic-ai/sdk');
       const symbols = ['Anthropic.Completions.prototype.create'];

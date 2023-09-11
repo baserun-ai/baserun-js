@@ -1,5 +1,12 @@
 import { v4 } from 'uuid';
-import { BaserunStepType, Log, StandardLog, Trace, TraceType } from './types';
+import {
+  AutoLLMLog,
+  BaserunStepType,
+  Log,
+  StandardLog,
+  Trace,
+  TraceType,
+} from './types';
 import { OpenAIEdgeWrapper } from './patches/openai_edge';
 import { getTimestamp } from './helpers';
 import { Evals } from './evals/evals';
@@ -36,9 +43,9 @@ export class Baserun {
     process.env.BASERUN_API_URL ?? 'https://baserun.ai/api/v1';
 
   static monkeyPatch(): void {
-    OpenAIEdgeWrapper.init(Baserun._appendToBuffer);
-    OpenAIWrapper.init(Baserun._appendToBuffer);
-    AnthropicWrapper.init(Baserun._appendToBuffer);
+    OpenAIEdgeWrapper.init(Baserun._handleAutoLLM);
+    OpenAIWrapper.init(Baserun._handleAutoLLM);
+    AnthropicWrapper.init(Baserun._handleAutoLLM);
   }
 
   static init(): void {
@@ -284,6 +291,28 @@ export class Baserun {
 
   static _storeTrace(traceData: Trace): void {
     global.baserunTraces.push(traceData);
+  }
+
+  static async _handleAutoLLM(logEntry: AutoLLMLog): Promise<void> {
+    const store = global.baserunTraceStore;
+    if (store && store.has(TraceExecutionIdKey)) {
+      Baserun._appendToBuffer(logEntry);
+      return;
+    }
+
+    global.baserunTraces.push({
+      type: TraceType.Production,
+      testName: `${logEntry.provider} ${logEntry.type}`,
+      testInputs: [],
+      id: v4(),
+      result: String(logEntry.output),
+      startTimestamp: logEntry.startTimestamp,
+      completionTimestamp: logEntry.completionTimestamp,
+      steps: [logEntry],
+      evals: [],
+    });
+
+    await Baserun.flush();
   }
 
   static _appendToBuffer(logEntry: Log): void {

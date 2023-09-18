@@ -10,19 +10,19 @@
 
 ## Quick Start
 
-### 1. Generate an API key
-Create an account at [https://baserun.ai](https://baserun.ai). Then generate an API key for your project in the [settings](https://baserun.ai/settings) tab and set it as an environment variable.
-
-```bash
-export BASERUN_API_KEY="your_api_key_here"
-```
-
-### 2. Install Baserun
+### 1. Install Baserun
 
 ```bash
 npm install baserun --save-dev
 # or
 yarn add baserun --dev
+```
+
+### 2. Generate an API key
+Create an account at [https://baserun.ai](https://baserun.ai). Then generate an API key for your project in the [settings](https://baserun.ai/settings) tab and set it as an environment variable.
+
+```bash
+export BASERUN_API_KEY="your_api_key_here"
 ```
 
 ### 3. Start testing

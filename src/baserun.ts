@@ -56,9 +56,6 @@ export class Baserun {
     }
 
     if (global.baserunInitialized) {
-      console.warn(
-        'Baserun has already been initialized. Additional calls to init will be ignored.',
-      );
       return;
     }
 

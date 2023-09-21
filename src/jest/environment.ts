@@ -1,11 +1,10 @@
 import NodeEnvironment from 'jest-environment-node';
 import { Circus } from '@jest/types';
 import { Baserun } from '../baserun';
-import { TraceType } from '../types';
+import { Run } from '../v1/generated/baserun_pb';
+import { SpanKind, trace } from '@opentelemetry/api';
 
 export default class BaserunJestEnvironment extends NodeEnvironment {
-  private _baserunTraceStore: Map<string, any> | undefined;
-
   handleTestEvent = (event: Circus.Event) => {
     if (event.name === 'test_start' && event.test) {
       const namePath = [event.test.name];
@@ -18,23 +17,38 @@ export default class BaserunJestEnvironment extends NodeEnvironment {
         parent = parent.parent;
       }
 
-      this._baserunTraceStore = Baserun.markTraceStart(
-        TraceType.Test,
-        namePath.join(' • '),
+      const name = namePath.join(' • ');
+      this.global.baserunTestRun = Baserun.getOrCreateCurrentRun({
+        name,
+        suiteId: global.baserunTestSuite.getId(),
+        traceType: Run.RunType.RUN_TYPE_TEST,
+      });
+
+      const tracerProvider = trace.getTracerProvider();
+      const tracer = tracerProvider.getTracer('baserun');
+
+      this.global.baserunParentSpan = tracer.startSpan(
+        `baserun.parent.${name}`,
+        {
+          kind: SpanKind.CLIENT,
+        },
       );
-      this.global.baserunTraceStore = this._baserunTraceStore;
     }
 
     if (event.name === 'test_done' && event.test) {
-      Baserun.markTraceEnd(
-        {
-          error: event.test.errors[0],
-          result: event.test.status,
-        },
-        this._baserunTraceStore,
-      );
-      this._baserunTraceStore = undefined;
-      this.global.baserunTraceStore = undefined;
+      if (event.test.errors[0]) {
+        this.global.baserunTestRun.setError(String(event.test.errors[0]));
+      }
+
+      if (event.test.status) {
+        this.global.baserunTestRun.setResult(event.test.status);
+      }
+
+      Baserun.finishRun(this.global.baserunTestRun);
+      this.global.baserunParentSpan.end();
+
+      this.global.baserunTestRun = undefined;
+      this.global.baserunParentSpan = undefined;
     }
   };
 }

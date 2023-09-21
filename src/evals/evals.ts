@@ -1,5 +1,4 @@
 import {
-  Eval,
   EvalPayloadWithStep,
   EvalType,
   EvalPayload,
@@ -9,7 +8,13 @@ import { isValidJson } from './json';
 import { OpenAIWrapper } from '../patches/openai';
 import { BaserunProvider, BaserunStepType, BaserunType } from '../types';
 import { DEFAULT_USAGE } from '../patches/constants';
-import { getTimestamp } from '../helpers';
+import { getTimestamp, isDefined } from '../helpers';
+import {
+  Eval as EvalProto,
+  SubmitEvalRequest,
+} from '../v1/generated/baserun_pb';
+import { getOrCreateSubmissionService } from '../grpc';
+import { getCurrentRun } from '../current_run';
 
 function getAnswerPrompt(choices: string[]): string {
   const joinedChoices = choices.map((choice) => `"${choice}"`).join(' or ');
@@ -54,12 +59,6 @@ function getChoiceAndScore(choiceScores: {
 }
 
 export class Evals {
-  private readonly _log: (evalEntry: Eval<any>) => void;
-
-  constructor(log: (evalEntry: Eval<any>) => void) {
-    this._log = log;
-  }
-
   private _storeEvalData<T extends EvalType>({
     name,
     type,
@@ -73,13 +72,30 @@ export class Evals {
     score?: number;
     payload: EvalPayload<T>;
   }): void {
-    this._log({
-      name,
-      type,
-      eval: result,
-      score,
-      payload,
-    });
+    const evalProto = new EvalProto()
+      .setName(name)
+      .setType(type)
+      .setResult(result)
+      .setPayload(JSON.stringify(payload));
+    if (isDefined(score)) {
+      evalProto.setScore(score);
+    }
+
+    const run = getCurrentRun();
+    if (!run) {
+      console.warn('Baserun run attribute not set, cannot submit eval');
+      return;
+    }
+
+    const evalRequest = new SubmitEvalRequest().setEval(evalProto).setRun(run);
+    getOrCreateSubmissionService().submitEval(
+      evalRequest,
+      (error, _response) => {
+        if (error) {
+          console.error('Failed to submit eval to Baserun: ', error);
+        }
+      },
+    );
   }
 
   match(

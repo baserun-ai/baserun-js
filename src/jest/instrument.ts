@@ -1,3 +1,3 @@
 import { Baserun } from '../baserun';
 
-Baserun.monkeyPatch();
+Baserun.instrument();

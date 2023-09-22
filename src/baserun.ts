@@ -1,4 +1,5 @@
 import { v4 } from 'uuid';
+import stringify from 'json-stringify-safe';
 import {
   AutoLLMLog,
   BaserunStepType,
@@ -80,7 +81,7 @@ export class Baserun {
     traceStore.set(TraceNameKey, name);
     traceStore.set(
       TraceInputsKey,
-      inputs.map((input) => JSON.stringify(input)),
+      inputs.map((input) => stringify(input)),
     );
     traceStore.set(TraceStartTimestampKey, getTimestamp());
     traceStore.set(TraceTypeKey, type);
@@ -221,7 +222,7 @@ export class Baserun {
       try {
         const result = await fn(...args);
         Baserun.markTraceEnd(
-          { result: result != null ? JSON.stringify(result) : '' },
+          { result: result != null ? stringify(result) : '' },
           global.baserunTraceStore,
         );
         return result;
@@ -259,7 +260,7 @@ export class Baserun {
         const response = await fetch(apiUrl, {
           method: 'POST',
           headers,
-          body: JSON.stringify({ testExecutions: global.baserunTraces }),
+          body: stringify({ testExecutions: global.baserunTraces }),
         });
 
         const data = await response.json();
@@ -274,7 +275,7 @@ export class Baserun {
         await fetch(`${Baserun._apiUrl}/traces`, {
           method: 'POST',
           headers,
-          body: JSON.stringify({ traces: global.baserunTraces }),
+          body: stringify({ traces: global.baserunTraces }),
         });
       } else {
         console.warn('Inconsistent trace types, skipping Baserun upload');

@@ -1,7 +1,7 @@
 import { Baserun } from '../../baserun';
 import { baserun } from '../../index';
 
-jest.mock('axios');
+jest.mock('node-fetch');
 
 /*
  * BASERUN_API_KEY="test-key" npx jest src/tests/baserun-jest --config src/tests/baserun-jest/jest.config.js

@@ -3,7 +3,7 @@ process.env.BASERUN_API_KEY = 'test-key';
 import { Baserun } from '../baserun';
 import { baserun } from '../index';
 
-jest.mock('axios');
+jest.mock('node-fetch');
 
 /*
  * npx jest src/tests/trace.test.ts

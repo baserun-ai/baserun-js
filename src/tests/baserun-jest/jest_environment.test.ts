@@ -3,9 +3,6 @@ import { baserun } from '../../index';
 
 jest.mock('node-fetch');
 
-/*
- * BASERUN_API_KEY="test-key" npx jest src/tests/baserun-jest --config src/tests/baserun-jest/jest.config.js
- */
 describe('BaserunJestEnvironment', () => {
   let appendToBufferSpy: jest.SpyInstance;
 

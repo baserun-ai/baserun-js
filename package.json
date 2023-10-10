@@ -11,7 +11,9 @@
   "scripts": {
     "clean": "rimraf dist",
     "build": "npm run clean && tsc",
-    "test": "jest",
+    "test:jest-environment": "BASERUN_API_KEY=\"test-key\" jest --testPathPattern=\"/baserun-jest/\" --config=src/tests/baserun-jest/jest.config.js",
+    "test:normal": "jest --testPathIgnorePatterns=\"baserun-jest\"",
+    "test": "concurrently 'npm run test:jest-environment' 'npm run test:normal'",
     "lint": "eslint --fix --ext .js,.ts .",
     "format": "prettier --write \"**/*.{js,ts}\"",
     "prepare": "husky install"
@@ -27,6 +29,7 @@
     "@types/uuid": "^9.0.2",
     "@typescript-eslint/eslint-plugin": "^5.60.0",
     "@typescript-eslint/parser": "^5.60.0",
+    "concurrently": "^8.2.1",
     "eslint": "^8.43.0",
     "eslint-config-prettier": "^8.8.0",
     "eslint-plugin-prettier": "^4.2.1",

@@ -5,9 +5,6 @@ import { baserun } from '../index';
 
 jest.mock('node-fetch');
 
-/*
- * npx jest src/tests/trace.test.ts
- */
 describe('Baserun trace', () => {
   let storeTestSpy: jest.SpyInstance;
 

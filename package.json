@@ -11,9 +11,9 @@
   "scripts": {
     "clean": "rimraf dist",
     "build": "npm run clean && tsc",
-    "test:jest-environment": "BASERUN_API_KEY=\"test-key\" jest --testPathPattern=\"/baserun-jest/\" --config=src/tests/baserun-jest/jest.config.js",
-    "test:normal": "jest --testPathIgnorePatterns=\"baserun-jest\"",
-    "test": "concurrently 'npm run test:jest-environment' 'npm run test:normal'",
+    "test:baserun": "jest --testPathPattern=\"/baserun/\" --config=jest.config.baserun.js",
+    "test:normal": "jest --testPathIgnorePatterns=\"/baserun/\"",
+    "test": "concurrently 'npm run test:baserun' 'npm run test:normal'",
     "lint": "eslint --fix --ext .js,.ts .",
     "format": "prettier --write \"**/*.{js,ts}\"",
     "prepare": "husky install"
@@ -22,6 +22,7 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "@anthropic-ai/sdk": "^0.6.2",
     "@types/jest": "^29.5.2",
     "@types/json-stringify-safe": "^5.0.1",
     "@types/node": "^20.4.5",
@@ -36,6 +37,8 @@
     "husky": "^8.0.3",
     "jest": "^29.5.0",
     "mocha": "^10.2.0",
+    "openai": "^4.11.1",
+    "openai-edge": "^1.2.2",
     "prettier": "^2.8.8",
     "rimraf": "^5.0.1",
     "ts-jest": "^29.1.1",

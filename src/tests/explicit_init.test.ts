@@ -5,9 +5,6 @@ import { baserun } from '../index';
 
 jest.mock('node-fetch');
 
-/*
- * npx jest src/tests/explicit_init.test.ts
- */
 describe('BaserunExplicitInit', () => {
   let storeTestSpy: jest.SpyInstance;
 

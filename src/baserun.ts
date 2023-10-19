@@ -6,6 +6,7 @@ import { context, SpanKind, trace } from '@opentelemetry/api';
 import {
   SimpleSpanProcessor,
   NodeTracerProvider,
+  ConsoleSpanExporter,
 } from '@opentelemetry/sdk-trace-node';
 import { BaserunExporter } from './exporter';
 import {
@@ -14,9 +15,9 @@ import {
   Run,
   StartRunRequest,
   SubmitLogRequest,
-} from './v1/generated/baserun_pb';
+} from './v1/generated/baserun_pb.js';
 import { BASERUN_RUN_KEY } from './instrumentation/span_attributes';
-import { Timestamp } from 'google-protobuf/google/protobuf/timestamp_pb';
+import { Timestamp } from 'google-protobuf/google/protobuf/timestamp_pb.js';
 import { Evals } from './evals/evals';
 import { getOrCreateSubmissionService } from './grpc';
 import { getCurrentRun } from './current_run';
@@ -50,8 +51,12 @@ export class Baserun {
     nodeTraceProvider.getTracer('baserun');
 
     // TODO (Adam) why isn't BatchSpanProcessor working???
-    const processor = new SimpleSpanProcessor(new BaserunExporter());
-    nodeTraceProvider.addSpanProcessor(processor);
+    nodeTraceProvider.addSpanProcessor(
+      new SimpleSpanProcessor(new BaserunExporter()),
+    );
+    nodeTraceProvider.addSpanProcessor(
+      new SimpleSpanProcessor(new ConsoleSpanExporter()),
+    );
     nodeTraceProvider.register();
 
     Baserun.instrument();
@@ -141,6 +146,8 @@ export class Baserun {
       .setTimestamp(Timestamp.fromDate(new Date()));
     const submitLogRequest = new SubmitLogRequest().setRun(run).setLog(log);
 
+    console.log({ submitLogRequest });
+
     getOrCreateSubmissionService().submitLog(
       submitLogRequest,
       (error, _response) => {
@@ -177,6 +184,7 @@ export class Baserun {
         async () => {
           try {
             const result = await fn(...args);
+            console.log({ result });
             run.setResult(result ? stringify(result) : '');
             return result;
           } catch (err) {

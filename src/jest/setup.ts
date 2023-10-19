@@ -1,5 +1,8 @@
 import { Baserun } from '../baserun';
-import { TestSuite, StartTestSuiteRequest } from '../v1/generated/baserun_pb';
+import {
+  TestSuite,
+  StartTestSuiteRequest,
+} from '../v1/generated/baserun_pb.js';
 import { v4 } from 'uuid';
 import { Timestamp } from 'google-protobuf/google/protobuf/timestamp_pb';
 import { getOrCreateSubmissionService } from '../grpc';

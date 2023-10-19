@@ -1,4 +1,4 @@
-import { Run } from './v1/generated/baserun_pb';
+import { Run } from './v1/generated/baserun_pb.js';
 import { BASERUN_RUN_KEY } from './instrumentation/span_attributes';
 import { context } from '@opentelemetry/api';
 

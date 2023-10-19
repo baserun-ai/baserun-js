@@ -1,8 +1,8 @@
 import { ReadableSpan, SpanExporter } from '@opentelemetry/sdk-trace-node';
 import { AttributeValue, SpanAttributes } from '@opentelemetry/api';
-import { Message, Span, SubmitSpanRequest } from './v1/generated/baserun_pb';
+import { Message, Span, SubmitSpanRequest } from './v1/generated/baserun_pb.js';
 import { SpanAttributeName } from './instrumentation/span_attributes';
-import { Timestamp } from 'google-protobuf/google/protobuf/timestamp_pb';
+import { Timestamp } from 'google-protobuf/google/protobuf/timestamp_pb.js';
 import { hrTimeToMilliseconds } from '@opentelemetry/core';
 import { isDefined } from './helpers';
 import { getOrCreateSubmissionService } from './grpc';

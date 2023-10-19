@@ -1,7 +1,7 @@
 import NodeEnvironment from 'jest-environment-node';
 import { Circus } from '@jest/types';
 import { Baserun } from '../baserun';
-import { Run } from '../v1/generated/baserun_pb';
+import { Run } from '../v1/generated/baserun_pb.js';
 import { SpanKind, trace } from '@opentelemetry/api';
 
 export default class BaserunJestEnvironment extends NodeEnvironment {

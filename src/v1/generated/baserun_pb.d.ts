@@ -95,6 +95,8 @@ export class Run extends jspb.Message {
     setResult(value: string): Run;
     getError(): string;
     setError(value: string): Run;
+    getSessionId(): string;
+    setSessionId(value: string): Run;
 
     serializeBinary(): Uint8Array;
     toObject(includeInstance?: boolean): Run.AsObject;
@@ -118,6 +120,7 @@ export namespace Run {
         completionTimestamp?: google_protobuf_timestamp_pb.Timestamp.AsObject,
         result: string,
         error: string,
+        sessionId: string,
     }
 
     export enum RunType {
@@ -156,6 +159,111 @@ export namespace Log {
         name: string,
         payload: string,
         timestamp?: google_protobuf_timestamp_pb.Timestamp.AsObject,
+    }
+}
+
+export class EndUser extends jspb.Message { 
+    getId(): string;
+    setId(value: string): EndUser;
+    getIdentifier(): string;
+    setIdentifier(value: string): EndUser;
+
+    serializeBinary(): Uint8Array;
+    toObject(includeInstance?: boolean): EndUser.AsObject;
+    static toObject(includeInstance: boolean, msg: EndUser): EndUser.AsObject;
+    static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+    static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+    static serializeBinaryToWriter(message: EndUser, writer: jspb.BinaryWriter): void;
+    static deserializeBinary(bytes: Uint8Array): EndUser;
+    static deserializeBinaryFromReader(message: EndUser, reader: jspb.BinaryReader): EndUser;
+}
+
+export namespace EndUser {
+    export type AsObject = {
+        id: string,
+        identifier: string,
+    }
+}
+
+export class Model extends jspb.Message { 
+    getId(): number;
+    setId(value: number): Model;
+    getModelName(): string;
+    setModelName(value: string): Model;
+    getProvider(): string;
+    setProvider(value: string): Model;
+    getName(): string;
+    setName(value: string): Model;
+
+    serializeBinary(): Uint8Array;
+    toObject(includeInstance?: boolean): Model.AsObject;
+    static toObject(includeInstance: boolean, msg: Model): Model.AsObject;
+    static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+    static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+    static serializeBinaryToWriter(message: Model, writer: jspb.BinaryWriter): void;
+    static deserializeBinary(bytes: Uint8Array): Model;
+    static deserializeBinaryFromReader(message: Model, reader: jspb.BinaryReader): Model;
+}
+
+export namespace Model {
+    export type AsObject = {
+        id: number,
+        modelName: string,
+        provider: string,
+        name: string,
+    }
+}
+
+export class ModelConfig extends jspb.Message { 
+    getId(): number;
+    setId(value: number): ModelConfig;
+    getModelId(): number;
+    setModelId(value: number): ModelConfig;
+
+    hasModel(): boolean;
+    clearModel(): void;
+    getModel(): Model | undefined;
+    setModel(value?: Model): ModelConfig;
+    getLogitBias(): string;
+    setLogitBias(value: string): ModelConfig;
+    getPresencePenalty(): number;
+    setPresencePenalty(value: number): ModelConfig;
+    getFrequencyPenalty(): number;
+    setFrequencyPenalty(value: number): ModelConfig;
+    getTemperature(): number;
+    setTemperature(value: number): ModelConfig;
+    getTopP(): number;
+    setTopP(value: number): ModelConfig;
+    getTopK(): number;
+    setTopK(value: number): ModelConfig;
+    getFunctions(): string;
+    setFunctions(value: string): ModelConfig;
+    getFunctionCall(): string;
+    setFunctionCall(value: string): ModelConfig;
+
+    serializeBinary(): Uint8Array;
+    toObject(includeInstance?: boolean): ModelConfig.AsObject;
+    static toObject(includeInstance: boolean, msg: ModelConfig): ModelConfig.AsObject;
+    static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+    static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+    static serializeBinaryToWriter(message: ModelConfig, writer: jspb.BinaryWriter): void;
+    static deserializeBinary(bytes: Uint8Array): ModelConfig;
+    static deserializeBinaryFromReader(message: ModelConfig, reader: jspb.BinaryReader): ModelConfig;
+}
+
+export namespace ModelConfig {
+    export type AsObject = {
+        id: number,
+        modelId: number,
+        model?: Model.AsObject,
+        logitBias: string,
+        presencePenalty: number,
+        frequencyPenalty: number,
+        temperature: number,
+        topP: number,
+        topK: number,
+        functions: string,
+        functionCall: string,
     }
 }
 
@@ -305,6 +413,21 @@ export class Span extends jspb.Message {
     getTopK(): number | undefined;
     setTopK(value: number): Span;
 
+    hasEndUser(): boolean;
+    clearEndUser(): void;
+    getEndUser(): EndUser | undefined;
+    setEndUser(value?: EndUser): Span;
+
+    hasTemplateId(): boolean;
+    clearTemplateId(): void;
+    getTemplateId(): string | undefined;
+    setTemplateId(value: string): Span;
+
+    hasTemplateParameters(): boolean;
+    clearTemplateParameters(): void;
+    getTemplateParameters(): string | undefined;
+    setTemplateParameters(value: string): Span;
+
     serializeBinary(): Uint8Array;
     toObject(includeInstance?: boolean): Span.AsObject;
     static toObject(includeInstance: boolean, msg: Span): Span.AsObject;
@@ -352,6 +475,9 @@ export namespace Span {
         bestOf?: number,
         logId?: string,
         topK?: number,
+        endUser?: EndUser.AsObject,
+        templateId?: string,
+        templateParameters?: string,
     }
 }
 
@@ -425,6 +551,120 @@ export namespace TestSuite {
         name: string,
         startTimestamp?: google_protobuf_timestamp_pb.Timestamp.AsObject,
         completionTimestamp?: google_protobuf_timestamp_pb.Timestamp.AsObject,
+    }
+}
+
+export class Template extends jspb.Message { 
+    getId(): string;
+    setId(value: string): Template;
+    getName(): string;
+    setName(value: string): Template;
+    getTemplateType(): Template.TemplateType;
+    setTemplateType(value: Template.TemplateType): Template;
+    clearTemplateVersionsList(): void;
+    getTemplateVersionsList(): Array<TemplateVersion>;
+    setTemplateVersionsList(value: Array<TemplateVersion>): Template;
+    addTemplateVersions(value?: TemplateVersion, index?: number): TemplateVersion;
+
+    serializeBinary(): Uint8Array;
+    toObject(includeInstance?: boolean): Template.AsObject;
+    static toObject(includeInstance: boolean, msg: Template): Template.AsObject;
+    static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+    static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+    static serializeBinaryToWriter(message: Template, writer: jspb.BinaryWriter): void;
+    static deserializeBinary(bytes: Uint8Array): Template;
+    static deserializeBinaryFromReader(message: Template, reader: jspb.BinaryReader): Template;
+}
+
+export namespace Template {
+    export type AsObject = {
+        id: string,
+        name: string,
+        templateType: Template.TemplateType,
+        templateVersionsList: Array<TemplateVersion.AsObject>,
+    }
+
+    export enum TemplateType {
+    TEMPLATE_TYPE_UNSPECIFIED = 0,
+    TEMPLATE_TYPE_FORMATTED_STRING = 1,
+    TEMPLATE_TYPE_JINJA2 = 2,
+    }
+
+}
+
+export class TemplateVersion extends jspb.Message { 
+    getId(): string;
+    setId(value: string): TemplateVersion;
+
+    hasTemplate(): boolean;
+    clearTemplate(): void;
+    getTemplate(): Template | undefined;
+    setTemplate(value?: Template): TemplateVersion;
+    getTag(): string;
+    setTag(value: string): TemplateVersion;
+    getParameterDefinition(): string;
+    setParameterDefinition(value: string): TemplateVersion;
+    getTemplateString(): string;
+    setTemplateString(value: string): TemplateVersion;
+
+    serializeBinary(): Uint8Array;
+    toObject(includeInstance?: boolean): TemplateVersion.AsObject;
+    static toObject(includeInstance: boolean, msg: TemplateVersion): TemplateVersion.AsObject;
+    static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+    static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+    static serializeBinaryToWriter(message: TemplateVersion, writer: jspb.BinaryWriter): void;
+    static deserializeBinary(bytes: Uint8Array): TemplateVersion;
+    static deserializeBinaryFromReader(message: TemplateVersion, reader: jspb.BinaryReader): TemplateVersion;
+}
+
+export namespace TemplateVersion {
+    export type AsObject = {
+        id: string,
+        template?: Template.AsObject,
+        tag: string,
+        parameterDefinition: string,
+        templateString: string,
+    }
+}
+
+export class Session extends jspb.Message { 
+    getId(): string;
+    setId(value: string): Session;
+    getIdentifier(): string;
+    setIdentifier(value: string): Session;
+
+    hasStartTimestamp(): boolean;
+    clearStartTimestamp(): void;
+    getStartTimestamp(): google_protobuf_timestamp_pb.Timestamp | undefined;
+    setStartTimestamp(value?: google_protobuf_timestamp_pb.Timestamp): Session;
+
+    hasCompletionTimestamp(): boolean;
+    clearCompletionTimestamp(): void;
+    getCompletionTimestamp(): google_protobuf_timestamp_pb.Timestamp | undefined;
+    setCompletionTimestamp(value?: google_protobuf_timestamp_pb.Timestamp): Session;
+
+    hasEndUser(): boolean;
+    clearEndUser(): void;
+    getEndUser(): EndUser | undefined;
+    setEndUser(value?: EndUser): Session;
+
+    serializeBinary(): Uint8Array;
+    toObject(includeInstance?: boolean): Session.AsObject;
+    static toObject(includeInstance: boolean, msg: Session): Session.AsObject;
+    static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+    static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+    static serializeBinaryToWriter(message: Session, writer: jspb.BinaryWriter): void;
+    static deserializeBinary(bytes: Uint8Array): Session;
+    static deserializeBinaryFromReader(message: Session, reader: jspb.BinaryReader): Session;
+}
+
+export namespace Session {
+    export type AsObject = {
+        id: string,
+        identifier: string,
+        startTimestamp?: google_protobuf_timestamp_pb.Timestamp.AsObject,
+        completionTimestamp?: google_protobuf_timestamp_pb.Timestamp.AsObject,
+        endUser?: EndUser.AsObject,
     }
 }
 
@@ -744,5 +984,289 @@ export class EndTestSuiteResponse extends jspb.Message {
 export namespace EndTestSuiteResponse {
     export type AsObject = {
         message: string,
+    }
+}
+
+export class StartSessionRequest extends jspb.Message { 
+
+    hasSession(): boolean;
+    clearSession(): void;
+    getSession(): Session | undefined;
+    setSession(value?: Session): StartSessionRequest;
+
+    serializeBinary(): Uint8Array;
+    toObject(includeInstance?: boolean): StartSessionRequest.AsObject;
+    static toObject(includeInstance: boolean, msg: StartSessionRequest): StartSessionRequest.AsObject;
+    static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+    static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+    static serializeBinaryToWriter(message: StartSessionRequest, writer: jspb.BinaryWriter): void;
+    static deserializeBinary(bytes: Uint8Array): StartSessionRequest;
+    static deserializeBinaryFromReader(message: StartSessionRequest, reader: jspb.BinaryReader): StartSessionRequest;
+}
+
+export namespace StartSessionRequest {
+    export type AsObject = {
+        session?: Session.AsObject,
+    }
+}
+
+export class StartSessionResponse extends jspb.Message { 
+    getMessage(): string;
+    setMessage(value: string): StartSessionResponse;
+
+    hasSession(): boolean;
+    clearSession(): void;
+    getSession(): Session | undefined;
+    setSession(value?: Session): StartSessionResponse;
+
+    serializeBinary(): Uint8Array;
+    toObject(includeInstance?: boolean): StartSessionResponse.AsObject;
+    static toObject(includeInstance: boolean, msg: StartSessionResponse): StartSessionResponse.AsObject;
+    static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+    static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+    static serializeBinaryToWriter(message: StartSessionResponse, writer: jspb.BinaryWriter): void;
+    static deserializeBinary(bytes: Uint8Array): StartSessionResponse;
+    static deserializeBinaryFromReader(message: StartSessionResponse, reader: jspb.BinaryReader): StartSessionResponse;
+}
+
+export namespace StartSessionResponse {
+    export type AsObject = {
+        message: string,
+        session?: Session.AsObject,
+    }
+}
+
+export class EndSessionRequest extends jspb.Message { 
+
+    hasSession(): boolean;
+    clearSession(): void;
+    getSession(): Session | undefined;
+    setSession(value?: Session): EndSessionRequest;
+
+    serializeBinary(): Uint8Array;
+    toObject(includeInstance?: boolean): EndSessionRequest.AsObject;
+    static toObject(includeInstance: boolean, msg: EndSessionRequest): EndSessionRequest.AsObject;
+    static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+    static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+    static serializeBinaryToWriter(message: EndSessionRequest, writer: jspb.BinaryWriter): void;
+    static deserializeBinary(bytes: Uint8Array): EndSessionRequest;
+    static deserializeBinaryFromReader(message: EndSessionRequest, reader: jspb.BinaryReader): EndSessionRequest;
+}
+
+export namespace EndSessionRequest {
+    export type AsObject = {
+        session?: Session.AsObject,
+    }
+}
+
+export class EndSessionResponse extends jspb.Message { 
+    getMessage(): string;
+    setMessage(value: string): EndSessionResponse;
+
+    hasSession(): boolean;
+    clearSession(): void;
+    getSession(): Session | undefined;
+    setSession(value?: Session): EndSessionResponse;
+
+    serializeBinary(): Uint8Array;
+    toObject(includeInstance?: boolean): EndSessionResponse.AsObject;
+    static toObject(includeInstance: boolean, msg: EndSessionResponse): EndSessionResponse.AsObject;
+    static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+    static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+    static serializeBinaryToWriter(message: EndSessionResponse, writer: jspb.BinaryWriter): void;
+    static deserializeBinary(bytes: Uint8Array): EndSessionResponse;
+    static deserializeBinaryFromReader(message: EndSessionResponse, reader: jspb.BinaryReader): EndSessionResponse;
+}
+
+export namespace EndSessionResponse {
+    export type AsObject = {
+        message: string,
+        session?: Session.AsObject,
+    }
+}
+
+export class SubmitTemplateVersionRequest extends jspb.Message { 
+
+    hasTemplateVersion(): boolean;
+    clearTemplateVersion(): void;
+    getTemplateVersion(): TemplateVersion | undefined;
+    setTemplateVersion(value?: TemplateVersion): SubmitTemplateVersionRequest;
+
+    serializeBinary(): Uint8Array;
+    toObject(includeInstance?: boolean): SubmitTemplateVersionRequest.AsObject;
+    static toObject(includeInstance: boolean, msg: SubmitTemplateVersionRequest): SubmitTemplateVersionRequest.AsObject;
+    static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+    static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+    static serializeBinaryToWriter(message: SubmitTemplateVersionRequest, writer: jspb.BinaryWriter): void;
+    static deserializeBinary(bytes: Uint8Array): SubmitTemplateVersionRequest;
+    static deserializeBinaryFromReader(message: SubmitTemplateVersionRequest, reader: jspb.BinaryReader): SubmitTemplateVersionRequest;
+}
+
+export namespace SubmitTemplateVersionRequest {
+    export type AsObject = {
+        templateVersion?: TemplateVersion.AsObject,
+    }
+}
+
+export class SubmitTemplateVersionResponse extends jspb.Message { 
+    getMessage(): string;
+    setMessage(value: string): SubmitTemplateVersionResponse;
+
+    hasTemplateVersion(): boolean;
+    clearTemplateVersion(): void;
+    getTemplateVersion(): TemplateVersion | undefined;
+    setTemplateVersion(value?: TemplateVersion): SubmitTemplateVersionResponse;
+
+    serializeBinary(): Uint8Array;
+    toObject(includeInstance?: boolean): SubmitTemplateVersionResponse.AsObject;
+    static toObject(includeInstance: boolean, msg: SubmitTemplateVersionResponse): SubmitTemplateVersionResponse.AsObject;
+    static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+    static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+    static serializeBinaryToWriter(message: SubmitTemplateVersionResponse, writer: jspb.BinaryWriter): void;
+    static deserializeBinary(bytes: Uint8Array): SubmitTemplateVersionResponse;
+    static deserializeBinaryFromReader(message: SubmitTemplateVersionResponse, reader: jspb.BinaryReader): SubmitTemplateVersionResponse;
+}
+
+export namespace SubmitTemplateVersionResponse {
+    export type AsObject = {
+        message: string,
+        templateVersion?: TemplateVersion.AsObject,
+    }
+}
+
+export class SubmitModelConfigRequest extends jspb.Message { 
+
+    hasModelConfig(): boolean;
+    clearModelConfig(): void;
+    getModelConfig(): ModelConfig | undefined;
+    setModelConfig(value?: ModelConfig): SubmitModelConfigRequest;
+
+    serializeBinary(): Uint8Array;
+    toObject(includeInstance?: boolean): SubmitModelConfigRequest.AsObject;
+    static toObject(includeInstance: boolean, msg: SubmitModelConfigRequest): SubmitModelConfigRequest.AsObject;
+    static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+    static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+    static serializeBinaryToWriter(message: SubmitModelConfigRequest, writer: jspb.BinaryWriter): void;
+    static deserializeBinary(bytes: Uint8Array): SubmitModelConfigRequest;
+    static deserializeBinaryFromReader(message: SubmitModelConfigRequest, reader: jspb.BinaryReader): SubmitModelConfigRequest;
+}
+
+export namespace SubmitModelConfigRequest {
+    export type AsObject = {
+        modelConfig?: ModelConfig.AsObject,
+    }
+}
+
+export class SubmitModelConfigResponse extends jspb.Message { 
+    getMessage(): string;
+    setMessage(value: string): SubmitModelConfigResponse;
+
+    hasModelConfig(): boolean;
+    clearModelConfig(): void;
+    getModelConfig(): ModelConfig | undefined;
+    setModelConfig(value?: ModelConfig): SubmitModelConfigResponse;
+
+    serializeBinary(): Uint8Array;
+    toObject(includeInstance?: boolean): SubmitModelConfigResponse.AsObject;
+    static toObject(includeInstance: boolean, msg: SubmitModelConfigResponse): SubmitModelConfigResponse.AsObject;
+    static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+    static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+    static serializeBinaryToWriter(message: SubmitModelConfigResponse, writer: jspb.BinaryWriter): void;
+    static deserializeBinary(bytes: Uint8Array): SubmitModelConfigResponse;
+    static deserializeBinaryFromReader(message: SubmitModelConfigResponse, reader: jspb.BinaryReader): SubmitModelConfigResponse;
+}
+
+export namespace SubmitModelConfigResponse {
+    export type AsObject = {
+        message: string,
+        modelConfig?: ModelConfig.AsObject,
+    }
+}
+
+export class SubmitUserRequest extends jspb.Message { 
+
+    hasUser(): boolean;
+    clearUser(): void;
+    getUser(): EndUser | undefined;
+    setUser(value?: EndUser): SubmitUserRequest;
+
+    serializeBinary(): Uint8Array;
+    toObject(includeInstance?: boolean): SubmitUserRequest.AsObject;
+    static toObject(includeInstance: boolean, msg: SubmitUserRequest): SubmitUserRequest.AsObject;
+    static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+    static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+    static serializeBinaryToWriter(message: SubmitUserRequest, writer: jspb.BinaryWriter): void;
+    static deserializeBinary(bytes: Uint8Array): SubmitUserRequest;
+    static deserializeBinaryFromReader(message: SubmitUserRequest, reader: jspb.BinaryReader): SubmitUserRequest;
+}
+
+export namespace SubmitUserRequest {
+    export type AsObject = {
+        user?: EndUser.AsObject,
+    }
+}
+
+export class SubmitUserResponse extends jspb.Message { 
+    getMessage(): string;
+    setMessage(value: string): SubmitUserResponse;
+
+    hasUser(): boolean;
+    clearUser(): void;
+    getUser(): EndUser | undefined;
+    setUser(value?: EndUser): SubmitUserResponse;
+
+    serializeBinary(): Uint8Array;
+    toObject(includeInstance?: boolean): SubmitUserResponse.AsObject;
+    static toObject(includeInstance: boolean, msg: SubmitUserResponse): SubmitUserResponse.AsObject;
+    static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+    static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+    static serializeBinaryToWriter(message: SubmitUserResponse, writer: jspb.BinaryWriter): void;
+    static deserializeBinary(bytes: Uint8Array): SubmitUserResponse;
+    static deserializeBinaryFromReader(message: SubmitUserResponse, reader: jspb.BinaryReader): SubmitUserResponse;
+}
+
+export namespace SubmitUserResponse {
+    export type AsObject = {
+        message: string,
+        user?: EndUser.AsObject,
+    }
+}
+
+export class GetTemplatesRequest extends jspb.Message { 
+
+    serializeBinary(): Uint8Array;
+    toObject(includeInstance?: boolean): GetTemplatesRequest.AsObject;
+    static toObject(includeInstance: boolean, msg: GetTemplatesRequest): GetTemplatesRequest.AsObject;
+    static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+    static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+    static serializeBinaryToWriter(message: GetTemplatesRequest, writer: jspb.BinaryWriter): void;
+    static deserializeBinary(bytes: Uint8Array): GetTemplatesRequest;
+    static deserializeBinaryFromReader(message: GetTemplatesRequest, reader: jspb.BinaryReader): GetTemplatesRequest;
+}
+
+export namespace GetTemplatesRequest {
+    export type AsObject = {
+    }
+}
+
+export class GetTemplatesResponse extends jspb.Message { 
+    clearTemplatesList(): void;
+    getTemplatesList(): Array<Template>;
+    setTemplatesList(value: Array<Template>): GetTemplatesResponse;
+    addTemplates(value?: Template, index?: number): Template;
+
+    serializeBinary(): Uint8Array;
+    toObject(includeInstance?: boolean): GetTemplatesResponse.AsObject;
+    static toObject(includeInstance: boolean, msg: GetTemplatesResponse): GetTemplatesResponse.AsObject;
+    static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+    static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+    static serializeBinaryToWriter(message: GetTemplatesResponse, writer: jspb.BinaryWriter): void;
+    static deserializeBinary(bytes: Uint8Array): GetTemplatesResponse;
+    static deserializeBinaryFromReader(message: GetTemplatesResponse, reader: jspb.BinaryReader): GetTemplatesResponse;
+}
+
+export namespace GetTemplatesResponse {
+    export type AsObject = {
+        templatesList: Array<Template.AsObject>,
     }
 }

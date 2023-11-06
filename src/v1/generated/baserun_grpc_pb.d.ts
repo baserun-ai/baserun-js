@@ -16,6 +16,12 @@ interface ISubmissionServiceService extends grpc.ServiceDefinition<grpc.UntypedS
     submitEval: ISubmissionServiceService_ISubmitEval;
     startTestSuite: ISubmissionServiceService_IStartTestSuite;
     endTestSuite: ISubmissionServiceService_IEndTestSuite;
+    startSession: ISubmissionServiceService_IStartSession;
+    endSession: ISubmissionServiceService_IEndSession;
+    submitTemplateVersion: ISubmissionServiceService_ISubmitTemplateVersion;
+    submitModelConfig: ISubmissionServiceService_ISubmitModelConfig;
+    submitUser: ISubmissionServiceService_ISubmitUser;
+    getTemplates: ISubmissionServiceService_IGetTemplates;
 }
 
 interface ISubmissionServiceService_IStartRun extends grpc.MethodDefinition<baserun_pb.StartRunRequest, baserun_pb.StartRunResponse> {
@@ -81,6 +87,60 @@ interface ISubmissionServiceService_IEndTestSuite extends grpc.MethodDefinition<
     responseSerialize: grpc.serialize<baserun_pb.EndTestSuiteResponse>;
     responseDeserialize: grpc.deserialize<baserun_pb.EndTestSuiteResponse>;
 }
+interface ISubmissionServiceService_IStartSession extends grpc.MethodDefinition<baserun_pb.StartSessionRequest, baserun_pb.StartSessionResponse> {
+    path: "/baserun.v1.SubmissionService/StartSession";
+    requestStream: false;
+    responseStream: false;
+    requestSerialize: grpc.serialize<baserun_pb.StartSessionRequest>;
+    requestDeserialize: grpc.deserialize<baserun_pb.StartSessionRequest>;
+    responseSerialize: grpc.serialize<baserun_pb.StartSessionResponse>;
+    responseDeserialize: grpc.deserialize<baserun_pb.StartSessionResponse>;
+}
+interface ISubmissionServiceService_IEndSession extends grpc.MethodDefinition<baserun_pb.EndSessionRequest, baserun_pb.EndSessionResponse> {
+    path: "/baserun.v1.SubmissionService/EndSession";
+    requestStream: false;
+    responseStream: false;
+    requestSerialize: grpc.serialize<baserun_pb.EndSessionRequest>;
+    requestDeserialize: grpc.deserialize<baserun_pb.EndSessionRequest>;
+    responseSerialize: grpc.serialize<baserun_pb.EndSessionResponse>;
+    responseDeserialize: grpc.deserialize<baserun_pb.EndSessionResponse>;
+}
+interface ISubmissionServiceService_ISubmitTemplateVersion extends grpc.MethodDefinition<baserun_pb.SubmitTemplateVersionRequest, baserun_pb.SubmitTemplateVersionResponse> {
+    path: "/baserun.v1.SubmissionService/SubmitTemplateVersion";
+    requestStream: false;
+    responseStream: false;
+    requestSerialize: grpc.serialize<baserun_pb.SubmitTemplateVersionRequest>;
+    requestDeserialize: grpc.deserialize<baserun_pb.SubmitTemplateVersionRequest>;
+    responseSerialize: grpc.serialize<baserun_pb.SubmitTemplateVersionResponse>;
+    responseDeserialize: grpc.deserialize<baserun_pb.SubmitTemplateVersionResponse>;
+}
+interface ISubmissionServiceService_ISubmitModelConfig extends grpc.MethodDefinition<baserun_pb.SubmitModelConfigRequest, baserun_pb.SubmitModelConfigResponse> {
+    path: "/baserun.v1.SubmissionService/SubmitModelConfig";
+    requestStream: false;
+    responseStream: false;
+    requestSerialize: grpc.serialize<baserun_pb.SubmitModelConfigRequest>;
+    requestDeserialize: grpc.deserialize<baserun_pb.SubmitModelConfigRequest>;
+    responseSerialize: grpc.serialize<baserun_pb.SubmitModelConfigResponse>;
+    responseDeserialize: grpc.deserialize<baserun_pb.SubmitModelConfigResponse>;
+}
+interface ISubmissionServiceService_ISubmitUser extends grpc.MethodDefinition<baserun_pb.SubmitUserRequest, baserun_pb.SubmitUserResponse> {
+    path: "/baserun.v1.SubmissionService/SubmitUser";
+    requestStream: false;
+    responseStream: false;
+    requestSerialize: grpc.serialize<baserun_pb.SubmitUserRequest>;
+    requestDeserialize: grpc.deserialize<baserun_pb.SubmitUserRequest>;
+    responseSerialize: grpc.serialize<baserun_pb.SubmitUserResponse>;
+    responseDeserialize: grpc.deserialize<baserun_pb.SubmitUserResponse>;
+}
+interface ISubmissionServiceService_IGetTemplates extends grpc.MethodDefinition<baserun_pb.GetTemplatesRequest, baserun_pb.GetTemplatesResponse> {
+    path: "/baserun.v1.SubmissionService/GetTemplates";
+    requestStream: false;
+    responseStream: false;
+    requestSerialize: grpc.serialize<baserun_pb.GetTemplatesRequest>;
+    requestDeserialize: grpc.deserialize<baserun_pb.GetTemplatesRequest>;
+    responseSerialize: grpc.serialize<baserun_pb.GetTemplatesResponse>;
+    responseDeserialize: grpc.deserialize<baserun_pb.GetTemplatesResponse>;
+}
 
 export const SubmissionServiceService: ISubmissionServiceService;
 
@@ -92,6 +152,12 @@ export interface ISubmissionServiceServer extends grpc.UntypedServiceImplementat
     submitEval: grpc.handleUnaryCall<baserun_pb.SubmitEvalRequest, baserun_pb.SubmitEvalResponse>;
     startTestSuite: grpc.handleUnaryCall<baserun_pb.StartTestSuiteRequest, baserun_pb.StartTestSuiteResponse>;
     endTestSuite: grpc.handleUnaryCall<baserun_pb.EndTestSuiteRequest, baserun_pb.EndTestSuiteResponse>;
+    startSession: grpc.handleUnaryCall<baserun_pb.StartSessionRequest, baserun_pb.StartSessionResponse>;
+    endSession: grpc.handleUnaryCall<baserun_pb.EndSessionRequest, baserun_pb.EndSessionResponse>;
+    submitTemplateVersion: grpc.handleUnaryCall<baserun_pb.SubmitTemplateVersionRequest, baserun_pb.SubmitTemplateVersionResponse>;
+    submitModelConfig: grpc.handleUnaryCall<baserun_pb.SubmitModelConfigRequest, baserun_pb.SubmitModelConfigResponse>;
+    submitUser: grpc.handleUnaryCall<baserun_pb.SubmitUserRequest, baserun_pb.SubmitUserResponse>;
+    getTemplates: grpc.handleUnaryCall<baserun_pb.GetTemplatesRequest, baserun_pb.GetTemplatesResponse>;
 }
 
 export interface ISubmissionServiceClient {
@@ -116,6 +182,24 @@ export interface ISubmissionServiceClient {
     endTestSuite(request: baserun_pb.EndTestSuiteRequest, callback: (error: grpc.ServiceError | null, response: baserun_pb.EndTestSuiteResponse) => void): grpc.ClientUnaryCall;
     endTestSuite(request: baserun_pb.EndTestSuiteRequest, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: baserun_pb.EndTestSuiteResponse) => void): grpc.ClientUnaryCall;
     endTestSuite(request: baserun_pb.EndTestSuiteRequest, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: baserun_pb.EndTestSuiteResponse) => void): grpc.ClientUnaryCall;
+    startSession(request: baserun_pb.StartSessionRequest, callback: (error: grpc.ServiceError | null, response: baserun_pb.StartSessionResponse) => void): grpc.ClientUnaryCall;
+    startSession(request: baserun_pb.StartSessionRequest, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: baserun_pb.StartSessionResponse) => void): grpc.ClientUnaryCall;
+    startSession(request: baserun_pb.StartSessionRequest, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: baserun_pb.StartSessionResponse) => void): grpc.ClientUnaryCall;
+    endSession(request: baserun_pb.EndSessionRequest, callback: (error: grpc.ServiceError | null, response: baserun_pb.EndSessionResponse) => void): grpc.ClientUnaryCall;
+    endSession(request: baserun_pb.EndSessionRequest, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: baserun_pb.EndSessionResponse) => void): grpc.ClientUnaryCall;
+    endSession(request: baserun_pb.EndSessionRequest, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: baserun_pb.EndSessionResponse) => void): grpc.ClientUnaryCall;
+    submitTemplateVersion(request: baserun_pb.SubmitTemplateVersionRequest, callback: (error: grpc.ServiceError | null, response: baserun_pb.SubmitTemplateVersionResponse) => void): grpc.ClientUnaryCall;
+    submitTemplateVersion(request: baserun_pb.SubmitTemplateVersionRequest, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: baserun_pb.SubmitTemplateVersionResponse) => void): grpc.ClientUnaryCall;
+    submitTemplateVersion(request: baserun_pb.SubmitTemplateVersionRequest, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: baserun_pb.SubmitTemplateVersionResponse) => void): grpc.ClientUnaryCall;
+    submitModelConfig(request: baserun_pb.SubmitModelConfigRequest, callback: (error: grpc.ServiceError | null, response: baserun_pb.SubmitModelConfigResponse) => void): grpc.ClientUnaryCall;
+    submitModelConfig(request: baserun_pb.SubmitModelConfigRequest, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: baserun_pb.SubmitModelConfigResponse) => void): grpc.ClientUnaryCall;
+    submitModelConfig(request: baserun_pb.SubmitModelConfigRequest, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: baserun_pb.SubmitModelConfigResponse) => void): grpc.ClientUnaryCall;
+    submitUser(request: baserun_pb.SubmitUserRequest, callback: (error: grpc.ServiceError | null, response: baserun_pb.SubmitUserResponse) => void): grpc.ClientUnaryCall;
+    submitUser(request: baserun_pb.SubmitUserRequest, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: baserun_pb.SubmitUserResponse) => void): grpc.ClientUnaryCall;
+    submitUser(request: baserun_pb.SubmitUserRequest, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: baserun_pb.SubmitUserResponse) => void): grpc.ClientUnaryCall;
+    getTemplates(request: baserun_pb.GetTemplatesRequest, callback: (error: grpc.ServiceError | null, response: baserun_pb.GetTemplatesResponse) => void): grpc.ClientUnaryCall;
+    getTemplates(request: baserun_pb.GetTemplatesRequest, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: baserun_pb.GetTemplatesResponse) => void): grpc.ClientUnaryCall;
+    getTemplates(request: baserun_pb.GetTemplatesRequest, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: baserun_pb.GetTemplatesResponse) => void): grpc.ClientUnaryCall;
 }
 
 export class SubmissionServiceClient extends grpc.Client implements ISubmissionServiceClient {
@@ -141,4 +225,22 @@ export class SubmissionServiceClient extends grpc.Client implements ISubmissionS
     public endTestSuite(request: baserun_pb.EndTestSuiteRequest, callback: (error: grpc.ServiceError | null, response: baserun_pb.EndTestSuiteResponse) => void): grpc.ClientUnaryCall;
     public endTestSuite(request: baserun_pb.EndTestSuiteRequest, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: baserun_pb.EndTestSuiteResponse) => void): grpc.ClientUnaryCall;
     public endTestSuite(request: baserun_pb.EndTestSuiteRequest, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: baserun_pb.EndTestSuiteResponse) => void): grpc.ClientUnaryCall;
+    public startSession(request: baserun_pb.StartSessionRequest, callback: (error: grpc.ServiceError | null, response: baserun_pb.StartSessionResponse) => void): grpc.ClientUnaryCall;
+    public startSession(request: baserun_pb.StartSessionRequest, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: baserun_pb.StartSessionResponse) => void): grpc.ClientUnaryCall;
+    public startSession(request: baserun_pb.StartSessionRequest, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: baserun_pb.StartSessionResponse) => void): grpc.ClientUnaryCall;
+    public endSession(request: baserun_pb.EndSessionRequest, callback: (error: grpc.ServiceError | null, response: baserun_pb.EndSessionResponse) => void): grpc.ClientUnaryCall;
+    public endSession(request: baserun_pb.EndSessionRequest, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: baserun_pb.EndSessionResponse) => void): grpc.ClientUnaryCall;
+    public endSession(request: baserun_pb.EndSessionRequest, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: baserun_pb.EndSessionResponse) => void): grpc.ClientUnaryCall;
+    public submitTemplateVersion(request: baserun_pb.SubmitTemplateVersionRequest, callback: (error: grpc.ServiceError | null, response: baserun_pb.SubmitTemplateVersionResponse) => void): grpc.ClientUnaryCall;
+    public submitTemplateVersion(request: baserun_pb.SubmitTemplateVersionRequest, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: baserun_pb.SubmitTemplateVersionResponse) => void): grpc.ClientUnaryCall;
+    public submitTemplateVersion(request: baserun_pb.SubmitTemplateVersionRequest, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: baserun_pb.SubmitTemplateVersionResponse) => void): grpc.ClientUnaryCall;
+    public submitModelConfig(request: baserun_pb.SubmitModelConfigRequest, callback: (error: grpc.ServiceError | null, response: baserun_pb.SubmitModelConfigResponse) => void): grpc.ClientUnaryCall;
+    public submitModelConfig(request: baserun_pb.SubmitModelConfigRequest, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: baserun_pb.SubmitModelConfigResponse) => void): grpc.ClientUnaryCall;
+    public submitModelConfig(request: baserun_pb.SubmitModelConfigRequest, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: baserun_pb.SubmitModelConfigResponse) => void): grpc.ClientUnaryCall;
+    public submitUser(request: baserun_pb.SubmitUserRequest, callback: (error: grpc.ServiceError | null, response: baserun_pb.SubmitUserResponse) => void): grpc.ClientUnaryCall;
+    public submitUser(request: baserun_pb.SubmitUserRequest, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: baserun_pb.SubmitUserResponse) => void): grpc.ClientUnaryCall;
+    public submitUser(request: baserun_pb.SubmitUserRequest, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: baserun_pb.SubmitUserResponse) => void): grpc.ClientUnaryCall;
+    public getTemplates(request: baserun_pb.GetTemplatesRequest, callback: (error: grpc.ServiceError | null, response: baserun_pb.GetTemplatesResponse) => void): grpc.ClientUnaryCall;
+    public getTemplates(request: baserun_pb.GetTemplatesRequest, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: baserun_pb.GetTemplatesResponse) => void): grpc.ClientUnaryCall;
+    public getTemplates(request: baserun_pb.GetTemplatesRequest, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: baserun_pb.GetTemplatesResponse) => void): grpc.ClientUnaryCall;
 }

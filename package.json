@@ -48,7 +48,7 @@
     "@opentelemetry/api": "^1.6.0",
     "@opentelemetry/instrumentation": "^0.43.0",
     "@opentelemetry/sdk-trace-node": "^1.17.0",
-    "baserun": "file:../../../../tmp/tmp.DH9P5c7KVA/baserun-1.3.10.tgz",
+    "baserun": "^1.3.9",
     "google-protobuf": "^3.21.2",
     "json-stringify-safe": "^5.0.1",
     "node-fetch": "^3.3.2",

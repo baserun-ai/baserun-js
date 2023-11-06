@@ -105,14 +105,11 @@ export class Baserun {
 
     const startRunRequest = new StartRunRequest().setRun(run);
 
-    getOrCreateSubmissionService().startRun(
-      startRunRequest,
-      (error, _response) => {
-        if (error) {
-          console.error('Failed to submit run start to Baserun: ', error);
-        }
-      },
-    );
+    getOrCreateSubmissionService().startRun(startRunRequest, (error) => {
+      if (error) {
+        console.error('Failed to submit run start to Baserun: ', error);
+      }
+    });
 
     return run;
   }
@@ -121,7 +118,7 @@ export class Baserun {
     run.setCompletionTimestamp(Timestamp.fromDate(new Date()));
 
     const endRunRequest = new EndRunRequest().setRun(run);
-    getOrCreateSubmissionService().endRun(endRunRequest, (error, _response) => {
+    getOrCreateSubmissionService().endRun(endRunRequest, (error) => {
       if (error) {
         console.error('Failed to submit run end to Baserun: ', error);
       }
@@ -148,14 +145,11 @@ export class Baserun {
 
     console.log({ submitLogRequest });
 
-    getOrCreateSubmissionService().submitLog(
-      submitLogRequest,
-      (error, _response) => {
-        if (error) {
-          console.error('Failed to submit log to Baserun: ', error);
-        }
-      },
-    );
+    getOrCreateSubmissionService().submitLog(submitLogRequest, (error) => {
+      if (error) {
+        console.error('Failed to submit log to Baserun: ', error);
+      }
+    });
   }
 
   static trace<T extends (...args: any[]) => any>(

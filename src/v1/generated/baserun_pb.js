@@ -1,4 +1,4 @@
-// source: baserun.proto
+// source: src/v1/protos/baserun.proto
 /**
  * @fileoverview
  * @enhanceable
@@ -13,13 +13,13 @@
 
 var jspb = require('google-protobuf');
 var goog = jspb;
-var global = (function() {
-  if (this) { return this; }
-  if (typeof window !== 'undefined') { return window; }
-  if (typeof global !== 'undefined') { return global; }
-  if (typeof self !== 'undefined') { return self; }
-  return Function('return this')();
-}.call(null));
+var global =
+    (typeof globalThis !== 'undefined' && globalThis) ||
+    (typeof window !== 'undefined' && window) ||
+    (typeof global !== 'undefined' && global) ||
+    (typeof self !== 'undefined' && self) ||
+    (function () { return this; }).call(null) ||
+    Function('return this')();
 
 var google_protobuf_timestamp_pb = require('google-protobuf/google/protobuf/timestamp_pb.js');
 goog.object.extend(proto, google_protobuf_timestamp_pb);
@@ -1787,11 +1787,11 @@ proto.baserun.v1.Span.deserializeBinaryFromReader = function(msg, reader) {
       msg.setFunctionCall(value);
       break;
     case 20:
-      var value = /** @type {number} */ (reader.readFloat());
+      var value = /** @type {number} */ (reader.readDouble());
       msg.setTemperature(value);
       break;
     case 21:
-      var value = /** @type {number} */ (reader.readFloat());
+      var value = /** @type {number} */ (reader.readDouble());
       msg.setTopP(value);
       break;
     case 22:
@@ -1811,11 +1811,11 @@ proto.baserun.v1.Span.deserializeBinaryFromReader = function(msg, reader) {
       msg.setMaxTokens(value);
       break;
     case 26:
-      var value = /** @type {number} */ (reader.readFloat());
+      var value = /** @type {number} */ (reader.readDouble());
       msg.setPresencePenalty(value);
       break;
     case 27:
-      var value = /** @type {number} */ (reader.readFloat());
+      var value = /** @type {number} */ (reader.readDouble());
       msg.setFrequencyPenalty(value);
       break;
     case 28:
@@ -1847,7 +1847,7 @@ proto.baserun.v1.Span.deserializeBinaryFromReader = function(msg, reader) {
       msg.setLogId(value);
       break;
     case 35:
-      var value = /** @type {number} */ (reader.readFloat());
+      var value = /** @type {number} */ (reader.readDouble());
       msg.setTopK(value);
       break;
     default:
@@ -2019,14 +2019,14 @@ proto.baserun.v1.Span.serializeBinaryToWriter = function(message, writer) {
   }
   f = /** @type {number} */ (jspb.Message.getField(message, 20));
   if (f != null) {
-    writer.writeFloat(
+    writer.writeDouble(
       20,
       f
     );
   }
   f = /** @type {number} */ (jspb.Message.getField(message, 21));
   if (f != null) {
-    writer.writeFloat(
+    writer.writeDouble(
       21,
       f
     );
@@ -2061,14 +2061,14 @@ proto.baserun.v1.Span.serializeBinaryToWriter = function(message, writer) {
   }
   f = /** @type {number} */ (jspb.Message.getField(message, 26));
   if (f != null) {
-    writer.writeFloat(
+    writer.writeDouble(
       26,
       f
     );
   }
   f = /** @type {number} */ (jspb.Message.getField(message, 27));
   if (f != null) {
-    writer.writeFloat(
+    writer.writeDouble(
       27,
       f
     );
@@ -2124,7 +2124,7 @@ proto.baserun.v1.Span.serializeBinaryToWriter = function(message, writer) {
   }
   f = /** @type {number} */ (jspb.Message.getField(message, 35));
   if (f != null) {
-    writer.writeFloat(
+    writer.writeDouble(
       35,
       f
     );
@@ -2668,7 +2668,7 @@ proto.baserun.v1.Span.prototype.hasFunctionCall = function() {
 
 
 /**
- * optional float temperature = 20;
+ * optional double temperature = 20;
  * @return {number}
  */
 proto.baserun.v1.Span.prototype.getTemperature = function() {
@@ -2704,7 +2704,7 @@ proto.baserun.v1.Span.prototype.hasTemperature = function() {
 
 
 /**
- * optional float top_p = 21;
+ * optional double top_p = 21;
  * @return {number}
  */
 proto.baserun.v1.Span.prototype.getTopP = function() {
@@ -2885,7 +2885,7 @@ proto.baserun.v1.Span.prototype.hasMaxTokens = function() {
 
 
 /**
- * optional float presence_penalty = 26;
+ * optional double presence_penalty = 26;
  * @return {number}
  */
 proto.baserun.v1.Span.prototype.getPresencePenalty = function() {
@@ -2921,7 +2921,7 @@ proto.baserun.v1.Span.prototype.hasPresencePenalty = function() {
 
 
 /**
- * optional float frequency_penalty = 27;
+ * optional double frequency_penalty = 27;
  * @return {number}
  */
 proto.baserun.v1.Span.prototype.getFrequencyPenalty = function() {
@@ -3209,7 +3209,7 @@ proto.baserun.v1.Span.prototype.hasLogId = function() {
 
 
 /**
- * optional float top_k = 35;
+ * optional double top_k = 35;
  * @return {number}
  */
 proto.baserun.v1.Span.prototype.getTopK = function() {
@@ -3331,7 +3331,7 @@ proto.baserun.v1.Eval.deserializeBinaryFromReader = function(msg, reader) {
       msg.setResult(value);
       break;
     case 5:
-      var value = /** @type {number} */ (reader.readFloat());
+      var value = /** @type {number} */ (reader.readDouble());
       msg.setScore(value);
       break;
     case 6:
@@ -3394,7 +3394,7 @@ proto.baserun.v1.Eval.serializeBinaryToWriter = function(message, writer) {
   }
   f = /** @type {number} */ (jspb.Message.getField(message, 5));
   if (f != null) {
-    writer.writeFloat(
+    writer.writeDouble(
       5,
       f
     );
@@ -3471,7 +3471,7 @@ proto.baserun.v1.Eval.prototype.setResult = function(value) {
 
 
 /**
- * optional float score = 5;
+ * optional double score = 5;
  * @return {number}
  */
 proto.baserun.v1.Eval.prototype.getScore = function() {

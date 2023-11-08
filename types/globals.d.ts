@@ -1,4 +1,5 @@
 /* Global to all test environments */
+
 // eslint-disable-next-line
 declare var baserunInitialized: boolean | undefined;
 
@@ -8,3 +9,9 @@ declare var baserunTraces: any[];
 /* Global within a test environment */
 // eslint-disable-next-line
 declare var baserunTraceStore: Map<string, any> | undefined;
+
+// eslint-disable-next-line
+declare var baserunCurrentRun: any | undefined;
+
+// eslint-disable-next-line
+declare var baserunTestSuite: any | undefined;

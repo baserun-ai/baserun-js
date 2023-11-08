@@ -3,18 +3,29 @@ import stringify from 'json-stringify-safe';
 import {
   AutoLLMLog,
   BaserunStepType,
-  Log,
   StandardLog,
   Trace,
   TraceType,
 } from './types';
-import { OpenAIEdgeWrapper } from './patches/openai_edge';
 import { getTimestamp } from './helpers';
 import { Evals } from './evals/evals';
 import { Eval } from './evals/types';
 import { OpenAIWrapper } from './patches/openai';
+import { Timestamp } from 'google-protobuf/google/protobuf/timestamp_pb.js';
 import { AnthropicWrapper } from './patches/anthropic';
-import { loadModule } from './loader';
+import fetch from 'isomorphic-unfetch';
+import { GrpcClient } from './backend/grpc';
+import {
+  EndRunRequest,
+  Run,
+  StartRunRequest,
+  Log,
+  SubmitLogRequest,
+  SubmitSpanRequest,
+} from './v1/generated/baserun_pb';
+import { getCurrentRun } from './getCurrentRun';
+import { getOrCreateSubmissionService } from './backend/submissionService';
+import { logToSpan } from './logToSpan';
 
 const TraceExecutionIdKey = 'baserun_trace_execution_id';
 const TraceNameKey = 'baserun_trace_name';
@@ -25,26 +36,15 @@ const TraceTypeKey = 'baserun_trace_type';
 const TraceMetadataKey = 'baserun_trace_metadata';
 const TraceEvalsKey = 'baserun_trace_evals';
 
-type FetchInstance = (
-  input: URL | RequestInfo,
-  init?: RequestInit,
-) => Promise<Response>;
-
-let fetch: FetchInstance;
-if (typeof globalThis.fetch === 'undefined') {
-  fetch = loadModule(module, 'node-fetch');
-} else {
-  fetch = globalThis.fetch;
-}
-
 export class Baserun {
   static evals = new Evals(Baserun._appendToEvals);
-  static _apiKey: string | undefined = process.env.BASERUN_API_KEY;
-  static _apiUrl: string =
+  private static _apiKey: string | undefined = process.env.BASERUN_API_KEY;
+  private static _apiUrl: string =
     process.env.BASERUN_API_URL ?? 'https://baserun.ai/api/v1';
 
+  private static _grpcClient = new GrpcClient();
+
   static monkeyPatch(): void {
-    OpenAIEdgeWrapper.init(Baserun._handleAutoLLM);
     OpenAIWrapper.init(Baserun._handleAutoLLM);
     AnthropicWrapper.init(Baserun._handleAutoLLM);
   }
@@ -176,27 +176,27 @@ export class Baserun {
     return descriptor;
   }
 
-  static log(name: string, payload: object | string): void {
-    if (!global.baserunInitialized) return;
+  // static log(name: string, payload: object | string): void {
+  //   if (!global.baserunInitialized) return;
 
-    const store = global.baserunTraceStore;
+  //   const store = global.baserunTraceStore;
 
-    if (!store || !store.has(TraceExecutionIdKey)) {
-      console.info(
-        'baserun.log was called outside of a Baserun decorated trace. The log will be ignored.',
-      );
-      return;
-    }
+  //   if (!store || !store.has(TraceExecutionIdKey)) {
+  //     console.info(
+  //       'baserun.log was called outside of a Baserun decorated trace. The log will be ignored.',
+  //     );
+  //     return;
+  //   }
 
-    const logEntry: StandardLog = {
-      stepType: BaserunStepType.Log,
-      name,
-      payload,
-      timestamp: getTimestamp(),
-    };
+  //   const logEntry: StandardLog = {
+  //     stepType: BaserunStepType.Log,
+  //     name,
+  //     payload,
+  //     timestamp: getTimestamp(),
+  //   };
 
-    Baserun._appendToBuffer(logEntry);
-  }
+  //   Baserun._appendToBuffer(logEntry);
+  // }
 
   static trace<T extends (...args: any[]) => any>(
     fn: T,
@@ -237,6 +237,96 @@ export class Baserun {
     };
   }
 
+  static getOrCreateCurrentRun({
+    name,
+    suiteId,
+    startTimestamp,
+    completionTimestamp,
+    traceType,
+    metadata,
+  }: {
+    name: string;
+    suiteId?: string;
+    startTimestamp?: Date;
+    completionTimestamp?: Date;
+    traceType?: Run.RunType;
+    metadata?: object;
+  }) {
+    const currentRun = getCurrentRun();
+    if (currentRun) {
+      return currentRun;
+    }
+
+    const runId = v4();
+    if (!traceType) {
+      traceType = global.baserunTestSuite
+        ? Run.RunType.RUN_TYPE_TEST
+        : Run.RunType.RUN_TYPE_PRODUCTION;
+    }
+
+    const run = new Run()
+      .setRunId(runId)
+      .setRunType(traceType)
+      .setName(name)
+      .setMetadata(stringify(metadata ?? {}));
+    if (suiteId ?? global.baserunTestSuite) {
+      run.setSuiteId(suiteId ?? global.baserunTestSuite.getId());
+    }
+
+    run.setStartTimestamp(Timestamp.fromDate(startTimestamp ?? new Date()));
+    if (completionTimestamp) {
+      run.setCompletionTimestamp(Timestamp.fromDate(completionTimestamp));
+    }
+
+    const startRunRequest = new StartRunRequest().setRun(run);
+
+    getOrCreateSubmissionService().startRun(startRunRequest, (error) => {
+      if (error) {
+        console.error('Failed to submit run start to Baserun: ', error);
+      }
+    });
+
+    return run;
+  }
+
+  static finishRun(run: Run): void {
+    run.setCompletionTimestamp(Timestamp.fromDate(new Date()));
+
+    const endRunRequest = new EndRunRequest().setRun(run);
+    getOrCreateSubmissionService().endRun(endRunRequest, (error) => {
+      if (error) {
+        console.error('Failed to submit run end to Baserun: ', error);
+      }
+    });
+  }
+
+  static log(name: string, payload: object | string): void {
+    if (!global.baserunInitialized) return;
+
+    const run = getCurrentRun();
+    if (!run) {
+      console.info(
+        'baserun.log was called outside of a Baserun decorated trace. The log will be ignored.',
+      );
+      return;
+    }
+
+    const log = new Log()
+      .setRunId(run.getRunId())
+      .setName(name)
+      .setPayload(stringify(payload))
+      .setTimestamp(Timestamp.fromDate(new Date()));
+    const submitLogRequest = new SubmitLogRequest().setRun(run).setLog(log);
+
+    console.log({ submitLogRequest });
+
+    getOrCreateSubmissionService().submitLog(submitLogRequest, (error) => {
+      if (error) {
+        console.error('Failed to submit log to Baserun: ', error);
+      }
+    });
+  }
+
   static async flush(): Promise<string | undefined> {
     if (!global.baserunInitialized) {
       console.warn(
@@ -248,37 +338,41 @@ export class Baserun {
     if (global.baserunTraces.length === 0) return;
 
     try {
+      await Baserun._grpcClient.sendTraces(global.baserunTraces);
+      return;
       const headers = {
         Authorization: `Bearer ${Baserun._apiKey}`,
         'Content-Type': 'application/json',
       };
 
-      if (
-        global.baserunTraces.every((trace) => trace.type === TraceType.Test)
-      ) {
+      const testTraces = global.baserunTraces.filter(
+        (trace) => trace.type === TraceType.Test,
+      );
+
+      if (testTraces && testTraces.length > 0) {
         const apiUrl = `${Baserun._apiUrl}/runs`;
         const response = await fetch(apiUrl, {
           method: 'POST',
           headers,
-          body: stringify({ testExecutions: global.baserunTraces }),
+          body: stringify({ testExecutions: testTraces }),
         });
 
         const data = await response.json();
         const testRunId = (data as { id: string }).id;
         const url = new URL(apiUrl);
         return `${url.protocol}//${url.host}/runs/${testRunId}`;
-      } else if (
-        global.baserunTraces.every(
-          (trace) => trace.type === TraceType.Production,
-        )
-      ) {
+      }
+
+      const productionTraces = global.baserunTraces.filter(
+        (trace) => trace.type === TraceType.Production,
+      );
+
+      if (productionTraces && productionTraces.length > 0) {
         await fetch(`${Baserun._apiUrl}/traces`, {
           method: 'POST',
           headers,
-          body: stringify({ traces: global.baserunTraces }),
+          body: stringify({ traces: productionTraces }),
         });
-      } else {
-        console.warn('Inconsistent trace types, skipping Baserun upload');
       }
     } catch (error) {
       console.warn(`Failed to upload results to Baserun: `, error);
@@ -292,25 +386,22 @@ export class Baserun {
   }
 
   static async _handleAutoLLM(logEntry: AutoLLMLog): Promise<void> {
-    const store = global.baserunTraceStore;
-    if (store && store.has(TraceExecutionIdKey)) {
-      Baserun._appendToBuffer(logEntry);
-      return;
-    }
-
-    global.baserunTraces.push({
-      type: TraceType.Production,
-      testName: `${logEntry.provider} ${logEntry.type}`,
-      testInputs: [],
-      id: v4(),
-      result: String(logEntry.output),
-      startTimestamp: logEntry.startTimestamp,
-      completionTimestamp: logEntry.completionTimestamp,
-      steps: [logEntry],
-      evals: [],
+    const run = this.getOrCreateCurrentRun({
+      name: `${logEntry.provider} ${logEntry.type}`,
+      startTimestamp: new Date(logEntry.startTimestamp),
+      completionTimestamp: new Date(logEntry.completionTimestamp),
+      // todo: add metadata
     });
 
-    await Baserun.flush();
+    // todo: this might have to go into a separate function like flush
+    const span = logToSpan(logEntry, run.getRunId());
+
+    const spanRequest = new SubmitSpanRequest().setSpan(span).setRun(run);
+    getOrCreateSubmissionService().submitSpan(spanRequest, (error) => {
+      if (error) {
+        console.error('Failed to submit span to Baserun: ', error);
+      }
+    });
   }
 
   static _appendToBuffer(logEntry: Log): void {

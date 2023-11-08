@@ -13,15 +13,21 @@ export enum BaserunType {
 export enum BaserunStepType {
   Log = 'log',
   AutoLLM = 'auto_llm',
-  CustomLLM = 'custom_llm',
 }
 
-interface LLMChatLog {
+export interface LLMChatLog {
   stepType: BaserunStepType.AutoLLM;
-  type: BaserunType;
+  type: BaserunType.Chat;
   provider: BaserunProvider;
   config: object;
-  messages: Array<{ role: string; content: string }>;
+  messages: Array<{
+    // todo: I caused breaking types intentionally, wanting to push down the issue to where the types are created
+    role: string;
+    content: string;
+    function_call: string;
+    finish_reason: string;
+  }>;
+  logId: string;
   output: string;
   startTimestamp: number;
   completionTimestamp: number;
@@ -32,15 +38,16 @@ interface LLMChatLog {
   };
 }
 
-interface LLMCompletionLog {
+export interface LLMCompletionLog {
   stepType: BaserunStepType.AutoLLM;
-  type: BaserunType;
+  type: BaserunType.Completion;
   provider: BaserunProvider;
   config: object;
   prompt: { content: string };
   output: string;
   startTimestamp: number;
   completionTimestamp: number;
+  logId?: string;
   usage: {
     prompt_tokens: number;
     completion_tokens: number;
@@ -64,7 +71,7 @@ export enum TraceType {
   Production = 'Production',
 }
 
-interface BaseTrace {
+export interface BaseTrace {
   type: TraceType;
   testName: string;
   testInputs: string[];

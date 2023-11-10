@@ -1,19 +1,12 @@
 import { v4 } from 'uuid';
 import stringify from 'json-stringify-safe';
-import {
-  AutoLLMLog,
-  BaserunStepType,
-  StandardLog,
-  Trace,
-  TraceType,
-} from './types';
+import { AutoLLMLog, Trace, TraceType } from './types';
 import { getTimestamp } from './helpers';
 import { Evals } from './evals/evals';
 import { Eval } from './evals/types';
 import { OpenAIWrapper } from './patches/openai';
 import { Timestamp } from 'google-protobuf/google/protobuf/timestamp_pb.js';
 import { AnthropicWrapper } from './patches/anthropic';
-import fetch from 'isomorphic-unfetch';
 import { GrpcClient } from './backend/grpc';
 import {
   EndRunRequest,
@@ -41,8 +34,6 @@ export class Baserun {
   private static _apiKey: string | undefined = process.env.BASERUN_API_KEY;
   private static _apiUrl: string =
     process.env.BASERUN_API_URL ?? 'https://baserun.ai/api/v1';
-
-  private static _grpcClient = new GrpcClient();
 
   static monkeyPatch(): void {
     OpenAIWrapper.init(Baserun._handleAutoLLM);
@@ -213,12 +204,20 @@ export class Baserun {
     }
 
     return async (...args: Parameters<T>): Promise<ReturnType<T>> => {
+      Baserun.getOrCreateCurrentRun({
+        name: fn.name,
+        traceType: Run.RunType.RUN_TYPE_PRODUCTION,
+        metadata,
+      });
+
+      // this is sth we might have to clean up, as we probably don't want run and store to exist at the same time
       global.baserunTraceStore = Baserun.markTraceStart(
         TraceType.Production,
         fn.name,
         args,
         metadata,
       );
+
       try {
         const result = await fn(...args);
         Baserun.markTraceEnd(
@@ -269,6 +268,7 @@ export class Baserun {
       .setRunType(traceType)
       .setName(name)
       .setMetadata(stringify(metadata ?? {}));
+
     if (suiteId ?? global.baserunTestSuite) {
       run.setSuiteId(suiteId ?? global.baserunTestSuite.getId());
     }
@@ -298,6 +298,8 @@ export class Baserun {
         console.error('Failed to submit run end to Baserun: ', error);
       }
     });
+
+    global.baserunCurrentRun = undefined;
   }
 
   static log(name: string, payload: object | string): void {
@@ -318,8 +320,6 @@ export class Baserun {
       .setTimestamp(Timestamp.fromDate(new Date()));
     const submitLogRequest = new SubmitLogRequest().setRun(run).setLog(log);
 
-    console.log({ submitLogRequest });
-
     getOrCreateSubmissionService().submitLog(submitLogRequest, (error) => {
       if (error) {
         console.error('Failed to submit log to Baserun: ', error);
@@ -338,41 +338,30 @@ export class Baserun {
     if (global.baserunTraces.length === 0) return;
 
     try {
-      await Baserun._grpcClient.sendTraces(global.baserunTraces);
-      return;
-      const headers = {
-        Authorization: `Bearer ${Baserun._apiKey}`,
-        'Content-Type': 'application/json',
-      };
-
-      const testTraces = global.baserunTraces.filter(
-        (trace) => trace.type === TraceType.Test,
-      );
-
-      if (testTraces && testTraces.length > 0) {
-        const apiUrl = `${Baserun._apiUrl}/runs`;
-        const response = await fetch(apiUrl, {
-          method: 'POST',
-          headers,
-          body: stringify({ testExecutions: testTraces }),
+      const traces = global.baserunTraces as Trace[];
+      for (const trace of traces) {
+        const run = Baserun.getOrCreateCurrentRun({
+          name: trace.testName,
+          traceType:
+            trace.type === TraceType.Production
+              ? Run.RunType.RUN_TYPE_PRODUCTION
+              : Run.RunType.RUN_TYPE_TEST,
+          metadata: trace.metadata,
         });
 
-        const data = await response.json();
-        const testRunId = (data as { id: string }).id;
-        const url = new URL(apiUrl);
-        return `${url.protocol}//${url.host}/runs/${testRunId}`;
-      }
+        for (const step of trace.steps) {
+          const span = logToSpan(step, run.getRunId());
 
-      const productionTraces = global.baserunTraces.filter(
-        (trace) => trace.type === TraceType.Production,
-      );
+          const spanRequest = new SubmitSpanRequest().setSpan(span).setRun(run);
+          getOrCreateSubmissionService().submitSpan(spanRequest, (error) => {
+            if (error) {
+              console.error('Failed to submit span to Baserun: ', error);
+            }
+          });
+        }
 
-      if (productionTraces && productionTraces.length > 0) {
-        await fetch(`${Baserun._apiUrl}/traces`, {
-          method: 'POST',
-          headers,
-          body: stringify({ traces: productionTraces }),
-        });
+        // todo: deal with evals
+        Baserun.finishRun(run);
       }
     } catch (error) {
       console.warn(`Failed to upload results to Baserun: `, error);

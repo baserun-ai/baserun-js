@@ -2,18 +2,15 @@
 
 import { Anthropic, HUMAN_PROMPT, AI_PROMPT } from '@anthropic-ai/sdk';
 import { baserun } from 'baserun';
-import {
-  Configuration as EdgeConfiguration,
-  OpenAIApi as EdgeOpenAIApi,
-} from 'openai-edge';
+import { Configuration, OpenAIApi } from 'openai';
 
 import OpenAI from 'openai';
 const api = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-const openaiEdge = new EdgeOpenAIApi(
-  new EdgeConfiguration({
+const openaiEdge = new OpenAIApi(
+  new Configuration({
     apiKey: process.env.OPENAI_API_KEY,
   }),
 );

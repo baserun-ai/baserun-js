@@ -18,7 +18,7 @@ export enum BaserunStepType {
 export type Message = {
   role: string;
   content: string;
-  function_call: string;
+  function_call?: string;
   finish_reason: string;
 };
 
@@ -28,15 +28,17 @@ export interface LLMChatLog {
   provider: BaserunProvider;
   config: object;
   promptMessages: Message[];
-  choices: Message[];
+  choices?: Message[];
   logId: string;
   startTimestamp: Date;
   completionTimestamp: Date;
-  usage: {
+  isStream: boolean;
+  usage?: {
     prompt_tokens: number;
     completion_tokens: number;
     total_tokens: number;
   };
+  errorStack?: string;
 }
 
 export interface LLMCompletionLog {
@@ -45,15 +47,17 @@ export interface LLMCompletionLog {
   provider: BaserunProvider;
   config: object;
   prompt: { content: string };
-  choices: Message[];
+  choices?: Message[];
   startTimestamp: Date;
   completionTimestamp: Date;
   logId?: string;
-  usage: {
+  isStream: boolean;
+  usage?: {
     prompt_tokens: number;
     completion_tokens: number;
     total_tokens: number;
   };
+  errorStack?: string;
 }
 
 export type AutoLLMLog = LLMChatLog | LLMCompletionLog;

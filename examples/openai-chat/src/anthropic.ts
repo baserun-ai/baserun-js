@@ -6,13 +6,19 @@ baserun.init();
 const anthropic = new Anthropic({});
 
 async function main() {
-  const completion = await anthropic.completions.create({
+  const stream = await anthropic.completions.create({
     model: 'claude-2',
     max_tokens_to_sample: 20,
-    prompt: `${Anthropic.HUMAN_PROMPT} What's going on? ${Anthropic.AI_PROMPT}`,
+    prompt: `${Anthropic.HUMAN_PROMPT} What's going on?${Anthropic.AI_PROMPT}`,
+    // prompt: `${Anthropic.HUMAN_PROMPT} What's going on?`,
+    stream: true,
   });
 
-  console.log(completion);
+  console.log(stream);
+
+  for await (const completion of stream) {
+    // console.log(completion);
+  }
 }
 
 main();

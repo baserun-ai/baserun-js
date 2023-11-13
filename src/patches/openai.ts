@@ -37,6 +37,7 @@ export class OpenAIWrapper {
     args: any[],
     startTime: Date,
     endTime: Date,
+    isStream: boolean,
     response?: any,
     error?: any,
   ) {
@@ -62,6 +63,8 @@ export class OpenAIWrapper {
       }
     }
 
+    const errorStack = error?.stack ?? '';
+
     if (type === BaserunType.Chat) {
       const { messages = [], ...config } = args[0] ?? {};
       return {
@@ -75,6 +78,8 @@ export class OpenAIWrapper {
         provider: BaserunProvider.OpenAI,
         promptMessages: messages,
         usage: usage ?? DEFAULT_USAGE,
+        isStream: false,
+        errorStack,
       } as LLMChatLog;
     }
 
@@ -90,6 +95,8 @@ export class OpenAIWrapper {
       prompt: { content: prompt },
       choices: getChoiceMessages(response),
       config,
+      isStream: false,
+      errorStack,
     } as LLMCompletionLog;
   }
 
@@ -98,6 +105,7 @@ export class OpenAIWrapper {
     args: any[],
     startTimestamp: Date,
     completionTimestamp: Date,
+    isStream: boolean,
     response?: any,
     error?: any,
   ) {
@@ -126,6 +134,7 @@ export class OpenAIWrapper {
     // clear if we need to keep the support for the old OpenAI lib around
     if (type === BaserunType.Chat) {
       const { messages = [], ...config } = args[0] ?? {};
+
       return {
         choices: getChoiceMessages(response),
         config,
@@ -137,6 +146,7 @@ export class OpenAIWrapper {
         provider: BaserunProvider.OpenAI,
         promptMessages: messages,
         usage: usage ?? DEFAULT_USAGE,
+        isStream,
       } as LLMChatLog;
     }
 
@@ -152,6 +162,7 @@ export class OpenAIWrapper {
       prompt: { content: prompt },
       choices: getChoiceMessages(response),
       config,
+      isStream,
     } as LLMCompletionLog;
   }
 

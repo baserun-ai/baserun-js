@@ -8,45 +8,53 @@ import { DEFAULT_USAGE } from './constants';
 import { patch } from './patch';
 import { loadModule } from '../utils/loader';
 
-interface AnthropicError {
-  error?: { error?: { message?: string } };
-}
-
 export class AnthropicWrapper {
   static resolver(
-    symbol: string,
+    _symbol: string,
     args: any[],
     startTimestamp: Date,
     completionTimestamp: Date,
+    isStream: boolean,
     response?: any,
     error?: any,
   ) {
-    let output = '';
     const { prompt = '', ...config } = args[0] ?? {};
     const type = BaserunType.Completion;
+
     if (error) {
-      const maybeAnthropicError = error as AnthropicError;
-      if (maybeAnthropicError?.error?.error?.message) {
-        output = `Error: ${maybeAnthropicError.error.error.message}`;
-      } else {
-        output = `Error: ${error}`;
-      }
-    } else if (response) {
-      output = response.completion ?? '';
+      const errorMessage = error?.stack ?? error?.toString() ?? '';
+      console.log({ errorMessage, error });
+      return {
+        stepType: BaserunStepType.AutoLLM,
+        type,
+        provider: BaserunProvider.Anthropic,
+        startTimestamp,
+        completionTimestamp,
+        usage: DEFAULT_USAGE,
+        prompt: { content: prompt },
+        config,
+        isStream,
+        errorStack: errorMessage,
+      } as AutoLLMLog;
     }
 
     return {
       stepType: BaserunStepType.AutoLLM,
       type,
       provider: BaserunProvider.Anthropic,
-      // output,
       startTimestamp,
       completionTimestamp,
       usage: DEFAULT_USAGE,
       prompt: { content: prompt },
       config,
-      // TODO: This needs to be tested an improved
-      choices: [{ content: output }],
+      isStream,
+      choices: [
+        {
+          content: response.completion,
+          finish_reason: response.stop_reason,
+          role: 'Assistant',
+        },
+      ],
     } as AutoLLMLog;
   }
 

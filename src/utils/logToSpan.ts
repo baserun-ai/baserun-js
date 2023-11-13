@@ -35,17 +35,34 @@ export function standardLogToSpan(log: StandardLog, runId: string): ProtoLog {
 export function autoLLMLogToSpan(log: AutoLLMLog, runId: string): Span {
   const { model, top_p, temperature, stream } = getModelConfig(log);
 
+  if (log.errorStack) {
+    console.log('setting errorStack', log.errorStack);
+    return new Span()
+      .setRunId(runId)
+      .setName(`baserun.${log.provider}.${log.type}`)
+      .setVendor(log.provider)
+      .setModel(model)
+      .setRequestType(log.type)
+      .setStartTime(Timestamp.fromDate(log.startTimestamp)) // todo: check if * 1000 is correct
+      .setEndTime(Timestamp.fromDate(log.completionTimestamp))
+      .setErrorStacktrace(log.errorStack);
+  }
+
   const span = new Span()
     .setRunId(runId)
-    .setName(`baserun.provider.requestType`)
+    .setName(`baserun.${log.provider}.${log.type}`)
     .setVendor(log.provider)
-    .setTotalTokens(log.usage.total_tokens)
-    .setCompletionTokens(log.usage.completion_tokens)
-    .setPromptTokens(log.usage.prompt_tokens)
     .setModel(model)
     .setRequestType(log.type)
     .setStartTime(Timestamp.fromDate(log.startTimestamp)) // todo: check if * 1000 is correct
     .setEndTime(Timestamp.fromDate(log.completionTimestamp));
+
+  if (log.usage) {
+    span
+      .setTotalTokens(log.usage.total_tokens)
+      .setCompletionTokens(log.usage.completion_tokens)
+      .setPromptTokens(log.usage.prompt_tokens);
+  }
 
   if (top_p) {
     span.setTopP(top_p);
@@ -68,7 +85,7 @@ export function autoLLMLogToSpan(log: AutoLLMLog, runId: string): Span {
         new Message()
           .setContent(content)
           .setFinishReason(finish_reason)
-          .setFunctionCall(function_call)
+          .setFunctionCall(function_call || '')
           .setRole(role),
     );
 
@@ -80,16 +97,18 @@ export function autoLLMLogToSpan(log: AutoLLMLog, runId: string): Span {
     span.setPromptMessagesList([message]);
   }
 
-  const completionsList = log.choices.map(
-    ({ content, finish_reason, function_call, role }) =>
-      new Message()
-        .setContent(content)
-        .setFinishReason(finish_reason)
-        .setFunctionCall(function_call)
-        .setRole(role),
-  );
+  if (log.choices) {
+    const completionsList = log.choices.map(
+      ({ content, finish_reason, function_call, role }) =>
+        new Message()
+          .setContent(content)
+          .setFinishReason(finish_reason)
+          .setFunctionCall(function_call || '')
+          .setRole(role),
+    );
 
-  span.setCompletionsList(completionsList);
+    span.setCompletionsList(completionsList);
+  }
 
   return span;
 }

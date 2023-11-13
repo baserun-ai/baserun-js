@@ -6,6 +6,7 @@ export type ResolverFn = (
   args: any[],
   startTime: Date,
   endTime: Date,
+  isStream: boolean,
   response?: any,
   error?: any,
 ) => AutoLLMLog;
@@ -63,6 +64,7 @@ export function generatePatchedMethod({
             args,
             startTime,
             streamEndTime,
+            isStream,
             streamResponse,
             streamError,
           );
@@ -87,6 +89,7 @@ export function generatePatchedMethod({
           args,
           startTime,
           endTime,
+          isStream,
           response,
           error,
         );

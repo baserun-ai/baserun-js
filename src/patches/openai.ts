@@ -9,7 +9,7 @@ import {
 } from '../types';
 import { patch } from './patch';
 import { DEFAULT_USAGE } from './constants';
-import { loadModule } from '../loader';
+import { loadModule } from '../utils/loader';
 
 interface OldOpenAIError {
   response?: { data?: { error?: { message?: string } } };

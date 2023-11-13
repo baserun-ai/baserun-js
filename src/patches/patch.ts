@@ -1,5 +1,5 @@
 import { AutoLLMLog } from '../types';
-import { getTimestamp } from '../helpers';
+import { getTimestamp } from '../utils/helpers';
 
 export type ResolverFn = (
   symbol: string,

@@ -9,7 +9,7 @@ import { isValidJson } from './json';
 import { OpenAIWrapper, getChoiceMessages } from '../patches/openai';
 import { BaserunProvider, BaserunStepType, BaserunType } from '../types';
 import { DEFAULT_USAGE } from '../patches/constants';
-import { getTimestamp } from '../helpers';
+import { getTimestamp } from '../utils/helpers';
 
 function getAnswerPrompt(choices: string[]): string {
   const joinedChoices = choices.map((choice) => `"${choice}"`).join(' or ');

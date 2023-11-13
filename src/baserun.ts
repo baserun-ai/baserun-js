@@ -1,7 +1,7 @@
 import { v4 } from 'uuid';
 import stringify from 'json-stringify-safe';
 import { AutoLLMLog, Trace, TraceType } from './types';
-import { getTimestamp } from './helpers';
+import { getTimestamp } from './utils/helpers';
 import { Evals } from './evals/evals';
 import { Eval } from './evals/types';
 import { OpenAIWrapper } from './patches/openai';
@@ -15,9 +15,9 @@ import {
   SubmitLogRequest,
   SubmitSpanRequest,
 } from './v1/generated/baserun_pb';
-import { getCurrentRun } from './getCurrentRun';
+import { getCurrentRun } from './utils/getCurrentRun';
 import { getOrCreateSubmissionService } from './backend/submissionService';
-import { logToSpan } from './logToSpan';
+import { logToSpan } from './utils/logToSpan';
 
 const TraceExecutionIdKey = 'baserun_trace_execution_id';
 const TraceNameKey = 'baserun_trace_name';

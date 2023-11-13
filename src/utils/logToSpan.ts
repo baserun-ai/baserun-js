@@ -6,8 +6,8 @@ import {
   LLMChatLog,
   Log,
   StandardLog,
-} from './types';
-import { Message, Span } from './v1/generated/baserun_pb';
+} from '../types';
+import { Message, Span } from '../v1/generated/baserun_pb';
 
 export function logToSpan(log: Log, runId: string): Span {
   const { stepType } = log;

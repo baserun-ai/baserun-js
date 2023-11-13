@@ -6,7 +6,7 @@ import {
 } from '../types';
 import { DEFAULT_USAGE } from './constants';
 import { patch } from './patch';
-import { loadModule } from '../loader';
+import { loadModule } from '../utils/loader';
 
 interface AnthropicError {
   error?: { error?: { message?: string } };

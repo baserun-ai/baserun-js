@@ -16,8 +16,8 @@ export class AnthropicWrapper {
   static resolver(
     symbol: string,
     args: any[],
-    startTime: number,
-    endTime: number,
+    startTimestamp: Date,
+    completionTimestamp: Date,
     response?: any,
     error?: any,
   ) {
@@ -40,8 +40,8 @@ export class AnthropicWrapper {
       type,
       provider: BaserunProvider.Anthropic,
       // output,
-      startTimestamp: startTime,
-      completionTimestamp: endTime,
+      startTimestamp,
+      completionTimestamp,
       usage: DEFAULT_USAGE,
       prompt: { content: prompt },
       config,

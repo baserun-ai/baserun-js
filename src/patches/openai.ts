@@ -35,8 +35,8 @@ export class OpenAIWrapper {
   static oldResolver(
     symbol: string,
     args: any[],
-    startTime: number,
-    endTime: number,
+    startTime: Date,
+    endTime: Date,
     response?: any,
     error?: any,
   ) {
@@ -96,8 +96,8 @@ export class OpenAIWrapper {
   static newResolver(
     symbol: string,
     args: any[],
-    startTime: number,
-    endTime: number,
+    startTimestamp: Date,
+    completionTimestamp: Date,
     response?: any,
     error?: any,
   ) {
@@ -131,8 +131,8 @@ export class OpenAIWrapper {
         config,
         logId: response.id,
         stepType: BaserunStepType.AutoLLM,
-        startTimestamp: startTime,
-        completionTimestamp: endTime,
+        startTimestamp,
+        completionTimestamp,
         type,
         provider: BaserunProvider.OpenAI,
         promptMessages: messages,
@@ -146,8 +146,8 @@ export class OpenAIWrapper {
       type,
       provider: BaserunProvider.OpenAI,
       output,
-      startTimestamp: startTime,
-      completionTimestamp: endTime,
+      startTimestamp,
+      completionTimestamp,
       usage: usage ?? DEFAULT_USAGE,
       prompt: { content: prompt },
       choices: getChoiceMessages(response),

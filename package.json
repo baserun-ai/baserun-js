@@ -17,7 +17,8 @@
     "test": "concurrently 'npm run test:baserun' 'npm run test:normal'",
     "lint": "eslint --fix --ext .js,.ts .",
     "format": "prettier --write \"**/*.{js,ts}\"",
-    "prepare": "husky install"
+    "prepare": "husky install",
+    "watch": "tsc --watch"
   },
   "keywords": [],
   "author": "",

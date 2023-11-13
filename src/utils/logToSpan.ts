@@ -44,8 +44,8 @@ export function autoLLMLogToSpan(log: AutoLLMLog, runId: string): Span {
     .setPromptTokens(log.usage.prompt_tokens)
     .setModel(model)
     .setRequestType(log.type)
-    .setStartTime(Timestamp.fromDate(new Date(log.startTimestamp * 1000))) // todo: check if * 1000 is correct
-    .setEndTime(Timestamp.fromDate(new Date(log.completionTimestamp * 1000)));
+    .setStartTime(Timestamp.fromDate(log.startTimestamp)) // todo: check if * 1000 is correct
+    .setEndTime(Timestamp.fromDate(log.completionTimestamp));
 
   if (top_p) {
     span.setTopP(top_p);

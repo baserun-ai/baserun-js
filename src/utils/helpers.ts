@@ -1,3 +1,3 @@
-export function getTimestamp(): number {
-  return Date.now() / 1000;
+export function getTimestamp(): Date {
+  return new Date();
 }

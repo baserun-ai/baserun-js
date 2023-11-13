@@ -4,8 +4,8 @@ import { getTimestamp } from '../utils/helpers';
 export type ResolverFn = (
   symbol: string,
   args: any[],
-  startTime: number,
-  endTime: number,
+  startTime: Date,
+  endTime: Date,
   response?: any,
   error?: any,
 ) => AutoLLMLog;

@@ -30,8 +30,8 @@ export interface LLMChatLog {
   promptMessages: Message[];
   choices: Message[];
   logId: string;
-  startTimestamp: number;
-  completionTimestamp: number;
+  startTimestamp: Date;
+  completionTimestamp: Date;
   usage: {
     prompt_tokens: number;
     completion_tokens: number;
@@ -46,8 +46,8 @@ export interface LLMCompletionLog {
   config: object;
   prompt: { content: string };
   choices: Message[];
-  startTimestamp: number;
-  completionTimestamp: number;
+  startTimestamp: Date;
+  completionTimestamp: Date;
   logId?: string;
   usage: {
     prompt_tokens: number;
@@ -77,8 +77,8 @@ export interface BaseTrace {
   testName: string;
   testInputs: string[];
   id: string;
-  startTimestamp: number;
-  completionTimestamp: number;
+  startTimestamp: Date;
+  completionTimestamp: Date;
   steps: Log[];
   metadata?: object;
   evals?: Eval<any>[];

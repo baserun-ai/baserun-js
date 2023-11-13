@@ -29,6 +29,11 @@ const TraceTypeKey = 'baserun_trace_type';
 const TraceMetadataKey = 'baserun_trace_metadata';
 const TraceEvalsKey = 'baserun_trace_evals';
 
+type TraceOptions = {
+  metadata?: any;
+  name?: string;
+};
+
 export class Baserun {
   static evals = new Evals(Baserun._appendToEvals);
   private static _apiKey: string | undefined = process.env.BASERUN_API_KEY;
@@ -169,9 +174,12 @@ export class Baserun {
 
   static trace<T extends (...args: any[]) => any>(
     fn: T,
-    metadata?: object,
+    traceOptions?: TraceOptions,
   ): (...args: Parameters<T>) => Promise<ReturnType<T>> {
     if (!global.baserunInitialized) return fn;
+
+    const metadata = traceOptions?.metadata;
+    const name = traceOptions?.name ?? fn.name;
 
     const store = global.baserunTraceStore;
     if (store && store.has(TraceExecutionIdKey)) {
@@ -183,7 +191,7 @@ export class Baserun {
 
     return async (...args: Parameters<T>): Promise<ReturnType<T>> => {
       await Baserun.getOrCreateCurrentRun({
-        name: fn.name,
+        name,
         traceType: Run.RunType.RUN_TYPE_PRODUCTION,
         metadata,
       });
@@ -191,7 +199,7 @@ export class Baserun {
       // this is sth we might have to clean up, as we probably don't want run and store to exist at the same time
       global.baserunTraceStore = Baserun.markTraceStart(
         TraceType.Production,
-        fn.name,
+        name,
         args,
         metadata,
       );

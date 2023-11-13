@@ -40,7 +40,7 @@ async function doItMooIt2() {
 }
 
 const getCompletion = baserun.trace(doItMooIt2, {
-  name: 'openai.chat.completions.create',
+  name: 'hello kello rello',
 });
 
 async function main() {

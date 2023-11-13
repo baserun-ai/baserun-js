@@ -3,6 +3,9 @@ import {
   BaserunProvider,
   BaserunStepType,
   BaserunType,
+  LLMChatLog,
+  LLMCompletionLog,
+  Message,
 } from '../types';
 import { patch } from './patch';
 import { DEFAULT_USAGE } from './constants';
@@ -59,7 +62,24 @@ export class OpenAIWrapper {
       }
     }
 
-    const logEntry = {
+    if (type === BaserunType.Chat) {
+      const { messages = [], ...config } = args[0] ?? {};
+      return {
+        choices: getChoiceMessages(response),
+        config,
+        logId: response.id,
+        stepType: BaserunStepType.AutoLLM,
+        startTimestamp: startTime,
+        completionTimestamp: endTime,
+        type,
+        provider: BaserunProvider.OpenAI,
+        promptMessages: messages,
+        usage: usage ?? DEFAULT_USAGE,
+      } as LLMChatLog;
+    }
+
+    const { prompt = '', ...config } = args[0] ?? {};
+    return {
       stepType: BaserunStepType.AutoLLM,
       type,
       provider: BaserunProvider.OpenAI,
@@ -67,23 +87,10 @@ export class OpenAIWrapper {
       startTimestamp: startTime,
       completionTimestamp: endTime,
       usage: usage ?? DEFAULT_USAGE,
-    };
-
-    if (type === BaserunType.Chat) {
-      const { messages = [], ...config } = args[0] ?? {};
-      return {
-        ...logEntry,
-        messages,
-        config,
-      } as AutoLLMLog;
-    }
-
-    const { prompt = '', ...config } = args[0] ?? {};
-    return {
-      ...logEntry,
       prompt: { content: prompt },
+      choices: getChoiceMessages(response),
       config,
-    } as AutoLLMLog;
+    } as LLMCompletionLog;
   }
 
   static newResolver(
@@ -115,8 +122,26 @@ export class OpenAIWrapper {
         output = response.choices[0]?.message?.content ?? '';
       }
     }
+    // todo: this is a bunch of duplicate code from the function above, this is something to clean up later, but it's also not
+    // clear if we need to keep the support for the old OpenAI lib around
+    if (type === BaserunType.Chat) {
+      const { messages = [], ...config } = args[0] ?? {};
+      return {
+        choices: getChoiceMessages(response),
+        config,
+        logId: response.id,
+        stepType: BaserunStepType.AutoLLM,
+        startTimestamp: startTime,
+        completionTimestamp: endTime,
+        type,
+        provider: BaserunProvider.OpenAI,
+        promptMessages: messages,
+        usage: usage ?? DEFAULT_USAGE,
+      } as LLMChatLog;
+    }
 
-    const logEntry = {
+    const { prompt = '', ...config } = args[0] ?? {};
+    return {
       stepType: BaserunStepType.AutoLLM,
       type,
       provider: BaserunProvider.OpenAI,
@@ -124,23 +149,10 @@ export class OpenAIWrapper {
       startTimestamp: startTime,
       completionTimestamp: endTime,
       usage: usage ?? DEFAULT_USAGE,
-    };
-
-    if (type === BaserunType.Chat) {
-      const { messages = [], ...config } = args[0] ?? {};
-      return {
-        ...logEntry,
-        messages,
-        config,
-      } as AutoLLMLog;
-    }
-
-    const { prompt = '', ...config } = args[0] ?? {};
-    return {
-      ...logEntry,
       prompt: { content: prompt },
+      choices: getChoiceMessages(response),
       config,
-    } as AutoLLMLog;
+    } as LLMCompletionLog;
   }
 
   static isStreaming(_symbol: string, args: any[]): boolean {
@@ -319,4 +331,28 @@ export class OpenAIWrapper {
       throw err;
     }
   }
+}
+
+export function getChoiceMessages(response: any): Message[] {
+  if (!response.choices) {
+    return [];
+  }
+
+  return response.choices.map((c: any) => {
+    const { finish_reason, message, text } = c;
+    if (text) {
+      return {
+        content: text,
+        finish_reason,
+      };
+    }
+    const { content, function_call, name, role } = message;
+    return {
+      content,
+      function_call,
+      name,
+      role,
+      finish_reason,
+    };
+  });
 }

@@ -6,7 +6,7 @@ import {
   ModelGradedEvalTypes,
 } from './types';
 import { isValidJson } from './json';
-import { OpenAIWrapper } from '../patches/openai';
+import { OpenAIWrapper, getChoiceMessages } from '../patches/openai';
 import { BaserunProvider, BaserunStepType, BaserunType } from '../types';
 import { DEFAULT_USAGE } from '../patches/constants';
 import { getTimestamp } from '../helpers';
@@ -263,6 +263,7 @@ export class Evals {
     const output = response['choices'][0]['message']['content'];
     const { choice, score } = getChoiceAndScore(output);
     const { messages, ...config } = modelConfig;
+    // TODO: this code hasn't been tested at all
     this._storeEvalData({
       name,
       type,
@@ -274,9 +275,11 @@ export class Evals {
           stepType: BaserunStepType.AutoLLM,
           type: BaserunType.Chat,
           provider: BaserunProvider.OpenAI,
-          output,
+          // output,
           config,
-          messages,
+          promptMessages: messages,
+          logId: response.id,
+          choices: getChoiceMessages(response),
           startTimestamp: startTime,
           completionTimestamp: endTime,
           usage: response.usage ?? DEFAULT_USAGE,

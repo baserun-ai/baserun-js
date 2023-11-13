@@ -7,7 +7,6 @@ import { Eval } from './evals/types';
 import { OpenAIWrapper } from './patches/openai';
 import { Timestamp } from 'google-protobuf/google/protobuf/timestamp_pb.js';
 import { AnthropicWrapper } from './patches/anthropic';
-import { GrpcClient } from './backend/grpc';
 import {
   EndRunRequest,
   Run,
@@ -167,28 +166,6 @@ export class Baserun {
     return descriptor;
   }
 
-  // static log(name: string, payload: object | string): void {
-  //   if (!global.baserunInitialized) return;
-
-  //   const store = global.baserunTraceStore;
-
-  //   if (!store || !store.has(TraceExecutionIdKey)) {
-  //     console.info(
-  //       'baserun.log was called outside of a Baserun decorated trace. The log will be ignored.',
-  //     );
-  //     return;
-  //   }
-
-  //   const logEntry: StandardLog = {
-  //     stepType: BaserunStepType.Log,
-  //     name,
-  //     payload,
-  //     timestamp: getTimestamp(),
-  //   };
-
-  //   Baserun._appendToBuffer(logEntry);
-  // }
-
   static trace<T extends (...args: any[]) => any>(
     fn: T,
     metadata?: object,
@@ -204,11 +181,21 @@ export class Baserun {
     }
 
     return async (...args: Parameters<T>): Promise<ReturnType<T>> => {
-      Baserun.getOrCreateCurrentRun({
+      let run = await Baserun.getOrCreateCurrentRun({
         name: fn.name,
         traceType: Run.RunType.RUN_TYPE_PRODUCTION,
         metadata,
       });
+
+      console.log('run id 1', run.getRunId());
+
+      run = await Baserun.getOrCreateCurrentRun({
+        name: fn.name,
+        traceType: Run.RunType.RUN_TYPE_PRODUCTION,
+        metadata,
+      });
+
+      console.log('run id 2', run.getRunId());
 
       // this is sth we might have to clean up, as we probably don't want run and store to exist at the same time
       global.baserunTraceStore = Baserun.markTraceStart(
@@ -250,10 +237,10 @@ export class Baserun {
     completionTimestamp?: Date;
     traceType?: Run.RunType;
     metadata?: object;
-  }) {
+  }): Promise<Run> {
     const currentRun = getCurrentRun();
     if (currentRun) {
-      return currentRun;
+      return Promise.resolve(currentRun);
     }
 
     const runId = v4();
@@ -269,6 +256,8 @@ export class Baserun {
       .setName(name)
       .setMetadata(stringify(metadata ?? {}));
 
+    global.baserunCurrentRun = run;
+
     if (suiteId ?? global.baserunTestSuite) {
       run.setSuiteId(suiteId ?? global.baserunTestSuite.getId());
     }
@@ -280,13 +269,16 @@ export class Baserun {
 
     const startRunRequest = new StartRunRequest().setRun(run);
 
-    getOrCreateSubmissionService().startRun(startRunRequest, (error) => {
-      if (error) {
-        console.error('Failed to submit run start to Baserun: ', error);
-      }
+    return new Promise<Run>((resolve, reject) => {
+      getOrCreateSubmissionService().startRun(startRunRequest, (error) => {
+        if (error) {
+          console.error('Failed to submit run start to Baserun: ', error);
+          reject(error);
+        } else {
+          resolve(run);
+        }
+      });
     });
-
-    return run;
   }
 
   static finishRun(run: Run): void {
@@ -340,7 +332,7 @@ export class Baserun {
     try {
       const traces = global.baserunTraces as Trace[];
       for (const trace of traces) {
-        const run = Baserun.getOrCreateCurrentRun({
+        const run = await Baserun.getOrCreateCurrentRun({
           name: trace.testName,
           traceType:
             trace.type === TraceType.Production
@@ -375,12 +367,14 @@ export class Baserun {
   }
 
   static async _handleAutoLLM(logEntry: AutoLLMLog): Promise<void> {
-    const run = this.getOrCreateCurrentRun({
+    const run = await Baserun.getOrCreateCurrentRun({
       name: `${logEntry.provider} ${logEntry.type}`,
       startTimestamp: new Date(logEntry.startTimestamp),
       completionTimestamp: new Date(logEntry.completionTimestamp),
       // todo: add metadata
     });
+
+    console.log('run name', run.getName());
 
     // todo: this might have to go into a separate function like flush
     const span = logToSpan(logEntry, run.getRunId());

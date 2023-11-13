@@ -1,7 +1,4 @@
 import OpenAI from 'openai';
-import { baserun } from '../../../src';
-
-baserun.init();
 
 const openai = new OpenAI();
 
@@ -32,9 +29,7 @@ async function doItMooIt() {
   return chatCompletion2;
 }
 
-const getCompletion = baserun.trace(doItMooIt, {
-  name: 'openai.chat.completions.create',
-});
+const getCompletion = doItMooIt;
 
 async function main() {
   const completion = await getCompletion();

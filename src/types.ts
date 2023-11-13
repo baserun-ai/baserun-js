@@ -15,20 +15,21 @@ export enum BaserunStepType {
   AutoLLM = 'auto_llm',
 }
 
+export type Message = {
+  role: string;
+  content: string;
+  function_call: string;
+  finish_reason: string;
+};
+
 export interface LLMChatLog {
   stepType: BaserunStepType.AutoLLM;
   type: BaserunType.Chat;
   provider: BaserunProvider;
   config: object;
-  messages: Array<{
-    // todo: I caused breaking types intentionally, wanting to push down the issue to where the types are created
-    role: string;
-    content: string;
-    function_call: string;
-    finish_reason: string;
-  }>;
+  promptMessages: Message[];
+  choices: Message[];
   logId: string;
-  output: string;
   startTimestamp: number;
   completionTimestamp: number;
   usage: {
@@ -44,7 +45,7 @@ export interface LLMCompletionLog {
   provider: BaserunProvider;
   config: object;
   prompt: { content: string };
-  output: string;
+  choices: Message[];
   startTimestamp: number;
   completionTimestamp: number;
   logId?: string;

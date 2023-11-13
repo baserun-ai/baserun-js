@@ -35,20 +35,18 @@ export class AnthropicWrapper {
       output = response.completion ?? '';
     }
 
-    const logEntry = {
+    return {
       stepType: BaserunStepType.AutoLLM,
       type,
       provider: BaserunProvider.Anthropic,
-      output,
+      // output,
       startTimestamp: startTime,
       completionTimestamp: endTime,
       usage: DEFAULT_USAGE,
-    };
-
-    return {
-      ...logEntry,
       prompt: { content: prompt },
       config,
+      // TODO: This needs to be tested an improved
+      choices: [{ content: output }],
     } as AutoLLMLog;
   }
 

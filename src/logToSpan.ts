@@ -39,8 +39,7 @@ export function autoLLMLogToSpan(log: AutoLLMLog, runId: string): Span {
 
   const span = new Span()
     .setRunId(runId)
-    .setTraceId('') // todo: this is an otel concept, so we might have to change it
-    .setName('') // todo don't have this here yet
+    .setName(`baserun.provider.requestType`)
     .setVendor(log.provider)
     .setTotalTokens(log.usage.total_tokens)
     .setCompletionTokens(log.usage.completion_tokens)
@@ -62,10 +61,11 @@ export function autoLLMLogToSpan(log: AutoLLMLog, runId: string): Span {
     span.setStream(stream);
   }
 
+  // the main difference between a chat.completion and just completion is, that a chat completion can have multiple prompts (messages)
   if (isLLMChatLog(log)) {
-    const { messages } = log;
+    const { promptMessages } = log;
 
-    const mappedMessages = messages.map(
+    const mappedMessages = promptMessages.map(
       ({ content, finish_reason, function_call, role }) =>
         new Message()
           .setContent(content)
@@ -75,9 +75,23 @@ export function autoLLMLogToSpan(log: AutoLLMLog, runId: string): Span {
     );
 
     span.setPromptMessagesList(mappedMessages);
+  } else {
+    const { prompt } = log;
+
+    const message = new Message().setContent(prompt.content);
+    span.setPromptMessagesList([message]);
   }
 
-  // TODO: There are many many more things to set, but the LLMChatLog type doesn't support them yet
+  const completionsList = log.choices.map(
+    ({ content, finish_reason, function_call, role }) =>
+      new Message()
+        .setContent(content)
+        .setFinishReason(finish_reason)
+        .setFunctionCall(function_call)
+        .setRole(role),
+  );
+
+  span.setCompletionsList(completionsList);
 
   return span;
 }

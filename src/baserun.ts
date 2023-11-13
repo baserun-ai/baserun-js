@@ -1,6 +1,6 @@
 import { v4 } from 'uuid';
 import stringify from 'json-stringify-safe';
-import { AutoLLMLog, Trace, TraceType } from './types';
+import { AutoLLMLog, Trace, TraceType, Log } from './types';
 import { getTimestamp } from './utils/helpers';
 import { Evals } from './evals/evals';
 import { Eval } from './evals/types';
@@ -11,13 +11,14 @@ import {
   EndRunRequest,
   Run,
   StartRunRequest,
-  Log,
+  Log as ProtoLog,
   SubmitLogRequest,
   SubmitSpanRequest,
+  Span,
 } from './v1/generated/baserun_pb';
 import { getCurrentRun } from './utils/getCurrentRun';
 import { getOrCreateSubmissionService } from './backend/submissionService';
-import { logToSpan } from './utils/logToSpan';
+import { logToSpanOrLog } from './utils/logToSpan';
 
 const TraceExecutionIdKey = 'baserun_trace_execution_id';
 const TraceNameKey = 'baserun_trace_name';
@@ -181,21 +182,11 @@ export class Baserun {
     }
 
     return async (...args: Parameters<T>): Promise<ReturnType<T>> => {
-      let run = await Baserun.getOrCreateCurrentRun({
+      await Baserun.getOrCreateCurrentRun({
         name: fn.name,
         traceType: Run.RunType.RUN_TYPE_PRODUCTION,
         metadata,
       });
-
-      console.log('run id 1', run.getRunId());
-
-      run = await Baserun.getOrCreateCurrentRun({
-        name: fn.name,
-        traceType: Run.RunType.RUN_TYPE_PRODUCTION,
-        metadata,
-      });
-
-      console.log('run id 2', run.getRunId());
 
       // this is sth we might have to clean up, as we probably don't want run and store to exist at the same time
       global.baserunTraceStore = Baserun.markTraceStart(
@@ -305,7 +296,7 @@ export class Baserun {
       return;
     }
 
-    const log = new Log()
+    const log = new ProtoLog()
       .setRunId(run.getRunId())
       .setName(name)
       .setPayload(stringify(payload))
@@ -341,16 +332,11 @@ export class Baserun {
           metadata: trace.metadata,
         });
 
-        for (const step of trace.steps) {
-          const span = logToSpan(step, run.getRunId());
-
-          const spanRequest = new SubmitSpanRequest().setSpan(span).setRun(run);
-          getOrCreateSubmissionService().submitSpan(spanRequest, (error) => {
-            if (error) {
-              console.error('Failed to submit span to Baserun: ', error);
-            }
-          });
-        }
+        await Promise.all(
+          trace.steps.map((step) =>
+            Baserun.submitLogOrSpan(logToSpanOrLog(step, run.getRunId()), run),
+          ),
+        );
 
         // todo: deal with evals
         Baserun.finishRun(run);
@@ -366,6 +352,37 @@ export class Baserun {
     global.baserunTraces.push(traceData);
   }
 
+  private static submitLogOrSpan(
+    logOrSpan: ProtoLog | Span,
+    run: Run,
+  ): Promise<void> {
+    return new Promise((resolve, reject) => {
+      if (logOrSpan instanceof ProtoLog) {
+        const logRequest = new SubmitLogRequest().setLog(logOrSpan).setRun(run);
+        getOrCreateSubmissionService().submitLog(logRequest, (error) => {
+          if (error) {
+            console.error('Failed to submit log to Baserun: ', error);
+            reject(error);
+          } else {
+            resolve(undefined);
+          }
+        });
+      } else {
+        const spanRequest = new SubmitSpanRequest()
+          .setSpan(logOrSpan)
+          .setRun(run);
+        getOrCreateSubmissionService().submitSpan(spanRequest, (error) => {
+          if (error) {
+            console.error('Failed to submit span to Baserun: ', error);
+            reject(error);
+          } else {
+            resolve(undefined);
+          }
+        });
+      }
+    });
+  }
+
   static async _handleAutoLLM(logEntry: AutoLLMLog): Promise<void> {
     const run = await Baserun.getOrCreateCurrentRun({
       name: `${logEntry.provider} ${logEntry.type}`,
@@ -374,17 +391,9 @@ export class Baserun {
       // todo: add metadata
     });
 
-    console.log('run name', run.getName());
+    const span = logToSpanOrLog(logEntry, run.getRunId());
 
-    // todo: this might have to go into a separate function like flush
-    const span = logToSpan(logEntry, run.getRunId());
-
-    const spanRequest = new SubmitSpanRequest().setSpan(span).setRun(run);
-    getOrCreateSubmissionService().submitSpan(spanRequest, (error) => {
-      if (error) {
-        console.error('Failed to submit span to Baserun: ', error);
-      }
-    });
+    return Baserun.submitLogOrSpan(span, run);
   }
 
   static _appendToBuffer(logEntry: Log): void {

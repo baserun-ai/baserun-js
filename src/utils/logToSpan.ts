@@ -7,9 +7,9 @@ import {
   Log,
   StandardLog,
 } from '../types';
-import { Message, Span } from '../v1/generated/baserun_pb';
+import { Message, Span, Log as ProtoLog } from '../v1/generated/baserun_pb';
 
-export function logToSpan(log: Log, runId: string): Span {
+export function logToSpanOrLog(log: Log, runId: string): Span | ProtoLog {
   const { stepType } = log;
 
   if (stepType === BaserunStepType.AutoLLM) {
@@ -22,16 +22,14 @@ export function logToSpan(log: Log, runId: string): Span {
   throw new Error('Unknown step type');
 }
 
-export function standardLogToSpan(log: StandardLog, runId: string): Span {
+export function standardLogToSpan(log: StandardLog, runId: string): ProtoLog {
   const { name, timestamp } = log;
 
-  const span = new Span()
-    .setRunId(runId)
-    .setTraceId('') // todo: this is an otel concept, so we might have to change it
+  return new ProtoLog()
+    .setPayload(JSON.stringify(log.payload))
     .setName(name)
-    .setStartTime(Timestamp.fromDate(new Date(timestamp * 1000))); // todo: check if * 1000 is correct
-
-  return span;
+    .setRunId(runId)
+    .setTimestamp(Timestamp.fromDate(new Date(timestamp * 1000))); // todo: check if * 1000 is correct
 }
 
 export function autoLLMLogToSpan(log: AutoLLMLog, runId: string): Span {

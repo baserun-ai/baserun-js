@@ -16,7 +16,8 @@ async function main() {
 
   console.log(stream);
 
-  for await (const completion of stream) {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  for await (const _completion of stream) {
     // console.log(completion);
   }
 }

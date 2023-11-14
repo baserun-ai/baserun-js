@@ -1,3 +1,9 @@
+import {
+  ChatCompletionMessageToolCall,
+  ChatCompletionTool,
+  ChatCompletionToolChoiceOption,
+} from 'openai/resources';
+
 import { Eval } from './evals/types';
 
 export enum BaserunProvider {
@@ -18,8 +24,8 @@ export enum BaserunStepType {
 export type Message = {
   role: string;
   content: string;
-  function_call?: string;
   finish_reason: string;
+  tool_calls?: ChatCompletionMessageToolCall[];
 };
 
 export interface LLMChatLog {
@@ -39,6 +45,8 @@ export interface LLMChatLog {
     total_tokens: number;
   };
   errorStack?: string;
+  tools?: ChatCompletionTool[];
+  toolChoice?: ChatCompletionToolChoiceOption;
 }
 
 export interface LLMCompletionLog {

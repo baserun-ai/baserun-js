@@ -11,10 +11,6 @@ import { patch } from './patch';
 import { DEFAULT_USAGE } from './constants';
 import { loadModule } from '../utils/loader';
 
-interface OldOpenAIError {
-  response?: { data?: { error?: { message?: string } } };
-}
-
 interface NewOpenAIError {
   response?: { error?: { message?: string } };
 }
@@ -32,75 +28,7 @@ export class OpenAIWrapper {
     },
   };
 
-  static oldResolver(
-    symbol: string,
-    args: any[],
-    startTime: Date,
-    endTime: Date,
-    isStream: boolean,
-    response?: any,
-    error?: any,
-  ) {
-    let usage = DEFAULT_USAGE;
-    let output = '';
-    const type = symbol.includes('Chat')
-      ? BaserunType.Chat
-      : BaserunType.Completion;
-
-    if (error) {
-      const maybeOpenAIError = error as OldOpenAIError;
-      if (maybeOpenAIError?.response?.data?.error?.message) {
-        output = `Error: ${maybeOpenAIError.response.data.error.message}`;
-      } else {
-        output = `Error: ${error}`;
-      }
-    } else if (response) {
-      usage = response.data.usage;
-      if (type === BaserunType.Completion) {
-        output = response.data.choices[0]?.text ?? '';
-      } else {
-        output = response.data.choices[0]?.message?.content ?? '';
-      }
-    }
-
-    const errorStack = error?.stack ?? '';
-
-    if (type === BaserunType.Chat) {
-      const { messages = [], ...config } = args[0] ?? {};
-      return {
-        choices: getChoiceMessages(response),
-        config,
-        logId: response.id,
-        stepType: BaserunStepType.AutoLLM,
-        startTimestamp: startTime,
-        completionTimestamp: endTime,
-        type,
-        provider: BaserunProvider.OpenAI,
-        promptMessages: messages,
-        usage: usage ?? DEFAULT_USAGE,
-        isStream: false,
-        errorStack,
-      } as LLMChatLog;
-    }
-
-    const { prompt = '', ...config } = args[0] ?? {};
-    return {
-      stepType: BaserunStepType.AutoLLM,
-      type,
-      provider: BaserunProvider.OpenAI,
-      output,
-      startTimestamp: startTime,
-      completionTimestamp: endTime,
-      usage: usage ?? DEFAULT_USAGE,
-      prompt: { content: prompt },
-      choices: getChoiceMessages(response),
-      config,
-      isStream: false,
-      errorStack,
-    } as LLMCompletionLog;
-  }
-
-  static newResolver(
+  static resolver(
     symbol: string,
     args: any[],
     startTimestamp: Date,
@@ -115,12 +43,21 @@ export class OpenAIWrapper {
       ? BaserunType.Chat
       : BaserunType.Completion;
 
+    let errorStack: string | undefined = undefined;
+
+    const options = args[0] ?? {};
+
     if (error) {
       const maybeOpenAIError = error as NewOpenAIError;
-      if (maybeOpenAIError?.response?.error?.message) {
-        output = `Error: ${maybeOpenAIError.response.error.message}`;
+      if (error.stack) {
+        errorStack = error.stack;
       } else {
-        output = `Error: ${error}`;
+        if (maybeOpenAIError?.response?.error?.message) {
+          output = `Error: ${maybeOpenAIError.response.error.message}`;
+          errorStack = maybeOpenAIError.response.error.message;
+        } else {
+          errorStack = error;
+        }
       }
     } else if (response) {
       usage = response.usage;
@@ -133,12 +70,12 @@ export class OpenAIWrapper {
     // todo: this is a bunch of duplicate code from the function above, this is something to clean up later, but it's also not
     // clear if we need to keep the support for the old OpenAI lib around
     if (type === BaserunType.Chat) {
-      const { messages = [], ...config } = args[0] ?? {};
+      const { messages = [], tools, ...config } = options;
 
       return {
         choices: getChoiceMessages(response),
         config,
-        logId: response.id,
+        logId: response?.id,
         stepType: BaserunStepType.AutoLLM,
         startTimestamp,
         completionTimestamp,
@@ -147,10 +84,13 @@ export class OpenAIWrapper {
         promptMessages: messages,
         usage: usage ?? DEFAULT_USAGE,
         isStream,
+        errorStack,
+        tools,
+        toolChoice: config.tool_choice,
       } as LLMChatLog;
     }
 
-    const { prompt = '', ...config } = args[0] ?? {};
+    const { prompt = '', ...config } = options;
     return {
       stepType: BaserunStepType.AutoLLM,
       type,
@@ -163,6 +103,7 @@ export class OpenAIWrapper {
       choices: getChoiceMessages(response),
       config,
       isStream,
+      errorStack,
     } as LLMCompletionLog;
   }
 
@@ -274,60 +215,27 @@ export class OpenAIWrapper {
   static init(log: (entry: AutoLLMLog) => Promise<void>) {
     try {
       const openaiModule = loadModule(module, 'openai');
-      const isV4 = Boolean(openaiModule?.OpenAI?.Chat?.Completions);
-      if (isV4) {
-        const symbols = [
-          'OpenAI.Completions.prototype.create',
-          'OpenAI.Chat.Completions.prototype.create',
-        ];
-        const openai = new openaiModule({
-          apiKey: process.env.OPENAI_API_KEY,
-        });
-        OpenAIWrapper.originalMethods = {
-          createCompletion: openai.completions.create.bind(openai.completions),
-          createChatCompletion: openai.chat.completions.create.bind(
-            openai.chat.completions,
-          ),
-        };
-        patch({
-          module: openaiModule,
-          symbols,
-          resolver: OpenAIWrapper.newResolver,
-          log,
-          isStreaming: OpenAIWrapper.isStreaming,
-          collectStreamedResponse: OpenAIWrapper.collectStreamedResponse,
-        });
-      } else {
-        const symbols = [
-          'OpenAIApi.prototype.createCompletion',
-          'OpenAIApi.prototype.createChatCompletion',
-        ];
-        const configuration = new openaiModule.Configuration({
-          apiKey: process.env.OPENAI_API_KEY,
-        });
-        const openai = new openaiModule.OpenAIApi(configuration);
-        const originalCreateCompletion = openai.createCompletion.bind(openai);
-        const originalCreateChatCompletion =
-          openai.createChatCompletion.bind(openai);
-        OpenAIWrapper.originalMethods = {
-          createCompletion: async (args) => {
-            const response = await originalCreateCompletion(args);
-            return response.data;
-          },
-          createChatCompletion: async (args) => {
-            const response = await originalCreateChatCompletion(args);
-            return response.data;
-          },
-        };
-        patch({
-          module: openaiModule,
-          symbols,
-          resolver: OpenAIWrapper.oldResolver,
-          log,
-          isStreaming: OpenAIWrapper.isStreaming,
-          collectStreamedResponse: OpenAIWrapper.collectStreamedResponse,
-        });
-      }
+      const symbols = [
+        'OpenAI.Completions.prototype.create',
+        'OpenAI.Chat.Completions.prototype.create',
+      ];
+      const openai = new openaiModule({
+        apiKey: process.env.OPENAI_API_KEY,
+      });
+      OpenAIWrapper.originalMethods = {
+        createCompletion: openai.completions.create.bind(openai.completions),
+        createChatCompletion: openai.chat.completions.create.bind(
+          openai.chat.completions,
+        ),
+      };
+      patch({
+        module: openaiModule,
+        symbols,
+        resolver: OpenAIWrapper.resolver,
+        log,
+        isStreaming: OpenAIWrapper.isStreaming,
+        collectStreamedResponse: OpenAIWrapper.collectStreamedResponse,
+      });
     } catch (err) {
       /* openai isn't used */
       if (
@@ -345,7 +253,7 @@ export class OpenAIWrapper {
 }
 
 export function getChoiceMessages(response: any): Message[] {
-  if (!response.choices) {
+  if (!response || !response.choices) {
     return [];
   }
 
@@ -357,13 +265,9 @@ export function getChoiceMessages(response: any): Message[] {
         finish_reason,
       };
     }
-    const { content, function_call, name, role } = message;
     return {
-      content,
-      function_call,
-      name,
-      role,
       finish_reason,
+      ...message,
     };
   });
 }

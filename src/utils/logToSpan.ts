@@ -7,7 +7,13 @@ import {
   Log,
   StandardLog,
 } from '../types';
-import { Message, Span, Log as ProtoLog } from '../v1/generated/baserun_pb';
+import {
+  Message,
+  Span,
+  Log as ProtoLog,
+  ToolCall,
+  ToolFunction,
+} from '../v1/generated/baserun_pb';
 
 export function logToSpanOrLog(log: Log, runId: string): Span | ProtoLog {
   const { stepType } = log;
@@ -48,6 +54,12 @@ export function autoLLMLogToSpan(log: AutoLLMLog, runId: string): Span {
       .setErrorStacktrace(log.errorStack);
   }
 
+  // const fn = new ToolFunction()
+  //   .setArguments('{\n  "location": "San Francisco, CA"\n}')
+  //   .setName('get_current_weather');
+
+  // const tc = new ToolCall().setId('').setType('function').setFunction(fn);
+
   const span = new Span()
     .setRunId(runId)
     .setName(`baserun.${log.provider}.${log.type}`)
@@ -78,15 +90,41 @@ export function autoLLMLogToSpan(log: AutoLLMLog, runId: string): Span {
 
   // the main difference between a chat.completion and just completion is, that a chat completion can have multiple prompts (messages)
   if (isLLMChatLog(log)) {
-    const { promptMessages } = log;
+    const { promptMessages, toolChoice, tools } = log;
+
+    if (toolChoice) {
+      span.setToolChoice(JSON.stringify(toolChoice));
+    }
+
+    if (tools) {
+      span.setTools(JSON.stringify(tools));
+    }
 
     const mappedMessages = promptMessages.map(
-      ({ content, finish_reason, function_call, role }) =>
-        new Message()
+      ({ content, finish_reason, tool_calls, role }) => {
+        const message = new Message()
           .setContent(content)
           .setFinishReason(finish_reason)
-          .setFunctionCall(function_call || '')
-          .setRole(role),
+          .setRole(role);
+
+        if (tool_calls) {
+          console.log({ tool_calls });
+          message.setToolCallsList(
+            tool_calls.map((t) =>
+              new ToolCall()
+                .setId(t.id)
+                .setType(t.type)
+                .setFunction(
+                  new ToolFunction()
+                    .setName(t.function.name)
+                    .setArguments(t.function.arguments),
+                ),
+            ),
+          );
+        }
+
+        return message;
+      },
     );
 
     span.setPromptMessagesList(mappedMessages);
@@ -99,12 +137,30 @@ export function autoLLMLogToSpan(log: AutoLLMLog, runId: string): Span {
 
   if (log.choices) {
     const completionsList = log.choices.map(
-      ({ content, finish_reason, function_call, role }) =>
-        new Message()
+      ({ content, finish_reason, tool_calls, role }) => {
+        const message = new Message()
           .setContent(content)
           .setFinishReason(finish_reason)
-          .setFunctionCall(function_call || '')
-          .setRole(role),
+          .setRole(role);
+
+        if (tool_calls) {
+          console.log({ tool_calls });
+          message.setToolCallsList(
+            tool_calls.map((t) =>
+              new ToolCall()
+                .setId(t.id)
+                .setType(t.type)
+                .setFunction(
+                  new ToolFunction()
+                    .setName(t.function.name)
+                    .setArguments(t.function.arguments),
+                ),
+            ),
+          );
+        }
+
+        return message;
+      },
     );
 
     span.setCompletionsList(completionsList);

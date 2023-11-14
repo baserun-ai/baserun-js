@@ -115,8 +115,8 @@ message Span {
     // OpenAI-specific attributes
     optional string api_base = 16;
     optional string api_type = 17;
-    optional string functions = 18; // JSONified array<map<str, any>>
-    optional string function_call = 19; // Request attribute: response function_call is in each Message
+    optional string functions = 18 [deprecated = true]; // JSONified array<map<str, any>>
+    optional string function_call = 19 [deprecated = true]; // Request attribute: response function_call is in each Message
     optional double temperature = 20;
     optional double top_p = 21;
     optional int32 n = 22;

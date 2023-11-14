@@ -268,6 +268,8 @@ export class Baserun {
 
     const startRunRequest = new StartRunRequest().setRun(run);
 
+    console.log({ startRunRequest });
+
     return new Promise<Run>((resolve, reject) => {
       getOrCreateSubmissionService().startRun(startRunRequest, (error) => {
         if (error) {

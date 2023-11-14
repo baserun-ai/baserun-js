@@ -15,6 +15,7 @@ async function doItMooIt() {
 const getCompletion = doItMooIt;
 
 async function main() {
+  await new Promise((resolve) => setTimeout(resolve, 1000));
   const completion = await getCompletion();
   console.dir(completion, { depth: null });
 }

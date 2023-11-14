@@ -5,14 +5,29 @@ baserun.init();
 
 const openai = new OpenAI();
 
+const cities = [
+  'San Francisco',
+  'Berlin',
+  'Tokyo',
+  'Paris',
+  'London',
+  'New York',
+  'Los Angeles',
+  'Chicago',
+  'Houston',
+  'Philadelphia',
+];
+
+const pickRandomCity = () => cities[Math.floor(Math.random() * cities.length)];
+
 async function doItMooIt2() {
-  baserun.log('getting started', { this: 'is json' });
+  // baserun.log('getting started', { this: 'is json' });
 
   const res = await openai.chat.completions.create({
     messages: [
       {
         role: 'user',
-        content: "What's the weather like in San Francisco, Tokyo, and Paris?",
+        content: `What's the weather like in ${pickRandomCity}?`,
       },
     ],
     model: 'gpt-3.5-turbo',

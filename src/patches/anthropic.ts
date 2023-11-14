@@ -75,9 +75,9 @@ export class AnthropicWrapper {
     return response;
   }
 
-  static init(log: (entry: AutoLLMLog) => Promise<void>) {
+  static async init(log: (entry: AutoLLMLog) => Promise<void>) {
     try {
-      const anthropicModule = loadModule(module, '@anthropic-ai/sdk');
+      const anthropicModule = await loadModule(module, '@anthropic-ai/sdk');
       const symbols = ['Anthropic.Completions.prototype.create'];
       patch({
         module: anthropicModule,

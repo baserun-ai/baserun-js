@@ -10,6 +10,7 @@ import {
 import { patch } from './patch';
 import { DEFAULT_USAGE } from './constants';
 import { loadModule } from '../utils/loader';
+import oaii from 'openai';
 
 interface NewOpenAIError {
   response?: { error?: { message?: string } };
@@ -37,6 +38,7 @@ export class OpenAIWrapper {
     response?: any,
     error?: any,
   ) {
+    console.log('resolver', { symbol, args, response, error });
     let usage = DEFAULT_USAGE;
     let output = '';
     const type = symbol.includes('Chat')
@@ -212,9 +214,8 @@ export class OpenAIWrapper {
     return response;
   }
 
-  static init(log: (entry: AutoLLMLog) => Promise<void>) {
+  static patch(openaiModule: any, log: (entry: AutoLLMLog) => Promise<void>) {
     try {
-      const openaiModule = loadModule(module, 'openai');
       const symbols = [
         'OpenAI.Completions.prototype.create',
         'OpenAI.Chat.Completions.prototype.create',
@@ -249,6 +250,18 @@ export class OpenAIWrapper {
 
       throw err;
     }
+  }
+
+  static init(log: (entry: AutoLLMLog) => Promise<void>) {
+    // loadModule(module, 'openai').then((openaiModule) => {
+    //   console.log('mod', openaiModule);
+    //   OpenAIWrapper.patch(openaiModule.default, log);
+    // });
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    // const oai = require('openai');
+    // OpenAIWrapper.patch(oai, log);
+    OpenAIWrapper.patch(oaii, log);
+    // console.log('patchin', oai === oaii);
   }
 }
 

@@ -24,7 +24,9 @@ function serialize_baserun_v1_EndRunResponse(arg) {
 }
 
 function deserialize_baserun_v1_EndRunResponse(buffer_arg) {
-  return baserun_pb.EndRunResponse.deserializeBinary(new Uint8Array(buffer_arg));
+  return baserun_pb.EndRunResponse.deserializeBinary(
+    new Uint8Array(buffer_arg),
+  );
 }
 
 function serialize_baserun_v1_EndSessionRequest(arg) {
@@ -35,7 +37,9 @@ function serialize_baserun_v1_EndSessionRequest(arg) {
 }
 
 function deserialize_baserun_v1_EndSessionRequest(buffer_arg) {
-  return baserun_pb.EndSessionRequest.deserializeBinary(new Uint8Array(buffer_arg));
+  return baserun_pb.EndSessionRequest.deserializeBinary(
+    new Uint8Array(buffer_arg),
+  );
 }
 
 function serialize_baserun_v1_EndSessionResponse(arg) {
@@ -46,7 +50,9 @@ function serialize_baserun_v1_EndSessionResponse(arg) {
 }
 
 function deserialize_baserun_v1_EndSessionResponse(buffer_arg) {
-  return baserun_pb.EndSessionResponse.deserializeBinary(new Uint8Array(buffer_arg));
+  return baserun_pb.EndSessionResponse.deserializeBinary(
+    new Uint8Array(buffer_arg),
+  );
 }
 
 function serialize_baserun_v1_EndTestSuiteRequest(arg) {
@@ -57,18 +63,24 @@ function serialize_baserun_v1_EndTestSuiteRequest(arg) {
 }
 
 function deserialize_baserun_v1_EndTestSuiteRequest(buffer_arg) {
-  return baserun_pb.EndTestSuiteRequest.deserializeBinary(new Uint8Array(buffer_arg));
+  return baserun_pb.EndTestSuiteRequest.deserializeBinary(
+    new Uint8Array(buffer_arg),
+  );
 }
 
 function serialize_baserun_v1_EndTestSuiteResponse(arg) {
   if (!(arg instanceof baserun_pb.EndTestSuiteResponse)) {
-    throw new Error('Expected argument of type baserun.v1.EndTestSuiteResponse');
+    throw new Error(
+      'Expected argument of type baserun.v1.EndTestSuiteResponse',
+    );
   }
   return Buffer.from(arg.serializeBinary());
 }
 
 function deserialize_baserun_v1_EndTestSuiteResponse(buffer_arg) {
-  return baserun_pb.EndTestSuiteResponse.deserializeBinary(new Uint8Array(buffer_arg));
+  return baserun_pb.EndTestSuiteResponse.deserializeBinary(
+    new Uint8Array(buffer_arg),
+  );
 }
 
 function serialize_baserun_v1_GetTemplatesRequest(arg) {
@@ -79,18 +91,24 @@ function serialize_baserun_v1_GetTemplatesRequest(arg) {
 }
 
 function deserialize_baserun_v1_GetTemplatesRequest(buffer_arg) {
-  return baserun_pb.GetTemplatesRequest.deserializeBinary(new Uint8Array(buffer_arg));
+  return baserun_pb.GetTemplatesRequest.deserializeBinary(
+    new Uint8Array(buffer_arg),
+  );
 }
 
 function serialize_baserun_v1_GetTemplatesResponse(arg) {
   if (!(arg instanceof baserun_pb.GetTemplatesResponse)) {
-    throw new Error('Expected argument of type baserun.v1.GetTemplatesResponse');
+    throw new Error(
+      'Expected argument of type baserun.v1.GetTemplatesResponse',
+    );
   }
   return Buffer.from(arg.serializeBinary());
 }
 
 function deserialize_baserun_v1_GetTemplatesResponse(buffer_arg) {
-  return baserun_pb.GetTemplatesResponse.deserializeBinary(new Uint8Array(buffer_arg));
+  return baserun_pb.GetTemplatesResponse.deserializeBinary(
+    new Uint8Array(buffer_arg),
+  );
 }
 
 function serialize_baserun_v1_StartRunRequest(arg) {
@@ -101,7 +119,9 @@ function serialize_baserun_v1_StartRunRequest(arg) {
 }
 
 function deserialize_baserun_v1_StartRunRequest(buffer_arg) {
-  return baserun_pb.StartRunRequest.deserializeBinary(new Uint8Array(buffer_arg));
+  return baserun_pb.StartRunRequest.deserializeBinary(
+    new Uint8Array(buffer_arg),
+  );
 }
 
 function serialize_baserun_v1_StartRunResponse(arg) {
@@ -112,7 +132,9 @@ function serialize_baserun_v1_StartRunResponse(arg) {
 }
 
 function deserialize_baserun_v1_StartRunResponse(buffer_arg) {
-  return baserun_pb.StartRunResponse.deserializeBinary(new Uint8Array(buffer_arg));
+  return baserun_pb.StartRunResponse.deserializeBinary(
+    new Uint8Array(buffer_arg),
+  );
 }
 
 function serialize_baserun_v1_StartSessionRequest(arg) {
@@ -123,40 +145,54 @@ function serialize_baserun_v1_StartSessionRequest(arg) {
 }
 
 function deserialize_baserun_v1_StartSessionRequest(buffer_arg) {
-  return baserun_pb.StartSessionRequest.deserializeBinary(new Uint8Array(buffer_arg));
+  return baserun_pb.StartSessionRequest.deserializeBinary(
+    new Uint8Array(buffer_arg),
+  );
 }
 
 function serialize_baserun_v1_StartSessionResponse(arg) {
   if (!(arg instanceof baserun_pb.StartSessionResponse)) {
-    throw new Error('Expected argument of type baserun.v1.StartSessionResponse');
+    throw new Error(
+      'Expected argument of type baserun.v1.StartSessionResponse',
+    );
   }
   return Buffer.from(arg.serializeBinary());
 }
 
 function deserialize_baserun_v1_StartSessionResponse(buffer_arg) {
-  return baserun_pb.StartSessionResponse.deserializeBinary(new Uint8Array(buffer_arg));
+  return baserun_pb.StartSessionResponse.deserializeBinary(
+    new Uint8Array(buffer_arg),
+  );
 }
 
 function serialize_baserun_v1_StartTestSuiteRequest(arg) {
   if (!(arg instanceof baserun_pb.StartTestSuiteRequest)) {
-    throw new Error('Expected argument of type baserun.v1.StartTestSuiteRequest');
+    throw new Error(
+      'Expected argument of type baserun.v1.StartTestSuiteRequest',
+    );
   }
   return Buffer.from(arg.serializeBinary());
 }
 
 function deserialize_baserun_v1_StartTestSuiteRequest(buffer_arg) {
-  return baserun_pb.StartTestSuiteRequest.deserializeBinary(new Uint8Array(buffer_arg));
+  return baserun_pb.StartTestSuiteRequest.deserializeBinary(
+    new Uint8Array(buffer_arg),
+  );
 }
 
 function serialize_baserun_v1_StartTestSuiteResponse(arg) {
   if (!(arg instanceof baserun_pb.StartTestSuiteResponse)) {
-    throw new Error('Expected argument of type baserun.v1.StartTestSuiteResponse');
+    throw new Error(
+      'Expected argument of type baserun.v1.StartTestSuiteResponse',
+    );
   }
   return Buffer.from(arg.serializeBinary());
 }
 
 function deserialize_baserun_v1_StartTestSuiteResponse(buffer_arg) {
-  return baserun_pb.StartTestSuiteResponse.deserializeBinary(new Uint8Array(buffer_arg));
+  return baserun_pb.StartTestSuiteResponse.deserializeBinary(
+    new Uint8Array(buffer_arg),
+  );
 }
 
 function serialize_baserun_v1_SubmitEvalRequest(arg) {
@@ -167,7 +203,9 @@ function serialize_baserun_v1_SubmitEvalRequest(arg) {
 }
 
 function deserialize_baserun_v1_SubmitEvalRequest(buffer_arg) {
-  return baserun_pb.SubmitEvalRequest.deserializeBinary(new Uint8Array(buffer_arg));
+  return baserun_pb.SubmitEvalRequest.deserializeBinary(
+    new Uint8Array(buffer_arg),
+  );
 }
 
 function serialize_baserun_v1_SubmitEvalResponse(arg) {
@@ -178,7 +216,9 @@ function serialize_baserun_v1_SubmitEvalResponse(arg) {
 }
 
 function deserialize_baserun_v1_SubmitEvalResponse(buffer_arg) {
-  return baserun_pb.SubmitEvalResponse.deserializeBinary(new Uint8Array(buffer_arg));
+  return baserun_pb.SubmitEvalResponse.deserializeBinary(
+    new Uint8Array(buffer_arg),
+  );
 }
 
 function serialize_baserun_v1_SubmitLogRequest(arg) {
@@ -189,7 +229,9 @@ function serialize_baserun_v1_SubmitLogRequest(arg) {
 }
 
 function deserialize_baserun_v1_SubmitLogRequest(buffer_arg) {
-  return baserun_pb.SubmitLogRequest.deserializeBinary(new Uint8Array(buffer_arg));
+  return baserun_pb.SubmitLogRequest.deserializeBinary(
+    new Uint8Array(buffer_arg),
+  );
 }
 
 function serialize_baserun_v1_SubmitLogResponse(arg) {
@@ -200,29 +242,39 @@ function serialize_baserun_v1_SubmitLogResponse(arg) {
 }
 
 function deserialize_baserun_v1_SubmitLogResponse(buffer_arg) {
-  return baserun_pb.SubmitLogResponse.deserializeBinary(new Uint8Array(buffer_arg));
+  return baserun_pb.SubmitLogResponse.deserializeBinary(
+    new Uint8Array(buffer_arg),
+  );
 }
 
 function serialize_baserun_v1_SubmitModelConfigRequest(arg) {
   if (!(arg instanceof baserun_pb.SubmitModelConfigRequest)) {
-    throw new Error('Expected argument of type baserun.v1.SubmitModelConfigRequest');
+    throw new Error(
+      'Expected argument of type baserun.v1.SubmitModelConfigRequest',
+    );
   }
   return Buffer.from(arg.serializeBinary());
 }
 
 function deserialize_baserun_v1_SubmitModelConfigRequest(buffer_arg) {
-  return baserun_pb.SubmitModelConfigRequest.deserializeBinary(new Uint8Array(buffer_arg));
+  return baserun_pb.SubmitModelConfigRequest.deserializeBinary(
+    new Uint8Array(buffer_arg),
+  );
 }
 
 function serialize_baserun_v1_SubmitModelConfigResponse(arg) {
   if (!(arg instanceof baserun_pb.SubmitModelConfigResponse)) {
-    throw new Error('Expected argument of type baserun.v1.SubmitModelConfigResponse');
+    throw new Error(
+      'Expected argument of type baserun.v1.SubmitModelConfigResponse',
+    );
   }
   return Buffer.from(arg.serializeBinary());
 }
 
 function deserialize_baserun_v1_SubmitModelConfigResponse(buffer_arg) {
-  return baserun_pb.SubmitModelConfigResponse.deserializeBinary(new Uint8Array(buffer_arg));
+  return baserun_pb.SubmitModelConfigResponse.deserializeBinary(
+    new Uint8Array(buffer_arg),
+  );
 }
 
 function serialize_baserun_v1_SubmitSpanRequest(arg) {
@@ -233,7 +285,9 @@ function serialize_baserun_v1_SubmitSpanRequest(arg) {
 }
 
 function deserialize_baserun_v1_SubmitSpanRequest(buffer_arg) {
-  return baserun_pb.SubmitSpanRequest.deserializeBinary(new Uint8Array(buffer_arg));
+  return baserun_pb.SubmitSpanRequest.deserializeBinary(
+    new Uint8Array(buffer_arg),
+  );
 }
 
 function serialize_baserun_v1_SubmitSpanResponse(arg) {
@@ -244,29 +298,39 @@ function serialize_baserun_v1_SubmitSpanResponse(arg) {
 }
 
 function deserialize_baserun_v1_SubmitSpanResponse(buffer_arg) {
-  return baserun_pb.SubmitSpanResponse.deserializeBinary(new Uint8Array(buffer_arg));
+  return baserun_pb.SubmitSpanResponse.deserializeBinary(
+    new Uint8Array(buffer_arg),
+  );
 }
 
 function serialize_baserun_v1_SubmitTemplateVersionRequest(arg) {
   if (!(arg instanceof baserun_pb.SubmitTemplateVersionRequest)) {
-    throw new Error('Expected argument of type baserun.v1.SubmitTemplateVersionRequest');
+    throw new Error(
+      'Expected argument of type baserun.v1.SubmitTemplateVersionRequest',
+    );
   }
   return Buffer.from(arg.serializeBinary());
 }
 
 function deserialize_baserun_v1_SubmitTemplateVersionRequest(buffer_arg) {
-  return baserun_pb.SubmitTemplateVersionRequest.deserializeBinary(new Uint8Array(buffer_arg));
+  return baserun_pb.SubmitTemplateVersionRequest.deserializeBinary(
+    new Uint8Array(buffer_arg),
+  );
 }
 
 function serialize_baserun_v1_SubmitTemplateVersionResponse(arg) {
   if (!(arg instanceof baserun_pb.SubmitTemplateVersionResponse)) {
-    throw new Error('Expected argument of type baserun.v1.SubmitTemplateVersionResponse');
+    throw new Error(
+      'Expected argument of type baserun.v1.SubmitTemplateVersionResponse',
+    );
   }
   return Buffer.from(arg.serializeBinary());
 }
 
 function deserialize_baserun_v1_SubmitTemplateVersionResponse(buffer_arg) {
-  return baserun_pb.SubmitTemplateVersionResponse.deserializeBinary(new Uint8Array(buffer_arg));
+  return baserun_pb.SubmitTemplateVersionResponse.deserializeBinary(
+    new Uint8Array(buffer_arg),
+  );
 }
 
 function serialize_baserun_v1_SubmitUserRequest(arg) {
@@ -277,7 +341,9 @@ function serialize_baserun_v1_SubmitUserRequest(arg) {
 }
 
 function deserialize_baserun_v1_SubmitUserRequest(buffer_arg) {
-  return baserun_pb.SubmitUserRequest.deserializeBinary(new Uint8Array(buffer_arg));
+  return baserun_pb.SubmitUserRequest.deserializeBinary(
+    new Uint8Array(buffer_arg),
+  );
 }
 
 function serialize_baserun_v1_SubmitUserResponse(arg) {
@@ -288,11 +354,12 @@ function serialize_baserun_v1_SubmitUserResponse(arg) {
 }
 
 function deserialize_baserun_v1_SubmitUserResponse(buffer_arg) {
-  return baserun_pb.SubmitUserResponse.deserializeBinary(new Uint8Array(buffer_arg));
+  return baserun_pb.SubmitUserResponse.deserializeBinary(
+    new Uint8Array(buffer_arg),
+  );
 }
 
-
-var SubmissionServiceService = exports.SubmissionServiceService = {
+var SubmissionServiceService = (exports.SubmissionServiceService = {
   startRun: {
     path: '/baserun.v1.SubmissionService/StartRun',
     requestStream: false,
@@ -436,6 +503,8 @@ var SubmissionServiceService = exports.SubmissionServiceService = {
     responseSerialize: serialize_baserun_v1_GetTemplatesResponse,
     responseDeserialize: deserialize_baserun_v1_GetTemplatesResponse,
   },
-};
+});
 
-exports.SubmissionServiceClient = grpc.makeGenericClientConstructor(SubmissionServiceService);
+exports.SubmissionServiceClient = grpc.makeGenericClientConstructor(
+  SubmissionServiceService,
+);

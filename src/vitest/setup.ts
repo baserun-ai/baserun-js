@@ -1,10 +1,9 @@
 import { afterAll, beforeAll } from 'vitest';
-import { Baserun } from '../baserun';
 
 beforeAll(async () => {
   // @ts-expect-error type
   globalThis.something = 42;
-  Baserun.monkeyPatch();
+  // Baserun.monkeyPatch();
   await new Promise((resolve) => {
     setTimeout(() => {
       resolve(null);

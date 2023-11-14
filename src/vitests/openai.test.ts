@@ -1,6 +1,8 @@
+import '../patch';
+
 import { expect, test, vi } from 'vitest';
-import { baserun } from '../../src';
-baserun.init();
+// import { baserun } from '../../src';
+// baserun.init();
 
 import OpenAI from 'openai';
 // import sinon from 'sinon';
@@ -8,23 +10,14 @@ import OpenAI from 'openai';
 
 const openai = new OpenAI();
 
-test('yo', async () => {
-  console.log(globalThis.something);
-});
-
 test.only('automatically instruments openai chat completion', async () => {
   // await sleep(1000);
   // const mockStartRun = sinon.stub(getOrCreateSubmissionService(), 'startRun');
   // const mockEndRun = sinon.stub(getOrCreateSubmissionService(), 'endRun');
 
-  await openai.chat.completions.create({
-    messages: [
-      {
-        role: 'user',
-        content: "What's the weather like in San Francisco, Tokyo, and Paris?",
-      },
-    ],
-    model: 'gpt-3.5-turbo',
+  await openai.completions.create({
+    model: 'gpt-3.5-turbo-instruct',
+    prompt: 'Hi',
   });
 
   // // Assert

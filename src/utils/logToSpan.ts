@@ -1,4 +1,3 @@
-import { Timestamp } from 'google-protobuf/google/protobuf/timestamp_pb.js';
 import {
   AutoLLMLog,
   BaserunStepType,
@@ -7,13 +6,8 @@ import {
   Log,
   StandardLog,
 } from '../types.js';
-import {
-  Message,
-  Span,
-  Log as ProtoLog,
-  ToolCall,
-  ToolFunction,
-} from '../v1/generated/baserun_pb.js';
+import { Message, Span, Log as ProtoLog } from '../v1/gen/baserun.js';
+import { Timestamp } from '../v1/gen/google/protobuf/timestamp.js';
 
 export function logToSpanOrLog(log: Log, runId: string): Span | ProtoLog {
   const { stepType } = log;
@@ -31,130 +25,147 @@ export function logToSpanOrLog(log: Log, runId: string): Span | ProtoLog {
 export function standardLogToSpan(log: StandardLog, runId: string): ProtoLog {
   const { name, timestamp } = log;
 
-  return new ProtoLog()
-    .setPayload(JSON.stringify(log.payload))
-    .setName(name)
-    .setRunId(runId)
-    .setTimestamp(Timestamp.fromDate(new Date(timestamp * 1000))); // todo: check if * 1000 is correct
+  return {
+    name,
+    runId,
+    timestamp: Timestamp.fromDate(new Date(timestamp * 1000)), // todo: double check if * 1000 is still needed
+    payload: JSON.stringify(log.payload),
+  };
 }
 
 export function autoLLMLogToSpan(log: AutoLLMLog, runId: string): Span {
   const { model, top_p, temperature, stream } = getModelConfig(log);
 
   if (log.errorStack) {
-    return new Span()
-      .setRunId(runId)
-      .setName(`baserun.${log.provider}.${log.type}`)
-      .setVendor(log.provider)
-      .setModel(model)
-      .setRequestType(log.type)
-      .setStartTime(Timestamp.fromDate(log.startTimestamp)) // todo: check if * 1000 is correct
-      .setEndTime(Timestamp.fromDate(log.completionTimestamp))
-      .setErrorStacktrace(log.errorStack);
+    return {
+      name: `baserun.${log.provider}.${log.type}`,
+      runId,
+      errorStacktrace: log.errorStack,
+      model,
+      requestType: log.type,
+      vendor: log.provider,
+      startTime: Timestamp.fromDate(log.startTimestamp),
+      endTime: Timestamp.fromDate(log.completionTimestamp),
+      completions: [],
+      completionTokens: 0,
+      promptMessages: [],
+      promptTokens: 0,
+      spanId: BigInt(0),
+      stop: [],
+      totalTokens: 0,
+      traceId: Uint8Array.from([]),
+    };
   }
 
-  const span = new Span()
-    .setRunId(runId)
-    .setName(`baserun.${log.provider}.${log.type}`)
-    .setVendor(log.provider)
-    .setModel(model)
-    .setRequestType(log.type)
-    .setStartTime(Timestamp.fromDate(log.startTimestamp)) // todo: check if * 1000 is correct
-    .setEndTime(Timestamp.fromDate(log.completionTimestamp));
-
-  if (log.usage) {
-    span
-      .setTotalTokens(log.usage.total_tokens)
-      .setCompletionTokens(log.usage.completion_tokens)
-      .setPromptTokens(log.usage.prompt_tokens);
-  }
-
-  if (top_p) {
-    span.setTopP(top_p);
-  }
-
-  if (temperature) {
-    span.setTemperature(temperature);
-  }
-
-  if (stream) {
-    span.setStream(stream);
-  }
+  const span: Span = {
+    name: `baserun.${log.provider}.${log.type}`,
+    runId,
+    model,
+    requestType: log.type,
+    vendor: log.provider,
+    startTime: Timestamp.fromDate(log.startTimestamp),
+    endTime: Timestamp.fromDate(log.completionTimestamp),
+    completions: [],
+    promptMessages: [],
+    spanId: BigInt(0),
+    stop: [],
+    completionTokens: log.usage?.completion_tokens ?? 0,
+    totalTokens: log.usage?.total_tokens ?? 0,
+    promptTokens: log.usage?.prompt_tokens ?? 0,
+    traceId: Uint8Array.from([]),
+    topP: top_p,
+    temperature,
+    stream,
+  };
 
   // the main difference between a chat.completion and just completion is, that a chat completion can have multiple prompts (messages)
   if (isLLMChatLog(log)) {
     const { promptMessages, toolChoice, tools } = log;
 
     if (toolChoice) {
-      span.setToolChoice(JSON.stringify(toolChoice));
+      span.toolChoice = JSON.stringify(toolChoice);
     }
 
     if (tools) {
-      span.setTools(JSON.stringify(tools));
+      span.tools = JSON.stringify(tools);
     }
 
     const mappedMessages = promptMessages.map(
       ({ content, finish_reason, tool_calls, role }) => {
-        const message = new Message()
-          .setContent(content)
-          .setFinishReason(finish_reason)
-          .setRole(role);
+        const message: Message = {
+          content,
+          finishReason: finish_reason,
+          role,
+          functionCall: '',
+          name: '',
+          systemFingerprint: '',
+          toolCallId: '',
+          toolCalls: [],
+        };
 
         if (tool_calls) {
-          message.setToolCallsList(
-            tool_calls.map((t) =>
-              new ToolCall()
-                .setId(t.id)
-                .setType(t.type)
-                .setFunction(
-                  new ToolFunction()
-                    .setName(t.function.name)
-                    .setArguments(t.function.arguments),
-                ),
-            ),
-          );
+          message.toolCalls = tool_calls.map((t) => ({
+            id: t.id,
+            type: t.type,
+            function: {
+              name: t.function.name,
+              arguments: t.function.arguments,
+            },
+          }));
         }
 
         return message;
       },
     );
 
-    span.setPromptMessagesList(mappedMessages);
+    span.promptMessages = mappedMessages;
   } else {
     const { prompt } = log;
 
-    const message = new Message().setContent(prompt.content);
-    span.setPromptMessagesList([message]);
+    // todo: we need to make some fields optional in the proto because they are not always present
+    const message: Message = {
+      content: prompt.content,
+      finishReason: '',
+      functionCall: '',
+      name: '',
+      role: '',
+      systemFingerprint: '',
+      toolCallId: '',
+      toolCalls: [],
+    };
+    span.promptMessages = [message];
   }
 
   if (log.choices) {
-    const completionsList = log.choices.map(
+    const completions = log.choices.map(
       ({ content, finish_reason, tool_calls, role }) => {
-        const message = new Message()
-          .setContent(content)
-          .setFinishReason(finish_reason)
-          .setRole(role);
+        const message: Message = {
+          content,
+          finishReason: finish_reason,
+          role,
+          functionCall: '',
+          name: '',
+          systemFingerprint: '',
+          toolCallId: '',
+          toolCalls: [],
+        };
 
         if (tool_calls) {
-          message.setToolCallsList(
-            tool_calls.map((t) =>
-              new ToolCall()
-                .setId(t.id)
-                .setType(t.type)
-                .setFunction(
-                  new ToolFunction()
-                    .setName(t.function.name)
-                    .setArguments(t.function.arguments),
-                ),
-            ),
-          );
+          message.toolCalls = tool_calls.map((t) => ({
+            id: t.id,
+            type: t.type,
+            function: {
+              name: t.function.name,
+              arguments: t.function.arguments,
+            },
+          }));
         }
 
         return message;
       },
     );
 
-    span.setCompletionsList(completionsList);
+    span.completions = completions;
   }
 
   return span;

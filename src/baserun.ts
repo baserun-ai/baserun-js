@@ -15,7 +15,7 @@ import {
   SubmitLogRequest,
   SubmitSpanRequest,
   Span,
-} from './v1/generated/baserun_pb.js';
+} from './v1/gen/baserun.js';
 import { getCurrentRun } from './utils/getCurrentRun.js';
 import { getOrCreateSubmissionService } from './backend/submissionService.js';
 import { logToSpanOrLog } from './utils/logToSpan.js';

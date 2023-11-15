@@ -14,7 +14,7 @@
     "prepare": "tshy",
     "test:baserun": "jest --testPathPattern=\"/baserun/\" --config=jest.config.baserun.js",
     "test:normal": "jest --testPathIgnorePatterns=\"/baserun/\"",
-    "build:grpc": "bash scripts/build_grpc.sh",
+    "build:grpc": "protoc --ts_opt client_grpc1 --ts_out ./src/v1/gen --proto_path src/v1/protos src/v1/protos/baserun.proto",
     "test": "concurrently 'npm run test:baserun' 'npm run test:normal'",
     "vitest": "vitest",
     "lint": "eslint --fix --ext .js,.ts .",
@@ -27,6 +27,12 @@
   "license": "ISC",
   "devDependencies": {
     "@anthropic-ai/sdk": "^0.6.2",
+    "@bufbuild/buf": "^1.28.1",
+    "@bufbuild/protobuf": "^1.4.2",
+    "@bufbuild/protoc-gen-es": "^1.4.2",
+    "@connectrpc/connect": "^1.1.3",
+    "@connectrpc/connect-node": "^1.1.3",
+    "@connectrpc/protoc-gen-connect-es": "^1.1.3",
     "@types/google-protobuf": "^3.15.10",
     "@types/jest": "^29.5.8",
     "@types/json-stringify-safe": "^5.0.1",
@@ -57,9 +63,8 @@
   "type": "module",
   "dependencies": {
     "@grpc/grpc-js": "^1.9.9",
+    "@protobuf-ts/plugin": "^2.9.1",
     "google-protobuf": "^3.21.2",
-    "grpc-tools": "^1.12.4",
-    "grpc_tools_node_protoc_ts": "^5.3.3",
     "isomorphic-unfetch": "^4.0.2",
     "json-stringify-safe": "^5.0.1",
     "uuid": "^9.0.0"

@@ -5,3 +5,4 @@ examples
 .husky
 patches
 scripts
+buf.gen.yaml

@@ -27,7 +27,7 @@ async function doItMooIt2() {
     messages: [
       {
         role: 'user',
-        content: `What's the weather like in ${pickRandomCity}?`,
+        content: `What's the weather like in ${pickRandomCity()}?`,
       },
     ],
     model: 'gpt-3.5-turbo',

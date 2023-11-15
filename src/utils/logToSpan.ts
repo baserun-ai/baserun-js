@@ -42,7 +42,6 @@ export function autoLLMLogToSpan(log: AutoLLMLog, runId: string): Span {
   const { model, top_p, temperature, stream } = getModelConfig(log);
 
   if (log.errorStack) {
-    console.log('setting errorStack', log.errorStack);
     return new Span()
       .setRunId(runId)
       .setName(`baserun.${log.provider}.${log.type}`)
@@ -53,12 +52,6 @@ export function autoLLMLogToSpan(log: AutoLLMLog, runId: string): Span {
       .setEndTime(Timestamp.fromDate(log.completionTimestamp))
       .setErrorStacktrace(log.errorStack);
   }
-
-  // const fn = new ToolFunction()
-  //   .setArguments('{\n  "location": "San Francisco, CA"\n}')
-  //   .setName('get_current_weather');
-
-  // const tc = new ToolCall().setId('').setType('function').setFunction(fn);
 
   const span = new Span()
     .setRunId(runId)
@@ -108,7 +101,6 @@ export function autoLLMLogToSpan(log: AutoLLMLog, runId: string): Span {
           .setRole(role);
 
         if (tool_calls) {
-          console.log({ tool_calls });
           message.setToolCallsList(
             tool_calls.map((t) =>
               new ToolCall()
@@ -144,7 +136,6 @@ export function autoLLMLogToSpan(log: AutoLLMLog, runId: string): Span {
           .setRole(role);
 
         if (tool_calls) {
-          console.log({ tool_calls });
           message.setToolCallsList(
             tool_calls.map((t) =>
               new ToolCall()

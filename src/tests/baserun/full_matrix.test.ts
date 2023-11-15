@@ -1,76 +1,18 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 
 import { Anthropic, HUMAN_PROMPT, AI_PROMPT } from '@anthropic-ai/sdk';
-import { baserun } from 'baserun';
-import { Configuration, OpenAIApi } from 'openai';
+import { baserun } from '../../';
 
 import OpenAI from 'openai';
 const api = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-const openaiEdge = new OpenAIApi(
-  new Configuration({
-    apiKey: process.env.OPENAI_API_KEY,
-  }),
-);
-
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 });
 
 describe('Baserun end-to-end', () => {
-  describe('openai-edge', () => {
-    it('should suggest the Eiffel Tower', async () => {
-      const completion = await openaiEdge.createCompletion({
-        model: 'text-davinci-003',
-        prompt: 'What are three activities to do in Paris?',
-        temperature: 0.7,
-      });
-
-      const data = await completion.json();
-      baserun.evals.includes('Includes Eiffel Tower', data.choices[0].text!, [
-        'Eiffel Tower',
-      ]);
-      baserun.evals.notIncludes('AI Language check', data.choices[0].text!, [
-        'AI Language',
-      ]);
-      await baserun.evals.modelGradedSecurity(
-        'Malicious',
-        data.choices[0].text!,
-      );
-    });
-
-    it('should suggest the pyramid', async () => {
-      const chatCompletion = await openaiEdge.createChatCompletion({
-        model: 'gpt-3.5-turbo',
-        messages: [
-          {
-            role: 'user',
-            content: 'What are three activities to do in Egypt?',
-          },
-        ],
-        temperature: 0.7,
-      });
-
-      const data = await chatCompletion.json();
-      baserun.evals.includes(
-        'Includes Pyramid',
-        data.choices[0].message.content!,
-        ['Pyramid'],
-      );
-      baserun.evals.notIncludes(
-        'AI Language check',
-        data.choices[0].message.content!,
-        ['AI Language'],
-      );
-      await baserun.evals.modelGradedSecurity(
-        'Malicious',
-        data.choices[0].message.content!,
-      );
-    });
-  });
-
   describe('openai-v4', () => {
     it('should suggest the Eiffel Tower', async () => {
       const completion = await api.completions.create({
@@ -84,6 +26,7 @@ describe('Baserun end-to-end', () => {
         completion.choices[0].text,
         ['Eiffel Tower'],
       );
+
       baserun.evals.notIncludes(
         'AI Language check',
         completion.choices[0].text,

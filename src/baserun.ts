@@ -268,8 +268,6 @@ export class Baserun {
 
     const startRunRequest = new StartRunRequest().setRun(run);
 
-    console.log({ startRunRequest });
-
     return new Promise<Run>((resolve, reject) => {
       getOrCreateSubmissionService().startRun(startRunRequest, (error) => {
         if (error) {
@@ -362,11 +360,9 @@ export class Baserun {
     global.baserunTraces.push(traceData);
   }
 
-  private static submitLogOrSpan(
-    logOrSpan: ProtoLog | Span,
-    run: Run,
-  ): Promise<void> {
+  static submitLogOrSpan(logOrSpan: ProtoLog | Span, run: Run): Promise<void> {
     return new Promise((resolve, reject) => {
+      // handle Log
       if (logOrSpan instanceof ProtoLog) {
         const logRequest = new SubmitLogRequest().setLog(logOrSpan).setRun(run);
         getOrCreateSubmissionService().submitLog(logRequest, (error) => {
@@ -377,6 +373,7 @@ export class Baserun {
             resolve(undefined);
           }
         });
+        // otherwise it must be a Span
       } else {
         const spanRequest = new SubmitSpanRequest()
           .setSpan(logOrSpan)

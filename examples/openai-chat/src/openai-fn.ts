@@ -1,5 +1,5 @@
 import OpenAI from 'openai';
-import { baserun } from '../../../src';
+import { baserun } from '../../../src/index.js';
 
 baserun.init();
 

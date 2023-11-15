@@ -6,7 +6,7 @@ import {
 } from '../types.js';
 import { DEFAULT_USAGE } from './constants.js';
 import { patch } from './patch.js';
-import { loadModule } from '../utils/loader.js';
+import { anthropic } from './modules.js';
 
 export class AnthropicWrapper {
   static resolver(
@@ -77,10 +77,9 @@ export class AnthropicWrapper {
 
   static async init(log: (entry: AutoLLMLog) => Promise<void>) {
     try {
-      const anthropicModule = await loadModule(module, '@anthropic-ai/sdk');
       const symbols = ['Anthropic.Completions.prototype.create'];
       patch({
-        module: anthropicModule,
+        module: anthropic,
         symbols,
         resolver: AnthropicWrapper.resolver,
         log,

@@ -9,7 +9,7 @@ import {
 } from '../types.js';
 import { patch } from './patch.js';
 import { DEFAULT_USAGE } from './constants.js';
-import { loadModule } from '../utils/loader.js';
+import { openai } from './modules.js';
 
 interface NewOpenAIError {
   response?: { error?: { message?: string } };
@@ -251,8 +251,7 @@ export class OpenAIWrapper {
   }
 
   static init(log: (entry: AutoLLMLog) => Promise<void>) {
-    const mod = loadModule(module, 'openai');
-    OpenAIWrapper.patch(mod, log);
+    OpenAIWrapper.patch(openai, log);
   }
 }
 

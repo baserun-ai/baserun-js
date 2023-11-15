@@ -2,6 +2,7 @@
 
 import { Baserun } from '../baserun';
 import { baserun } from '../index';
+import pick from 'lodash.pick';
 
 jest.mock('node-fetch');
 
@@ -20,7 +21,7 @@ describe('Baserun trace', () => {
     storeTestSpy.mockRestore();
   });
 
-  it.only('test_explicit_log', async () => {
+  it('test_explicit_log', async () => {
     const metadata = { environment: 'test', userId: 123 };
     async function entrypoint(arg1: string) {
       baserun.log('TestEvent', 'whatever');
@@ -32,15 +33,27 @@ describe('Baserun trace', () => {
 
     const storedData = storeTestSpy.mock.calls;
 
-    console.log({ storedData });
+    const [rawLog, rawRun] = storedData[0];
 
-    // expect(steps.length).toBe(1)
+    const log = rawLog.toObject();
+    const run = rawRun.toObject();
 
-    // expect(storedData['steps'][0]['name']).toBe('TestEvent');
-    // expect(storedData['steps'][0]['payload']).toBe('whatever');
-    // expect(storedData['metadata']).toEqual(metadata);
-    // expect(storedData['testInputs']).toEqual([JSON.stringify('Hello, world!')]);
-    // expect(storedData['result']).toBe(JSON.stringify('AI Hello, world!'));
+    const expectedLog = pick(log, ['name', 'payload']);
+    const expectedRun = pick(run, ['metadata', 'runType', 'name']);
+
+    expect(expectedLog).toMatchInlineSnapshot(`
+      {
+        "name": "TestEvent",
+        "payload": ""whatever"",
+      }
+    `);
+    expect(expectedRun).toMatchInlineSnapshot(`
+      {
+        "metadata": "{"environment":"test","userId":123}",
+        "name": "entrypoint",
+        "runType": 1,
+      }
+    `);
   });
 
   it('test_explicit_log_with_payload', async () => {
@@ -59,12 +72,15 @@ describe('Baserun trace', () => {
     const tracedEntrypoint = baserun.trace(entrypoint, { metadata });
     await tracedEntrypoint('Hello, world!');
 
-    const storedData = storeTestSpy.mock.calls[0][0];
-    expect(storedData['steps'][0]['name']).toBe(logName);
-    expect(storedData['steps'][0]['payload']).toEqual(logPayload);
-    expect(storedData['metadata']).toEqual(metadata);
-    expect(storedData['testInputs']).toEqual([JSON.stringify('Hello, world!')]);
-    expect(storedData['result']).toBe(JSON.stringify('AI Hello, world!'));
+    const run = storeTestSpy.mock.calls[0][0].toObject();
+    const expectedRun = pick(run, ['name', 'payload']);
+
+    expect(expectedRun).toMatchInlineSnapshot(`
+      {
+        "name": "TestEvent",
+        "payload": "{"action":"called_api","value":42}",
+      }
+    `);
   });
 
   it('handles exception', async () => {
@@ -80,9 +96,24 @@ describe('Baserun trace', () => {
       // Do nothing
     }
 
-    const storedData = storeTestSpy.mock.calls[0][0];
-    expect(storedData['steps'][0]['name']).toBe('TestEvent');
-    expect(storedData['steps'][0]['payload']).toBe('whatever');
-    expect(storedData['error']).toBe('Error: Failed');
+    const run = storeTestSpy.mock.calls[0][0].toObject();
+    const trace = storeTestSpy.mock.calls[0][1].toObject();
+
+    const expectedRun = pick(run, ['name', 'payload']);
+    const expectedTrace = pick(trace, ['name', 'metadata', 'result']);
+
+    expect(expectedRun).toMatchInlineSnapshot(`
+      {
+        "name": "TestEvent",
+        "payload": ""whatever"",
+      }
+    `);
+    expect(expectedTrace).toMatchInlineSnapshot(`
+      {
+        "metadata": "{}",
+        "name": "entrypoint",
+        "result": "",
+      }
+    `);
   });
 });

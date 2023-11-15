@@ -5,7 +5,9 @@ baserun.init();
 const main = async () => {
   const metadata = { environment: 'test', userId: 123 };
   async function entrypoint(arg1: string) {
-    baserun.log('TestEvent', 'whatever');
+    const text = `whatever ${(Math.random() * 1000) | 0}`;
+    console.log(text);
+    baserun.log('TestEvent', text);
     return `AI ${arg1}`;
   }
 

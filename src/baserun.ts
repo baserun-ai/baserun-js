@@ -309,13 +309,8 @@ export class Baserun {
       .setName(name)
       .setPayload(stringify(payload))
       .setTimestamp(Timestamp.fromDate(new Date()));
-    const submitLogRequest = new SubmitLogRequest().setRun(run).setLog(log);
 
-    getOrCreateSubmissionService().submitLog(submitLogRequest, (error) => {
-      if (error) {
-        console.error('Failed to submit log to Baserun: ', error);
-      }
-    });
+    Baserun.submitLogOrSpan(log, run);
   }
 
   static async flush(): Promise<string | undefined> {

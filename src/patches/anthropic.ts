@@ -3,10 +3,10 @@ import {
   BaserunProvider,
   BaserunStepType,
   BaserunType,
-} from '../types';
-import { DEFAULT_USAGE } from './constants';
-import { patch } from './patch';
-import { loadModule } from '../utils/loader';
+} from '../types.js';
+import { DEFAULT_USAGE } from './constants.js';
+import { patch } from './patch.js';
+import { loadModule } from '../utils/loader.js';
 
 export class AnthropicWrapper {
   static resolver(

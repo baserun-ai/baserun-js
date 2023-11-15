@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 
 import { Anthropic, HUMAN_PROMPT, AI_PROMPT } from '@anthropic-ai/sdk';
-import { baserun } from '../../';
+import { baserun } from '../../index.js';
 
 import OpenAI from 'openai';
 const api = new OpenAI({

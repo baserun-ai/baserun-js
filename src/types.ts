@@ -2,9 +2,9 @@ import {
   ChatCompletionMessageToolCall,
   ChatCompletionTool,
   ChatCompletionToolChoiceOption,
-} from 'openai/resources';
+} from 'openai/resources/index.js';
 
-import { Eval } from './evals/types';
+import { Eval } from './evals/types.js';
 
 export enum BaserunProvider {
   Anthropic = 'anthropic',

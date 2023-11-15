@@ -4,12 +4,12 @@ import {
   EvalType,
   EvalPayload,
   ModelGradedEvalTypes,
-} from './types';
-import { isValidJson } from './json';
-import { OpenAIWrapper, getChoiceMessages } from '../patches/openai';
-import { BaserunProvider, BaserunStepType, BaserunType } from '../types';
-import { DEFAULT_USAGE } from '../patches/constants';
-import { getTimestamp } from '../utils/helpers';
+} from './types.js';
+import { isValidJson } from './json.js';
+import { OpenAIWrapper, getChoiceMessages } from '../patches/openai.js';
+import { BaserunProvider, BaserunStepType, BaserunType } from '../types.js';
+import { DEFAULT_USAGE } from '../patches/constants.js';
+import { getTimestamp } from '../utils/helpers.js';
 
 function getAnswerPrompt(choices: string[]): string {
   const joinedChoices = choices.map((choice) => `"${choice}"`).join(' or ');

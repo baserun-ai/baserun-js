@@ -1,9 +1,12 @@
 import NodeEnvironment from 'jest-environment-node';
 import { Circus } from '@jest/types';
-import { Baserun } from '../baserun';
-import { TraceType } from '../types';
+import { Baserun } from '../baserun.js';
+import { TraceType } from '../types.js';
 
-export default class BaserunJestEnvironment extends NodeEnvironment {
+// yes this is sad, but needed due to TypeScript not seeing this as a function type
+const AnyNodeEnvironment = NodeEnvironment as any;
+
+export default class BaserunJestEnvironment extends AnyNodeEnvironment {
   private _baserunTraceStore: Map<string, any> | undefined;
 
   handleTestEvent = (event: Circus.Event) => {

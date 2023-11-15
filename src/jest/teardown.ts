@@ -1,4 +1,4 @@
-import { Baserun } from '../baserun';
+import { Baserun } from '../baserun.js';
 
 export default async function teardown(
   globalConfig: any,

@@ -6,10 +6,10 @@ import {
   LLMChatLog,
   LLMCompletionLog,
   Message,
-} from '../types';
-import { patch } from './patch';
-import { DEFAULT_USAGE } from './constants';
-import { loadModule } from '../utils/loader';
+} from '../types.js';
+import { patch } from './patch.js';
+import { DEFAULT_USAGE } from './constants.js';
+import { loadModule } from '../utils/loader.js';
 
 interface NewOpenAIError {
   response?: { error?: { message?: string } };

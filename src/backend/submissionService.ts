@@ -1,5 +1,5 @@
 import { credentials, Metadata } from '@grpc/grpc-js';
-import { SubmissionServiceClient } from '../v1/generated/baserun_grpc_pb';
+import { SubmissionServiceClient } from '../v1/generated/baserun_grpc_pb.js';
 
 let submissionService: SubmissionServiceClient | undefined;
 

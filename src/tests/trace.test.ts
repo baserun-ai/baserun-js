@@ -1,7 +1,7 @@
 // process.env.BASERUN_API_KEY = 'test-key';
 
-import { Baserun } from '../baserun';
-import { baserun } from '../index';
+import { Baserun } from '../baserun.js';
+import { baserun } from '../index.js';
 import pick from 'lodash.pick';
 
 jest.mock('node-fetch');
@@ -112,7 +112,7 @@ describe('Baserun trace', () => {
       {
         "metadata": "{}",
         "name": "entrypoint",
-        "result": "",
+        "result": ""
       }
     `);
   });

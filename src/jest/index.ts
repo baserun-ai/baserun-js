@@ -1,6 +1,4 @@
-export = {
-  globalSetup: require.resolve('./setup'),
-  globalTeardown: require.resolve('./teardown'),
-  setupFilesAfterEnv: [require.resolve('./monkey_patch')],
-  testEnvironment: require.resolve('./environment'),
-};
+export * as globalSetup from './setup.js';
+export * as globalTeardown from './teardown.js';
+export * as setupFilesAfterEnv from './monkey_patch.js';
+export * as testEnvironment from './environment.js';

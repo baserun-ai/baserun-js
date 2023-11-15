@@ -1,7 +1,7 @@
 process.env.BASERUN_API_KEY = 'test-key';
 
-import { Baserun } from '../baserun';
-import { baserun } from '../index';
+import { Baserun } from '../baserun.js';
+import { baserun } from '../index.js';
 
 jest.mock('node-fetch');
 

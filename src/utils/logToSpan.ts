@@ -1,4 +1,4 @@
-import { Timestamp } from 'google-protobuf/google/protobuf/timestamp_pb';
+import { Timestamp } from 'google-protobuf/google/protobuf/timestamp_pb.js';
 import {
   AutoLLMLog,
   BaserunStepType,
@@ -6,14 +6,14 @@ import {
   LLMChatLog,
   Log,
   StandardLog,
-} from '../types';
+} from '../types.js';
 import {
   Message,
   Span,
   Log as ProtoLog,
   ToolCall,
   ToolFunction,
-} from '../v1/generated/baserun_pb';
+} from '../v1/generated/baserun_pb.js';
 
 export function logToSpanOrLog(log: Log, runId: string): Span | ProtoLog {
   const { stepType } = log;

@@ -1,12 +1,12 @@
 import { v4 } from 'uuid';
 import stringify from 'json-stringify-safe';
-import { AutoLLMLog, Trace, TraceType, Log } from './types';
-import { getTimestamp } from './utils/helpers';
-import { Evals } from './evals/evals';
-import { Eval } from './evals/types';
-import { OpenAIWrapper } from './patches/openai';
+import { AutoLLMLog, Trace, TraceType, Log } from './types.js';
+import { getTimestamp } from './utils/helpers.js';
+import { Evals } from './evals/evals.js';
+import { Eval } from './evals/types.js';
+import { OpenAIWrapper } from './patches/openai.js';
 import { Timestamp } from 'google-protobuf/google/protobuf/timestamp_pb.js';
-import { AnthropicWrapper } from './patches/anthropic';
+import { AnthropicWrapper } from './patches/anthropic.js';
 import {
   EndRunRequest,
   Run,
@@ -15,10 +15,10 @@ import {
   SubmitLogRequest,
   SubmitSpanRequest,
   Span,
-} from './v1/generated/baserun_pb';
-import { getCurrentRun } from './utils/getCurrentRun';
-import { getOrCreateSubmissionService } from './backend/submissionService';
-import { logToSpanOrLog } from './utils/logToSpan';
+} from './v1/generated/baserun_pb.js';
+import { getCurrentRun } from './utils/getCurrentRun.js';
+import { getOrCreateSubmissionService } from './backend/submissionService.js';
+import { logToSpanOrLog } from './utils/logToSpan.js';
 
 const TraceExecutionIdKey = 'baserun_trace_execution_id';
 const TraceNameKey = 'baserun_trace_name';

@@ -1,3 +1,3 @@
-import { Baserun } from '../baserun';
+import { Baserun } from '../baserun.js';
 
 Baserun.monkeyPatch();

@@ -1,4 +1,4 @@
-import { Baserun } from './baserun';
+import { Baserun } from './baserun.js';
 
 const init = Baserun.init;
 const trace = Baserun.trace;

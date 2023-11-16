@@ -17,9 +17,10 @@ import OpenAI from 'openai';
 const openai = new OpenAI();
 
 async function main() {
-  const { result, sessionId } = await baserun.session(
-    async () => {
-      const chatCompletion = await openai.chat.completions.create({
+  const { result, sessionId } = await baserun.session({
+    user: 'bob@alice.com',
+    async session(b) {
+      const chatCompletion = await b.openai.chat.completions.create({
         model: 'gpt-3.5-turbo',
         messages: [
           {
@@ -29,13 +30,10 @@ async function main() {
         ],
       });
 
-      baserun.checks.json(chatCompletion.id, chatCompletion.choices[0].content);
+      b.checks.json(chatCompletion.id, chatCompletion.choices[0].content);
       return chatCompletion;
     },
-    {
-      user: 'bob@alice.com',
-    },
-  );
+  });
 
   // we can continue a session later
   const { result: result2 } = await baserun.session(
@@ -105,6 +103,37 @@ async function main() {
       sessionId,
     },
   );
+}
+
+main();
+```
+
+### No-callback design
+
+```ts
+import { baserun } from 'baserun';
+import OpenAI from 'openai';
+
+const openai = new OpenAI();
+
+async function main() {
+  const { result, sessionId } = await baserun.session({
+    user: 'bob@alice.com',
+    async session(b) {
+      const chatCompletion = await b.openai.chat.completions.create({
+        model: 'gpt-3.5-turbo',
+        messages: [
+          {
+            role: 'user',
+            content: `Return a json object`,
+          },
+        ],
+      });
+
+      b.checks.json(chatCompletion.id, chatCompletion.choices[0].content);
+      return chatCompletion;
+    },
+  });
 }
 
 main();

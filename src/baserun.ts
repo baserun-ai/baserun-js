@@ -5,7 +5,6 @@ import { getTimestamp } from './utils/helpers.js';
 import { Evals } from './evals/evals.js';
 import { Eval } from './evals/types.js';
 import { OpenAIWrapper } from './patches/openai.js';
-import { Timestamp } from 'google-protobuf/google/protobuf/timestamp_pb.js';
 import { AnthropicWrapper } from './patches/anthropic.js';
 import {
   EndRunRequest,
@@ -15,10 +14,12 @@ import {
   SubmitLogRequest,
   SubmitSpanRequest,
   Span,
+  Run_RunType,
 } from './v1/gen/baserun.js';
 import { getCurrentRun } from './utils/getCurrentRun.js';
 import { getOrCreateSubmissionService } from './backend/submissionService.js';
 import { logToSpanOrLog } from './utils/logToSpan.js';
+import { Timestamp } from './v1/gen/google/protobuf/timestamp.js';
 
 const TraceExecutionIdKey = 'baserun_trace_execution_id';
 const TraceNameKey = 'baserun_trace_name';
@@ -192,7 +193,7 @@ export class Baserun {
     return async (...args: Parameters<T>): Promise<ReturnType<T>> => {
       await Baserun.getOrCreateCurrentRun({
         name,
-        traceType: Run.RunType.RUN_TYPE_PRODUCTION,
+        traceType: Run_RunType.PRODUCTION,
         metadata,
       });
 
@@ -234,7 +235,7 @@ export class Baserun {
     suiteId?: string;
     startTimestamp?: Date;
     completionTimestamp?: Date;
-    traceType?: Run.RunType;
+    traceType?: Run_RunType;
     metadata?: object;
   }): Promise<Run> {
     const currentRun = getCurrentRun();
@@ -245,28 +246,37 @@ export class Baserun {
     const runId = v4();
     if (!traceType) {
       traceType = global.baserunTestSuite
-        ? Run.RunType.RUN_TYPE_TEST
-        : Run.RunType.RUN_TYPE_PRODUCTION;
+        ? Run_RunType.TEST
+        : Run_RunType.PRODUCTION;
     }
 
-    const run = new Run()
-      .setRunId(runId)
-      .setRunType(traceType)
-      .setName(name)
-      .setMetadata(stringify(metadata ?? {}));
+    const run: Run = {
+      runId,
+      runType: traceType,
+      name,
+      metadata: stringify(metadata ?? {}),
+      suiteId: '',
+      sessionId: '',
+      inputs: [],
+      error: '',
+      result: '',
+      startTimestamp: Timestamp.fromDate(new Date()),
+      completionTimestamp: Timestamp.fromDate(new Date()),
+    };
 
     global.baserunCurrentRun = run;
 
     if (suiteId ?? global.baserunTestSuite) {
-      run.setSuiteId(suiteId ?? global.baserunTestSuite.getId());
+      // todo: make sure getId still works here
+      run.suiteId = suiteId ?? global.baserunTestSuite.getId();
     }
 
-    run.setStartTimestamp(Timestamp.fromDate(startTimestamp ?? new Date()));
+    run.startTimestamp = Timestamp.fromDate(startTimestamp ?? new Date());
     if (completionTimestamp) {
-      run.setCompletionTimestamp(Timestamp.fromDate(completionTimestamp));
+      run.startTimestamp = Timestamp.fromDate(completionTimestamp);
     }
 
-    const startRunRequest = new StartRunRequest().setRun(run);
+    const startRunRequest: StartRunRequest = { run };
 
     return new Promise<Run>((resolve, reject) => {
       getOrCreateSubmissionService().startRun(startRunRequest, (error) => {
@@ -281,9 +291,9 @@ export class Baserun {
   }
 
   static finishRun(run: Run): void {
-    run.setCompletionTimestamp(Timestamp.fromDate(new Date()));
+    run.completionTimestamp = Timestamp.fromDate(new Date());
+    const endRunRequest: EndRunRequest = { run };
 
-    const endRunRequest = new EndRunRequest().setRun(run);
     getOrCreateSubmissionService().endRun(endRunRequest, (error) => {
       if (error) {
         console.error('Failed to submit run end to Baserun: ', error);
@@ -304,11 +314,12 @@ export class Baserun {
       return;
     }
 
-    const log = new ProtoLog()
-      .setRunId(run.getRunId())
-      .setName(name)
-      .setPayload(stringify(payload))
-      .setTimestamp(Timestamp.fromDate(new Date()));
+    const log: ProtoLog = {
+      name,
+      payload: stringify(payload),
+      timestamp: Timestamp.fromDate(new Date()),
+      runId: run.runId,
+    };
 
     Baserun.submitLogOrSpan(log, run);
   }
@@ -330,14 +341,14 @@ export class Baserun {
           name: trace.testName,
           traceType:
             trace.type === TraceType.Production
-              ? Run.RunType.RUN_TYPE_PRODUCTION
-              : Run.RunType.RUN_TYPE_TEST,
+              ? Run_RunType.PRODUCTION
+              : Run_RunType.TEST,
           metadata: trace.metadata,
         });
 
         await Promise.all(
           trace.steps.map((step) =>
-            Baserun.submitLogOrSpan(logToSpanOrLog(step, run.getRunId()), run),
+            Baserun.submitLogOrSpan(logToSpanOrLog(step, run.runId), run),
           ),
         );
 
@@ -358,11 +369,14 @@ export class Baserun {
   static submitLogOrSpan(logOrSpan: ProtoLog | Span, run: Run): Promise<void> {
     return new Promise((resolve, reject) => {
       // handle Log
-      if (logOrSpan instanceof ProtoLog) {
-        const logRequest = new SubmitLogRequest().setLog(logOrSpan).setRun(run);
-        getOrCreateSubmissionService().submitLog(logRequest, (error) => {
+      if (isSpan(logOrSpan)) {
+        const spanRequest: SubmitSpanRequest = {
+          run,
+          span: logOrSpan,
+        };
+        getOrCreateSubmissionService().submitSpan(spanRequest, (error) => {
           if (error) {
-            console.error('Failed to submit log to Baserun: ', error);
+            console.error('Failed to submit span to Baserun: ', error);
             reject(error);
           } else {
             resolve(undefined);
@@ -370,12 +384,13 @@ export class Baserun {
         });
         // otherwise it must be a Span
       } else {
-        const spanRequest = new SubmitSpanRequest()
-          .setSpan(logOrSpan)
-          .setRun(run);
-        getOrCreateSubmissionService().submitSpan(spanRequest, (error) => {
+        const logRequest: SubmitLogRequest = {
+          log: logOrSpan,
+          run,
+        };
+        getOrCreateSubmissionService().submitLog(logRequest, (error) => {
           if (error) {
-            console.error('Failed to submit span to Baserun: ', error);
+            console.error('Failed to submit log to Baserun: ', error);
             reject(error);
           } else {
             resolve(undefined);
@@ -393,7 +408,7 @@ export class Baserun {
       // todo: add metadata
     });
 
-    const span = logToSpanOrLog(logEntry, run.getRunId());
+    const span = logToSpanOrLog(logEntry, run.runId);
 
     return Baserun.submitLogOrSpan(span, run);
   }
@@ -419,4 +434,8 @@ export class Baserun {
     evals.push(evalEntry);
     store.set(TraceEvalsKey, evals);
   }
+}
+
+function isSpan(log: ProtoLog | Span): log is Span {
+  return Object.prototype.hasOwnProperty.call(log, 'spanId');
 }

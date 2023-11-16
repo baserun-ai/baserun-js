@@ -1,8 +1,6 @@
-import '../patch';
-
-import { expect, test, vi } from 'vitest';
-// import { baserun } from '../../src';
-// baserun.init();
+import { expect, test } from 'vitest';
+import { baserun } from '../index.js';
+baserun.init();
 
 import OpenAI from 'openai';
 // import sinon from 'sinon';
@@ -15,10 +13,14 @@ test.only('automatically instruments openai chat completion', async () => {
   // const mockStartRun = sinon.stub(getOrCreateSubmissionService(), 'startRun');
   // const mockEndRun = sinon.stub(getOrCreateSubmissionService(), 'endRun');
 
-  await openai.completions.create({
+  const x = await openai.completions.create({
     model: 'gpt-3.5-turbo-instruct',
-    prompt: 'Hi',
+    prompt: '1+1=',
   });
+
+  console.log(x);
+
+  expect(1).toBe(1);
 
   // // Assert
   // expect(mockStartRun.calledOnce).toBe(true);
@@ -28,5 +30,3 @@ test.only('automatically instruments openai chat completion', async () => {
   // mockStartRun.restore();
   // mockEndRun.restore();
 });
-
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));

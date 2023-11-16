@@ -4,6 +4,7 @@ export let anthropic: any;
 try {
   // @ts-ignore
   openai = (await import('openai')).default;
+  console.log('openai module found');
 } catch (e) {
   console.warn('openai module not found');
 }

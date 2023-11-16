@@ -37,6 +37,7 @@ export class OpenAIWrapper {
     response?: any,
     error?: any,
   ) {
+    console.log('resolver');
     let usage = DEFAULT_USAGE;
     let output = '';
     const type = symbol.includes('Chat')

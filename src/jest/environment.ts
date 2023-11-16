@@ -1,7 +1,8 @@
 import NodeEnvironment from 'jest-environment-node';
 import { Circus } from '@jest/types';
-import { Baserun } from '../baserun.js';
-import { TraceType } from '../types.js';
+// TODO: Make evals work again
+// import { Baserun } from '../baserun.js';
+// import { TraceType } from '../types.js';
 
 // yes this is sad, but needed due to TypeScript not seeing this as a function type
 const AnyNodeEnvironment = NodeEnvironment as any;
@@ -21,21 +22,21 @@ export default class BaserunJestEnvironment extends AnyNodeEnvironment {
         parent = parent.parent;
       }
 
-      this._baserunTraceStore = Baserun.markTraceStart(
-        TraceType.Test,
-        namePath.join(' • '),
-      );
+      // this._baserunTraceStore = Baserun.markTraceStart(
+      //   TraceType.Test,
+      //   namePath.join(' • '),
+      // );
       this.global.baserunTraceStore = this._baserunTraceStore;
     }
 
     if (event.name === 'test_done' && event.test) {
-      Baserun.markTraceEnd(
-        {
-          error: event.test.errors[0],
-          result: event.test.status,
-        },
-        this._baserunTraceStore,
-      );
+      // Baserun.markTraceEnd(
+      //   {
+      //     error: event.test.errors[0],
+      //     result: event.test.status,
+      //   },
+      //   this._baserunTraceStore,
+      // );
       this._baserunTraceStore = undefined;
       this.global.baserunTraceStore = undefined;
     }

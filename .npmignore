@@ -1,4 +1,10 @@
 /dist/test
+/dist/commonjs/tests
+/dist/commonjs/vitests
+/dist/commonjs/sandbox
+/dist/esm/tests
+/dist/esm/vitests
+/dist/esm/sandbox
 examples
 .vscode
 .idea

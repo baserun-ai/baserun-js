@@ -1,7 +1,7 @@
 // process.env.BASERUN_API_KEY = 'test-key';
 
-import { Baserun } from '../baserun.js';
-import { baserun } from '../index.js';
+import { Baserun } from '../../dist/commonjs/baserun.js';
+import { baserun } from '../../dist/commonjs/index.js';
 import pick from 'lodash.pick';
 
 jest.mock('node-fetch');
@@ -33,13 +33,10 @@ describe('Baserun trace', () => {
 
     const storedData = storeTestSpy.mock.calls;
 
-    const [rawLog, rawRun] = storedData[0];
-
-    const log = rawLog.toObject();
-    const run = rawRun.toObject();
+    const [log, run] = storedData[0];
 
     const expectedLog = pick(log, ['name', 'payload']);
-    const expectedRun = pick(run, ['metadata', 'runType', 'name']);
+    const expectedRun = pick(run, ['metadata', 'runType', 'name', 'result']);
 
     expect(expectedLog).toMatchInlineSnapshot(`
       {
@@ -51,6 +48,7 @@ describe('Baserun trace', () => {
       {
         "metadata": "{"environment":"test","userId":123}",
         "name": "entrypoint",
+        "result": ""AI Hello, world!"",
         "runType": 1,
       }
     `);
@@ -72,7 +70,7 @@ describe('Baserun trace', () => {
     const tracedEntrypoint = baserun.trace(entrypoint, { metadata });
     await tracedEntrypoint('Hello, world!');
 
-    const run = storeTestSpy.mock.calls[0][0].toObject();
+    const run = storeTestSpy.mock.calls[0][0];
     const expectedRun = pick(run, ['name', 'payload']);
 
     expect(expectedRun).toMatchInlineSnapshot(`
@@ -96,8 +94,8 @@ describe('Baserun trace', () => {
       // Do nothing
     }
 
-    const run = storeTestSpy.mock.calls[0][0].toObject();
-    const trace = storeTestSpy.mock.calls[0][1].toObject();
+    const run = storeTestSpy.mock.calls[0][0];
+    const trace = storeTestSpy.mock.calls[0][1];
 
     const expectedRun = pick(run, ['name', 'payload']);
     const expectedTrace = pick(trace, ['name', 'metadata', 'result']);
@@ -112,7 +110,7 @@ describe('Baserun trace', () => {
       {
         "metadata": "{}",
         "name": "entrypoint",
-        "result": ""
+        "result": "",
       }
     `);
   });

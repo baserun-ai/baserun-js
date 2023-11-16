@@ -1,7 +1,7 @@
 import { v4 } from 'uuid';
 import stringify from 'json-stringify-safe';
-import { AutoLLMLog, Trace, TraceType, Log } from './types.js';
-import { getTimestamp } from './utils/helpers.js';
+import { AutoLLMLog, Trace, Log } from './types.js';
+// import { getTimestamp } from './utils/helpers.js';
 import { Evals } from './evals/evals.js';
 import { Eval } from './evals/types.js';
 import { OpenAIWrapper } from './patches/openai.js';
@@ -16,19 +16,19 @@ import {
   Span,
   Run_RunType,
 } from './v1/gen/baserun.js';
-import { getCurrentRun } from './utils/getCurrentRun.js';
+import { deleteCurrentRun, getCurrentRun } from './utils/getCurrentRun.js';
 import { getOrCreateSubmissionService } from './backend/submissionService.js';
 import { logToSpanOrLog } from './utils/logToSpan.js';
 import { Timestamp } from './v1/gen/google/protobuf/timestamp.js';
 
 // TODO: clean this up. no need for this
 const TraceExecutionIdKey = 'baserun_trace_execution_id';
-const TraceNameKey = 'baserun_trace_name';
-const TraceInputsKey = 'baserun_trace_inputs';
-const TraceStartTimestampKey = 'baserun_trace_start_timestamp';
+// const TraceNameKey = 'baserun_trace_name';
+// const TraceInputsKey = 'baserun_trace_inputs';
+// const TraceStartTimestampKey = 'baserun_trace_start_timestamp';
 const TraceBufferKey = 'baserun_trace_buffer';
-const TraceTypeKey = 'baserun_trace_type';
-const TraceMetadataKey = 'baserun_trace_metadata';
+// const TraceTypeKey = 'baserun_trace_type';
+// const TraceMetadataKey = 'baserun_trace_metadata';
 const TraceEvalsKey = 'baserun_trace_evals';
 
 type TraceOptions = {
@@ -64,85 +64,85 @@ export class Baserun {
     Baserun.monkeyPatch();
   }
 
-  static markTraceStart(
-    type: TraceType,
-    name: string,
-    inputs: string[] = [],
-    metadata?: object,
-  ): Map<string, any> | undefined {
-    if (!global.baserunInitialized) {
-      return;
-    }
+  // static markTraceStart(
+  //   type: TraceType,
+  //   name: string,
+  //   inputs: string[] = [],
+  //   metadata?: object,
+  // ): Map<string, any> | undefined {
+  //   if (!global.baserunInitialized) {
+  //     return;
+  //   }
 
-    const traceStore = new Map();
-    traceStore.set(TraceExecutionIdKey, v4());
-    traceStore.set(TraceNameKey, name);
-    traceStore.set(
-      TraceInputsKey,
-      inputs.map((input) => stringify(input)),
-    );
-    traceStore.set(TraceStartTimestampKey, getTimestamp());
-    traceStore.set(TraceTypeKey, type);
-    traceStore.set(TraceBufferKey, []);
-    traceStore.set(TraceMetadataKey, metadata);
-    return traceStore;
-  }
+  //   const traceStore = new Map();
+  //   traceStore.set(TraceExecutionIdKey, v4());
+  //   traceStore.set(TraceNameKey, name);
+  //   traceStore.set(
+  //     TraceInputsKey,
+  //     inputs.map((input) => stringify(input)),
+  //   );
+  //   traceStore.set(TraceStartTimestampKey, getTimestamp());
+  //   traceStore.set(TraceTypeKey, type);
+  //   traceStore.set(TraceBufferKey, []);
+  //   traceStore.set(TraceMetadataKey, metadata);
+  //   return traceStore;
+  // }
 
-  static markTraceEnd(
-    {
-      error,
-      result,
-    }: {
-      error?: Error;
-      result?: string | null;
-    },
-    traceStore?: Map<string, any>,
-  ): void {
-    if (!global.baserunInitialized) {
-      return;
-    }
+  // static markTraceEnd(
+  //   {
+  //     error,
+  //     result,
+  //   }: {
+  //     error?: Error;
+  //     result?: string | null;
+  //   },
+  //   traceStore?: Map<string, any>,
+  // ): void {
+  //   if (!global.baserunInitialized) {
+  //     return;
+  //   }
 
-    if (!traceStore) {
-      return;
-    }
+  //   if (!traceStore) {
+  //     return;
+  //   }
 
-    const traceExecutionId = traceStore.get(TraceExecutionIdKey);
-    const name = traceStore.get(TraceNameKey);
-    const inputs = traceStore.get(TraceInputsKey);
-    const startTimestamp = traceStore.get(TraceStartTimestampKey);
-    const buffer = traceStore.get(TraceBufferKey);
-    const type = traceStore.get(TraceTypeKey);
-    const metadata = traceStore.get(TraceMetadataKey);
-    const evals = traceStore.get(TraceEvalsKey);
-    const completionTimestamp = getTimestamp();
-    if (error) {
-      Baserun._storeTrace({
-        type,
-        testName: name,
-        testInputs: inputs,
-        id: traceExecutionId,
-        error: String(error),
-        startTimestamp,
-        completionTimestamp,
-        steps: buffer || [],
-        metadata,
-        evals,
-      });
-    } else {
-      Baserun._storeTrace({
-        type,
-        testName: name,
-        testInputs: inputs,
-        id: traceExecutionId,
-        result: result ?? '',
-        startTimestamp,
-        completionTimestamp,
-        steps: buffer || [],
-        metadata,
-        evals,
-      });
-    }
-  }
+  //   const traceExecutionId = traceStore.get(TraceExecutionIdKey);
+  //   const name = traceStore.get(TraceNameKey);
+  //   const inputs = traceStore.get(TraceInputsKey);
+  //   const startTimestamp = traceStore.get(TraceStartTimestampKey);
+  //   const buffer = traceStore.get(TraceBufferKey);
+  //   const type = traceStore.get(TraceTypeKey);
+  //   const metadata = traceStore.get(TraceMetadataKey);
+  //   const evals = traceStore.get(TraceEvalsKey);
+  //   const completionTimestamp = getTimestamp();
+  //   if (error) {
+  //     Baserun._storeTrace({
+  //       type,
+  //       testName: name,
+  //       testInputs: inputs,
+  //       id: traceExecutionId,
+  //       error: String(error),
+  //       startTimestamp,
+  //       completionTimestamp,
+  //       steps: buffer || [],
+  //       metadata,
+  //       evals,
+  //     });
+  //   } else {
+  //     Baserun._storeTrace({
+  //       type,
+  //       testName: name,
+  //       testInputs: inputs,
+  //       id: traceExecutionId,
+  //       result: result ?? '',
+  //       startTimestamp,
+  //       completionTimestamp,
+  //       steps: buffer || [],
+  //       metadata,
+  //       evals,
+  //     });
+  //   }
+  // }
 
   static test(
     target: any,
@@ -154,21 +154,23 @@ export class Baserun {
     descriptor.value = async function (...args: any[]): Promise<any> {
       if (!global.baserunInitialized) return originalMethod.apply(this, args);
 
-      global.baserunTraceStore = Baserun.markTraceStart(
-        TraceType.Test,
-        originalMethod.name,
-      );
-      try {
-        let result = originalMethod.apply(this, args);
-        if (result instanceof Promise) {
-          result = await result;
-        }
-        Baserun.markTraceEnd({ result }, global.baserunTraceStore);
-      } catch (e) {
-        Baserun.markTraceEnd({ error: e as Error }, global.baserunTraceStore);
-      } finally {
-        global.baserunTraceStore = undefined;
-      }
+      // TODO: implement based on `Run`
+
+      // global.baserunTraceStore = Baserun.markTraceStart(
+      //   TraceType.Test,
+      //   originalMethod.name,
+      // );
+      // try {
+      //   let result = originalMethod.apply(this, args);
+      //   if (result instanceof Promise) {
+      //     result = await result;
+      //   }
+      //   Baserun.markTraceEnd({ result }, global.baserunTraceStore);
+      // } catch (e) {
+      //   Baserun.markTraceEnd({ error: e as Error }, global.baserunTraceStore);
+      // } finally {
+      //   global.baserunTraceStore = undefined;
+      // }
     };
 
     return descriptor;
@@ -192,29 +194,27 @@ export class Baserun {
     }
 
     return async (...args: Parameters<T>): Promise<ReturnType<T>> => {
-      await Baserun.getOrCreateCurrentRun({
+      // todo: check if we need to use the args
+      const run = await Baserun.getOrCreateCurrentRun({
         name,
         traceType: Run_RunType.PRODUCTION,
         metadata,
       });
 
       // this is sth we might have to clean up, as we probably don't want run and store to exist at the same time
-      global.baserunTraceStore = Baserun.markTraceStart(
-        TraceType.Production,
-        name,
-        args,
-        metadata,
-      );
+      // global.baserunTraceStore = Baserun.markTraceStart(
+      //   TraceType.Production,
+      //   name,
+      //   args,
+      //   metadata,
+      // );
 
       try {
         const result = await fn(...args);
-        Baserun.markTraceEnd(
-          { result: result != null ? stringify(result) : '' },
-          global.baserunTraceStore,
-        );
+        run.result = JSON.stringify(result);
         return result;
       } catch (err) {
-        Baserun.markTraceEnd({ error: err as Error }, global.baserunTraceStore);
+        run.error = String((err as Error).stack ?? err);
         throw err;
       } finally {
         global.baserunTraceStore = undefined;
@@ -333,34 +333,15 @@ export class Baserun {
       return;
     }
 
-    if (global.baserunTraces.length === 0) return;
+    const run = getCurrentRun();
 
-    try {
-      const traces = global.baserunTraces as Trace[];
-      for (const trace of traces) {
-        const run = await Baserun.getOrCreateCurrentRun({
-          name: trace.testName,
-          traceType:
-            trace.type === TraceType.Production
-              ? Run_RunType.PRODUCTION
-              : Run_RunType.TEST,
-          metadata: trace.metadata,
-        });
-
-        await Promise.all(
-          trace.steps.map((step) =>
-            Baserun.submitLogOrSpan(logToSpanOrLog(step, run.runId), run),
-          ),
-        );
-
-        // todo: deal with evals
-        Baserun.finishRun(run);
-      }
-    } catch (error) {
-      console.warn(`Failed to upload results to Baserun: `, error);
-    } finally {
-      global.baserunTraces = [];
+    if (run) {
+      await Baserun.finishRun(run);
     }
+
+    deleteCurrentRun();
+
+    return;
   }
 
   static _storeTrace(traceData: Trace): void {

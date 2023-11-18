@@ -7,6 +7,7 @@ import fsPromise from 'node:fs/promises';
 import resolvePkg from 'resolve-pkg';
 import { globby, globbySync } from 'globby';
 
+// resolves all occurrences of a module name in the current project
 export function resolveAllSync(moduleName: string): string[] {
   const paths = new Set<string>([]);
 
@@ -22,6 +23,7 @@ export function resolveAllSync(moduleName: string): string[] {
 
     resolveFromPackageSync(packageJsonPath, moduleName, paths);
 
+    // we go two levels deep because we want to catch packages/package-name/
     globbySync(['**/package.json', '!node_modules'], {
       cwd: pkgDir,
       deep: 2,
@@ -53,7 +55,9 @@ function resolveFromPackageSync(
             if (mod) {
               paths.add(url.fileURLToPath(mod));
             }
-          } catch (e) {}
+          } catch (e) {
+            // fail silently
+          }
           continue;
         }
         try {
@@ -67,14 +71,18 @@ function resolveFromPackageSync(
               if (mod) {
                 paths.add(url.fileURLToPath(mod));
               }
-            } catch (e) {}
+            } catch (e) {
+              // fail silently
+            }
           }
         } catch (e) {
           console.error(e);
         }
       }
     }
-  } catch (e) {}
+  } catch (e) {
+    // fail silently
+  }
 
   return Array.from(paths);
 }
@@ -136,14 +144,18 @@ async function resolveFromPackage(
               if (mod) {
                 paths.add(url.fileURLToPath(mod));
               }
-            } catch (e) {}
+            } catch (e) {
+              // fail silently
+            }
           }
         } catch (e) {
           console.error(e);
         }
       }
     }
-  } catch (e) {}
+  } catch (e) {
+    // fail silently
+  }
 
   return Array.from(paths);
 }

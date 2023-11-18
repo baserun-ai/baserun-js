@@ -23,7 +23,6 @@ export class AnthropicWrapper {
 
     if (error) {
       const errorMessage = error?.stack ?? error?.toString() ?? '';
-      console.log({ errorMessage, error });
       return {
         stepType: BaserunStepType.AutoLLM,
         type,
@@ -75,11 +74,17 @@ export class AnthropicWrapper {
     return response;
   }
 
-  static async init(log: (entry: AutoLLMLog) => Promise<void>) {
+  static init(log: (entry: AutoLLMLog) => Promise<void>) {
+    for (const mod of anthropic) {
+      AnthropicWrapper.patch(mod, log);
+    }
+  }
+
+  static patch(mod: any, log: (entry: AutoLLMLog) => Promise<void>) {
     try {
       const symbols = ['Anthropic.Completions.prototype.create'];
       patch({
-        module: anthropic,
+        module: mod,
         symbols,
         resolver: AnthropicWrapper.resolver,
         log,

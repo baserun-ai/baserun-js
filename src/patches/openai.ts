@@ -37,7 +37,6 @@ export class OpenAIWrapper {
     response?: any,
     error?: any,
   ) {
-    console.log('resolver');
     let usage = DEFAULT_USAGE;
     let output = '';
     const type = symbol.includes('Chat')
@@ -219,15 +218,11 @@ export class OpenAIWrapper {
         'OpenAI.Completions.prototype.create',
         'OpenAI.Chat.Completions.prototype.create',
       ];
-      const openai = new openaiModule({
-        apiKey: process.env.OPENAI_API_KEY,
-      });
       OpenAIWrapper.originalMethods = {
-        createCompletion: openai.completions.create.bind(openai.completions),
-        createChatCompletion: openai.chat.completions.create.bind(
-          openai.chat.completions,
-        ),
+        createCompletion: openaiModule.Completions.prototype.create,
+        createChatCompletion: openaiModule.Chat.Completions.prototype.create,
       };
+
       patch({
         module: openaiModule,
         symbols,
@@ -252,7 +247,9 @@ export class OpenAIWrapper {
   }
 
   static init(log: (entry: AutoLLMLog) => Promise<void>) {
-    OpenAIWrapper.patch(openai, log);
+    for (const mod of openai) {
+      OpenAIWrapper.patch(mod, log);
+    }
   }
 }
 

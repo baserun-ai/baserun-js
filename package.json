@@ -65,9 +65,13 @@
   "dependencies": {
     "@grpc/grpc-js": "^1.9.9",
     "@protobuf-ts/plugin": "^2.9.1",
+    "globby": "^14.0.0",
     "google-protobuf": "^3.21.2",
+    "import-meta-resolve": "^4.0.0",
     "isomorphic-unfetch": "^4.0.2",
     "json-stringify-safe": "^5.0.1",
+    "pkg-dir": "^8.0.0",
+    "resolve-pkg": "^2.0.0",
     "uuid": "^9.0.0"
   },
   "peerDependencies": {

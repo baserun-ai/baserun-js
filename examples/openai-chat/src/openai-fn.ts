@@ -51,11 +51,6 @@ async function doItMooIt2() {
         },
       },
     ],
-    // tool_choice: {
-    //   function: {
-    //     name: 'get_current_weather',
-    //   },
-    // },
   });
 
   return res;

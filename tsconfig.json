@@ -20,7 +20,7 @@
     "sourceMap": true,
     "inlineSources": true
   },
-  "include": ["src", "types"]
+  "include": ["src", "types", "examples/openai-chat/src/parallel.ts"]
   // "exclude": [
   //   "node_modules",
   //   "src/tests",

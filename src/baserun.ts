@@ -1,7 +1,6 @@
 import { v4 } from 'uuid';
 import stringify from 'json-stringify-safe';
 import { AutoLLMLog, Trace } from './types.js';
-// import { getTimestamp } from './utils/helpers.js';
 import { Evals } from './evals/evals.js';
 import { Eval } from './evals/types.js';
 import { OpenAIWrapper } from './patches/openai.js';
@@ -16,6 +15,9 @@ import {
   Span,
   Run_RunType,
   Session,
+  StartSessionRequest,
+  EndUser,
+  SubmitUserRequest,
 } from './v1/gen/baserun.js';
 import { getOrCreateSubmissionService } from './backend/submissionService.js';
 import { logToSpanOrLog } from './utils/logToSpan.js';
@@ -41,16 +43,15 @@ export type TraceOptions = {
   name?: string;
 };
 
-export type SessionOptions = {
-  user?: string;
+export type SessionOptions<T extends (...args: any[]) => any> = {
+  user: string;
   sessionId?: string;
+  session: T;
 };
 
 export class Baserun {
   static evals = new Evals(Baserun._appendToEvals);
   private static _apiKey: string | undefined = process.env.BASERUN_API_KEY;
-  private static _apiUrl: string =
-    process.env.BASERUN_API_URL ?? 'https://baserun.ai/api/v1';
 
   static monkeyPatch(): void {
     OpenAIWrapper.init(Baserun._handleAutoLLM);
@@ -58,6 +59,8 @@ export class Baserun {
   }
 
   private static runQueue: Run[] = [];
+  private static sessionQueue: Session[] = [];
+  private static sessionPromises: Promise<unknown>[] = [];
 
   static init(): void {
     if (!Baserun._apiKey) {
@@ -116,27 +119,76 @@ export class Baserun {
     };
   }
 
-  static session<T extends (...args: any[]) => any>(
-    fn: T,
-    options?: SessionOptions,
-  ): (...args: Parameters<T>) => Promise<ReturnType<T>> {
+  static session<T extends (...args: any[]) => any>({
+    session: fn,
+    sessionId,
+    user,
+  }: SessionOptions<T>): (...args: Parameters<T>) => Promise<ReturnType<T>> {
     if (!global.baserunInitialized) return fn;
 
-    const store = traceLocalStorage.getStore();
+    const traceStore = traceLocalStorage.getStore();
 
-    if (store?.run) {
-      console.info(
-        'baserun.trace was called inside of an existing Baserun decorated trace. The new trace will be ignored.',
+    if (traceStore?.run) {
+      console.warn(
+        'baserun.session was called inside of an existing Baserun decorated trace. The session will be ignored.',
       );
       return fn;
     }
 
-    return async (...args: Parameters<T>): Promise<ReturnType<T>> => {
-      const session: Session = {
-        id: options?.sessionId ?? v4(),
-        identifier: '',
-      };
+    const sessionStore = sessionLocalStorage.getStore();
+    if (sessionStore?.session) {
+      console.warn(
+        `baserun.session can't be nested. Session with id ${sessionStore.session.id} is already active`,
+      );
+      return fn;
+    }
 
+    const endUser: EndUser = {
+      id: user ?? '',
+      identifier: user ?? '',
+    };
+
+    const session: Session = {
+      id: sessionId ?? v4(),
+      identifier: sessionId ?? v4(),
+      endUser,
+      startTimestamp: Timestamp.fromDate(new Date()),
+    };
+
+    const startEndUserRequest: SubmitUserRequest = { user: endUser };
+
+    const submissionService = getOrCreateSubmissionService();
+
+    const userPromise = new Promise((resolve, reject) => {
+      submissionService.submitUser(startEndUserRequest, (error) => {
+        if (error) {
+          console.error('Failed to submit user to Baserun: ', error);
+          reject(error);
+        } else {
+          resolve(undefined);
+        }
+      });
+    });
+
+    const startSessionRequest: StartSessionRequest = { session };
+
+    const sessionPromise = new Promise((resolve, reject) => {
+      userPromise.then(() => {
+        submissionService.startSession(startSessionRequest, (error) => {
+          if (error) {
+            console.error('Failed to submit session start to Baserun: ', error);
+            reject(error);
+          } else {
+            resolve(undefined);
+          }
+        });
+      });
+    });
+
+    Baserun.sessionPromises.push(sessionPromise);
+    Baserun.sessionQueue.push(session);
+
+    return async (...args: Parameters<T>): Promise<ReturnType<T>> => {
       return sessionLocalStorage.run({ session }, async () => {
         try {
           const result = await fn(...args);
@@ -246,8 +298,6 @@ export class Baserun {
         Baserun.runQueue.splice(index, 1);
       }
     });
-
-    global.baserunCurrentRun = undefined;
   }
 
   static log(name: string, payload: object | string): void {
@@ -255,7 +305,7 @@ export class Baserun {
 
     const run = Baserun.getCurrentRun();
     if (!run) {
-      console.info(
+      console.warn(
         'baserun.log was called outside of a Baserun decorated trace. The log will be ignored.',
       );
       return;
@@ -281,6 +331,11 @@ export class Baserun {
 
     for (const run of Baserun.runQueue) {
       await Baserun.finishRun(run);
+    }
+
+    for (let i = 0; i < Baserun.sessionPromises.length; i++) {
+      await Baserun.sessionPromises[i];
+      delete Baserun.sessionPromises[i];
     }
 
     return;

@@ -1,6 +1,6 @@
 import { v4 } from 'uuid';
 import stringify from 'json-stringify-safe';
-import { AutoLLMLog, Trace } from './types.js';
+import { AutoLLMLog } from './types.js';
 import { Evals } from './evals/evals.js';
 import { Eval } from './evals/types.js';
 import { OpenAIWrapper } from './patches/openai.js';
@@ -74,7 +74,6 @@ export class Baserun {
     }
 
     global.baserunInitialized = true;
-    global.baserunTraces = [];
 
     Baserun.monkeyPatch();
   }
@@ -82,8 +81,6 @@ export class Baserun {
     fn: T,
     traceOptions?: TraceOptions,
   ): (...args: Parameters<T>) => Promise<ReturnType<T>> {
-    if (!global.baserunInitialized) return fn;
-
     const metadata = traceOptions?.metadata;
     const name = traceOptions?.name ?? fn.name;
 
@@ -123,8 +120,8 @@ export class Baserun {
     session: fn,
     sessionId,
     user,
-  }: SessionOptions<T>): (...args: Parameters<T>) => Promise<ReturnType<T>> {
-    if (!global.baserunInitialized) return fn;
+  }: SessionOptions<T>): Promise<ReturnType<T>> {
+    if (!global.baserunInitialized) return fn();
 
     const traceStore = traceLocalStorage.getStore();
 
@@ -132,7 +129,7 @@ export class Baserun {
       console.warn(
         'baserun.session was called inside of an existing Baserun decorated trace. The session will be ignored.',
       );
-      return fn;
+      return fn();
     }
 
     const sessionStore = sessionLocalStorage.getStore();
@@ -140,7 +137,7 @@ export class Baserun {
       console.warn(
         `baserun.session can't be nested. Session with id ${sessionStore.session.id} is already active`,
       );
-      return fn;
+      return fn();
     }
 
     const endUser: EndUser = {
@@ -148,18 +145,23 @@ export class Baserun {
       identifier: user ?? '',
     };
 
+    const actualSessionId = sessionId ?? v4();
+
     const session: Session = {
-      id: sessionId ?? v4(),
-      identifier: sessionId ?? v4(),
+      id: actualSessionId,
+      identifier: actualSessionId,
       endUser,
       startTimestamp: Timestamp.fromDate(new Date()),
     };
+
+    Baserun.sessionQueue.push(session);
 
     const startEndUserRequest: SubmitUserRequest = { user: endUser };
 
     const submissionService = getOrCreateSubmissionService();
 
     const userPromise = new Promise((resolve, reject) => {
+      console.log('submit user', endUser);
       submissionService.submitUser(startEndUserRequest, (error) => {
         if (error) {
           console.error('Failed to submit user to Baserun: ', error);
@@ -174,6 +176,7 @@ export class Baserun {
 
     const sessionPromise = new Promise((resolve, reject) => {
       userPromise.then(() => {
+        console.log('start session', session);
         submissionService.startSession(startSessionRequest, (error) => {
           if (error) {
             console.error('Failed to submit session start to Baserun: ', error);
@@ -186,19 +189,16 @@ export class Baserun {
     });
 
     Baserun.sessionPromises.push(sessionPromise);
-    Baserun.sessionQueue.push(session);
 
-    return async (...args: Parameters<T>): Promise<ReturnType<T>> => {
-      return sessionLocalStorage.run({ session }, async () => {
-        try {
-          const result = await fn(...args);
-          return result;
-        } finally {
-          /* Already silently catches all errors and warns */
-          await Baserun.flush();
-        }
-      });
-    };
+    return sessionLocalStorage.run({ session }, async () => {
+      try {
+        const result = await fn();
+        return result;
+      } finally {
+        /* Already silently catches all errors and warns */
+        await Baserun.flush();
+      }
+    });
   }
 
   static getCurrentRun(): Run | undefined {
@@ -210,14 +210,12 @@ export class Baserun {
 
   static getOrCreateCurrentRun({
     name,
-    suiteId,
     startTimestamp,
     completionTimestamp,
     traceType,
     metadata,
   }: {
     name: string;
-    suiteId?: string;
     startTimestamp?: Date;
     completionTimestamp?: Date;
     traceType?: Run_RunType;
@@ -253,19 +251,14 @@ export class Baserun {
 
     Baserun.runQueue.push(run);
 
-    global.baserunCurrentRun = run;
-
-    if (suiteId ?? global.baserunTestSuite) {
-      // todo: make sure getId still works here
-      run.suiteId = suiteId ?? global.baserunTestSuite.getId();
-    }
-
     run.startTimestamp = Timestamp.fromDate(startTimestamp ?? new Date());
     if (completionTimestamp) {
       run.startTimestamp = Timestamp.fromDate(completionTimestamp);
     }
 
     const startRunRequest: StartRunRequest = { run };
+
+    console.log('start run', run);
 
     return new Promise<Run>((resolve, reject) => {
       getOrCreateSubmissionService().startRun(startRunRequest, (error) => {
@@ -290,12 +283,6 @@ export class Baserun {
     getOrCreateSubmissionService().endRun(endRunRequest, (error) => {
       if (error) {
         console.error('Failed to submit run end to Baserun: ', error);
-      }
-      // remove from queue
-
-      const index = Baserun.runQueue.findIndex((r) => r.runId === run.runId);
-      if (index > -1) {
-        Baserun.runQueue.splice(index, 1);
       }
     });
   }
@@ -322,6 +309,7 @@ export class Baserun {
   }
 
   static async flush(): Promise<string | undefined> {
+    console.log('flushing');
     if (!global.baserunInitialized) {
       console.warn(
         'Baserun has not been initialized. No data will be flushed.',
@@ -329,23 +317,50 @@ export class Baserun {
       return;
     }
 
-    for (const run of Baserun.runQueue) {
+    // finish all outstanding runs
+    let run = Baserun.runQueue.shift();
+    while (run) {
       await Baserun.finishRun(run);
+      run = Baserun.runQueue.shift();
     }
 
-    for (let i = 0; i < Baserun.sessionPromises.length; i++) {
-      await Baserun.sessionPromises[i];
-      delete Baserun.sessionPromises[i];
+    // finish all outstanding session initializations
+    let sessionPromise = Baserun.sessionPromises.shift();
+    while (sessionPromise) {
+      await sessionPromise;
+      sessionPromise = Baserun.sessionPromises.shift();
+    }
+
+    // finish all outstanding sessions
+    let session = Baserun.sessionQueue.shift();
+    while (session) {
+      await Baserun.finishSession(session);
+      session = Baserun.sessionQueue.shift();
     }
 
     return;
   }
 
-  static _storeTrace(traceData: Trace): void {
-    global.baserunTraces.push(traceData);
+  static async finishSession(session: Session): Promise<void> {
+    session.completionTimestamp = Timestamp.fromDate(new Date());
+    const endSessionRequest = { session };
+
+    console.log('finish session', endSessionRequest);
+    await new Promise((resolve, reject) => {
+      getOrCreateSubmissionService().endSession(endSessionRequest, (error) => {
+        if (error) {
+          console.error('Failed to submit session end to Baserun: ', error);
+          reject(error);
+        } else {
+          resolve(undefined);
+        }
+      });
+    });
   }
 
   static submitLogOrSpan(logOrSpan: ProtoLog | Span, run: Run): Promise<void> {
+    const endUser = sessionLocalStorage.getStore()?.session?.endUser;
+
     return new Promise((resolve, reject) => {
       // handle Log
       if (isSpan(logOrSpan)) {
@@ -353,6 +368,7 @@ export class Baserun {
           run,
           span: logOrSpan,
         };
+        logOrSpan.endUser = endUser;
         getOrCreateSubmissionService().submitSpan(spanRequest, (error) => {
           if (error) {
             console.error('Failed to submit span to Baserun: ', error);
@@ -367,6 +383,7 @@ export class Baserun {
           log: logOrSpan,
           run,
         };
+        console.log('submit log', logRequest);
         getOrCreateSubmissionService().submitLog(logRequest, (error) => {
           if (error) {
             console.error('Failed to submit log to Baserun: ', error);

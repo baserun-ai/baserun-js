@@ -16,19 +16,16 @@ async function getCompletions(text: string) {
   });
 
   baserun.log('gptResponse', gptResponse);
-
-  console.log(gptResponse);
 }
 
-const reallyGetCompletions = (name: string) =>
-  baserun.trace(getCompletions, { name })(name);
+const reallyGetCompletions = baserun.trace(getCompletions);
 
 async function main() {
   await baserun.session({
     session() {
       return reallyGetCompletions('test');
     },
-    user: 'bob der meister',
+    user: 'bobby brown',
   });
 }
 

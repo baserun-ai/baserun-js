@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 //@ts-ignore
 import { resolve } from 'import-meta-resolve';
 import url from 'url';

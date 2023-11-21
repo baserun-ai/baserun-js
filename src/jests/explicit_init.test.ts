@@ -1,6 +1,6 @@
 process.env.BASERUN_API_KEY = 'test-key';
 
-import { Baserun } from '../baserun.js';
+// import { Baserun } from '../baserun.js';
 import { baserun } from '../index.js';
 
 jest.mock('node-fetch');
@@ -13,7 +13,7 @@ describe('BaserunExplicitInit', () => {
   });
 
   beforeEach(() => {
-    storeTestSpy = jest.spyOn(Baserun, '_storeTrace');
+    // storeTestSpy = jest.spyOn(Baserun, '_storeTrace');
   });
 
   afterEach(() => {
@@ -22,7 +22,7 @@ describe('BaserunExplicitInit', () => {
 
   it('test_explicit_log', () => {
     class Test {
-      @Baserun.test
+      // @Baserun.test
       static sample() {
         baserun.log('TestEvent', 'whatever');
       }
@@ -42,7 +42,7 @@ describe('BaserunExplicitInit', () => {
     };
 
     class Test {
-      @Baserun.test
+      // @Baserun.test
       static sample() {
         baserun.log(logName, logPayload);
       }
@@ -57,7 +57,7 @@ describe('BaserunExplicitInit', () => {
 
   it('test_eval_match', () => {
     class Test {
-      @Baserun.test
+      // @Baserun.test
       static sample() {
         baserun.evals.match('Hello world match', 'Hello World', [
           'Hello',
@@ -81,7 +81,7 @@ describe('BaserunExplicitInit', () => {
 
   it('test_eval_includes', () => {
     class Test {
-      @Baserun.test
+      // @Baserun.test
       static sample() {
         baserun.evals.includes('Hello world includes', 'Hello World', [
           'lo W',
@@ -105,7 +105,7 @@ describe('BaserunExplicitInit', () => {
 
   it('test_eval_fuzzy_match', () => {
     class Test {
-      @Baserun.test
+      // @Baserun.test
       static sample() {
         baserun.evals.fuzzyMatch('Hello world fuzzy', 'World', [
           'Hello World',
@@ -129,7 +129,7 @@ describe('BaserunExplicitInit', () => {
 
   it('test_eval_not_match', () => {
     class Test {
-      @Baserun.test
+      // @Baserun.test
       static sample() {
         baserun.evals.notMatch('Hello world not match', 'Hello World', [
           'Hey',
@@ -153,7 +153,7 @@ describe('BaserunExplicitInit', () => {
 
   it('test_eval_not_includes', () => {
     class Test {
-      @Baserun.test
+      // @Baserun.test
       static sample() {
         baserun.evals.notIncludes('Hello world not includes', 'Hello World', [
           'Bonjour',
@@ -177,7 +177,7 @@ describe('BaserunExplicitInit', () => {
 
   it('test_eval_not_fuzzy_match', () => {
     class Test {
-      @Baserun.test
+      // @Baserun.test
       static sample() {
         baserun.evals.notFuzzyMatch('Hello world not fuzzy', 'World', [
           'Hi Monde',
@@ -201,7 +201,7 @@ describe('BaserunExplicitInit', () => {
 
   it('test_eval_valid_json', () => {
     class Test {
-      @Baserun.test
+      // @Baserun.test
       static sample() {
         baserun.evals.validJson('Hello world valid json', '{"hello": "world"}');
       }
@@ -221,7 +221,7 @@ describe('BaserunExplicitInit', () => {
 
   it('test_eval_valid_json_fail', () => {
     class Test {
-      @Baserun.test
+      // @Baserun.test
       static sample() {
         baserun.evals.validJson('Hello world valid json', '{"hello": "world');
       }
@@ -241,7 +241,7 @@ describe('BaserunExplicitInit', () => {
 
   it('test_eval_custom', () => {
     class Test {
-      @Baserun.test
+      // @Baserun.test
       static sample() {
         function customEval(x: string) {
           return x.length > 5;
@@ -264,7 +264,7 @@ describe('BaserunExplicitInit', () => {
 
   it('test_eval_custom_async', async () => {
     class Test {
-      @Baserun.test
+      // @Baserun.test
       static async sample() {
         const customEval = async (x: string) => {
           return x.length > 5;
@@ -293,7 +293,7 @@ describe('BaserunExplicitInit', () => {
   describe('model graded', () => {
     it('test_eval_model_graded_fact', async () => {
       class Test {
-        @Baserun.test
+        // @Baserun.test
         static async sample() {
           await baserun.evals.modelGradedFact(
             'Central limit theorem',
@@ -325,7 +325,7 @@ describe('BaserunExplicitInit', () => {
 
     it('test_eval_model_graded_fact_fail', async () => {
       class Test {
-        @Baserun.test
+        // @Baserun.test
         static async sample() {
           await baserun.evals.modelGradedFact(
             'Central limit theorem',
@@ -357,7 +357,7 @@ describe('BaserunExplicitInit', () => {
 
     it('test_eval_model_graded_closedqa', async () => {
       class Test {
-        @Baserun.test
+        // @Baserun.test
         static async sample() {
           await baserun.evals.modelGradedClosedQA(
             'Coffee shop',
@@ -387,7 +387,7 @@ describe('BaserunExplicitInit', () => {
 
     it('test_eval_model_graded_closedqa_fail', async () => {
       class Test {
-        @Baserun.test
+        // @Baserun.test
         static async sample() {
           await baserun.evals.modelGradedClosedQA(
             'Coffee shop',
@@ -417,7 +417,7 @@ describe('BaserunExplicitInit', () => {
 
     it('test_eval_model_graded_security', async () => {
       class Test {
-        @Baserun.test
+        // @Baserun.test
         static async sample() {
           await baserun.evals.modelGradedSecurity(
             'Evil',

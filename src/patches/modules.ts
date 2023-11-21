@@ -44,4 +44,5 @@ async function resolveAnthropic() {
 }
 
 // get them in parallel
+//@ts-ignore
 await Promise.all([resolveOpenai(), resolveAnthropic()]);

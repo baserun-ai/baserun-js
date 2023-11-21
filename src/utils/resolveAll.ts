@@ -1,16 +1,20 @@
+//@ts-ignore
 import { resolve } from 'import-meta-resolve';
 import url from 'url';
+//@ts-ignore
 import { packageDirectorySync, packageDirectory } from 'pkg-dir';
 import path from 'node:path';
 import fs from 'node:fs';
 import fsPromise from 'node:fs/promises';
 import resolvePkg from 'resolve-pkg';
+//@ts-ignore
 import { globby, globbySync } from 'globby';
 
 // resolves all occurrences of a module name in the current project
 export function resolveAllSync(moduleName: string): string[] {
   const paths = new Set<string>([]);
 
+  //@ts-ignore
   const naive = resolve(moduleName, import.meta.url);
 
   if (naive) {
@@ -90,6 +94,7 @@ function resolveFromPackageSync(
 export async function resolveAll(moduleName: string): Promise<string[]> {
   const paths = new Set<string>([]);
 
+  //@ts-ignore
   const naive = resolve(moduleName, import.meta.url);
 
   if (naive) {

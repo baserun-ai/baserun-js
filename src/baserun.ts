@@ -28,6 +28,7 @@ import { AsyncLocalStorage } from 'node:async_hooks';
 import { isTestEnv } from './utils/isTestEnv.js';
 import { sep } from 'node:path';
 import getDebug from 'debug';
+import { SubmissionServiceClient } from './v1/gen/baserun.grpc-client.js';
 
 const debug = getDebug('baserun:baserun');
 
@@ -74,13 +75,19 @@ process.on('exit', () => {
   }
 });
 
+type InitOptions = {
+  apiKey?: string;
+};
+
 export class Baserun {
   static evals = new Evals(Baserun._appendToEvals);
   private static _apiKey: string | undefined = process.env.BASERUN_API_KEY;
 
-  static monkeyPatch(): void {
-    OpenAIWrapper.init(Baserun._handleAutoLLM);
-    AnthropicWrapper.init(Baserun._handleAutoLLM);
+  static monkeyPatch(): Promise<[void, void]> {
+    return Promise.all([
+      OpenAIWrapper.init(Baserun._handleAutoLLM),
+      AnthropicWrapper.init(Baserun._handleAutoLLM),
+    ]);
   }
 
   static runQueue: Run[] = [];
@@ -89,13 +96,20 @@ export class Baserun {
 
   static startTestSuitePromise: Promise<unknown> | undefined;
   static endTestSuitePromise: Promise<void> | undefined;
+  static submissionService: SubmissionServiceClient;
 
-  static init(): void {
+  static async init({ apiKey }: InitOptions = {}): Promise<void> {
+    Baserun._apiKey = apiKey ?? process.env.BASERUN_API_KEY;
+
     if (!Baserun._apiKey) {
       throw new Error(
         'Baserun API key is missing. Ensure the BASERUN_API_KEY environment variable is set.',
       );
     }
+
+    Baserun.submissionService = getOrCreateSubmissionService({
+      apiKey: Baserun._apiKey,
+    });
 
     if (global.baserunInitialized) {
       return;
@@ -109,7 +123,7 @@ export class Baserun {
       Baserun.initTestSuite();
     }
 
-    Baserun.monkeyPatch();
+    await Baserun.monkeyPatch();
   }
 
   static getTestSuite(): TestSuite | undefined {
@@ -142,7 +156,7 @@ export class Baserun {
     };
 
     Baserun.startTestSuitePromise = new Promise((resolve, reject) => {
-      getOrCreateSubmissionService().startTestSuite(
+      Baserun.submissionService.startTestSuite(
         startTestSuiteRequest,
         (error) => {
           if (error) {
@@ -181,7 +195,7 @@ export class Baserun {
           new Date(),
         );
 
-        getOrCreateSubmissionService().endTestSuite(
+        Baserun.submissionService.endTestSuite(
           { testSuite: global.baserunTestSuite },
           (error) => {
             if (error) {
@@ -284,10 +298,8 @@ export class Baserun {
 
     const startEndUserRequest: SubmitUserRequest = { user: endUser };
 
-    const submissionService = getOrCreateSubmissionService();
-
     const userPromise = new Promise((resolve, reject) => {
-      submissionService.submitUser(startEndUserRequest, (error) => {
+      Baserun.submissionService.submitUser(startEndUserRequest, (error) => {
         if (error) {
           console.error('Failed to submit user to Baserun: ', error);
           reject(error);
@@ -302,7 +314,7 @@ export class Baserun {
     debug('starting session', session);
     const sessionPromise = new Promise((resolve, reject) => {
       userPromise.then(() => {
-        submissionService.startSession(startSessionRequest, (error) => {
+        Baserun.submissionService.startSession(startSessionRequest, (error) => {
           if (error) {
             console.error('Failed to submit session start to Baserun: ', error);
             reject(error);
@@ -382,7 +394,7 @@ export class Baserun {
     const startRunRequest: StartRunRequest = { run };
 
     return new Promise<Run>((resolve, reject) => {
-      getOrCreateSubmissionService().startRun(startRunRequest, (error) => {
+      Baserun.submissionService.startRun(startRunRequest, (error) => {
         if (error) {
           console.error('Failed to submit run start to Baserun: ', error);
           reject(error);
@@ -402,7 +414,7 @@ export class Baserun {
     }
 
     debug('finishing run', run);
-    getOrCreateSubmissionService().endRun(endRunRequest, (error) => {
+    Baserun.submissionService.endRun(endRunRequest, (error) => {
       if (error) {
         console.error('Failed to submit run end to Baserun: ', error);
       }
@@ -468,7 +480,7 @@ export class Baserun {
 
     debug('finishing session', session);
     await new Promise((resolve, reject) => {
-      getOrCreateSubmissionService().endSession(endSessionRequest, (error) => {
+      Baserun.submissionService.endSession(endSessionRequest, (error) => {
         if (error) {
           console.error('Failed to submit session end to Baserun: ', error);
           reject(error);
@@ -491,7 +503,7 @@ export class Baserun {
         };
         logOrSpan.endUser = endUser;
         debug('submitting span', logOrSpan);
-        getOrCreateSubmissionService().submitSpan(spanRequest, (error) => {
+        Baserun.submissionService.submitSpan(spanRequest, (error) => {
           if (error) {
             console.error('Failed to submit span to Baserun: ', error);
             reject(error);
@@ -506,7 +518,7 @@ export class Baserun {
           run,
         };
         debug('submitting log', logOrSpan);
-        getOrCreateSubmissionService().submitLog(logRequest, (error) => {
+        Baserun.submissionService.submitLog(logRequest, (error) => {
           if (error) {
             console.error('Failed to submit log to Baserun: ', error);
             reject(error);

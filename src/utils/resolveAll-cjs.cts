@@ -32,22 +32,29 @@ export function resolveAllSync(moduleName: string): string[] {
     paths.add(naive);
   }
 
-  const pkgDir = packageDirectorySync();
-  if (pkgDir) {
-    const packageJsonPath = path.join(pkgDir, 'package.json');
+  let currentDir = process.cwd();
+  while (currentDir.split(path.sep).length > 2) {
+    const pkgDir = packageDirectorySync({ cwd: currentDir });
 
-    resolveFromPackageSync(packageJsonPath, moduleName, paths);
+    if (pkgDir) {
+      debug({ currentDir, pkgDir });
+      const packageJsonPath = path.join(pkgDir, 'package.json');
 
-    // we go two levels deep because we want to catch packages/package-name/
-    globbySync(['**/package.json', '!node_modules'], {
-      cwd: pkgDir,
-      deep: 2,
-      expandDirectories: {
-        files: ['package.json'],
-      },
-    }).forEach((p: any) => {
-      resolveFromPackageSync(p, moduleName, paths);
-    });
+      resolveFromPackageSync(packageJsonPath, moduleName, paths);
+
+      // we go two levels deep because we want to catch packages/package-name/
+      globbySync(['**/package.json', '!node_modules'], {
+        cwd: pkgDir,
+        deep: 2,
+        expandDirectories: {
+          files: ['package.json'],
+        },
+      }).forEach((p: any) => {
+        resolveFromPackageSync(p, moduleName, paths);
+      });
+    }
+
+    currentDir = path.dirname(currentDir);
   }
 
   debug(paths);
@@ -72,7 +79,7 @@ function resolveFromPackageSync(
               paths.add(mod);
             }
           } catch (e) {
-            console.error(e);
+            debug(e);
             // fail silently
           }
           continue;
@@ -88,17 +95,17 @@ function resolveFromPackageSync(
                 paths.add(mod);
               }
             } catch (e) {
-              console.error(e);
+              debug(e);
               // fail silently
             }
           }
         } catch (e) {
-          console.error(e);
+          debug(e);
         }
       }
     }
   } catch (e) {
-    console.error(e);
+    debug(e);
     // fail silently
   }
 
@@ -162,17 +169,17 @@ async function resolveFromPackage(
                 paths.add(mod);
               }
             } catch (e) {
-              console.error(e);
+              debug(e);
               // fail silently
             }
           }
         } catch (e) {
-          console.error(e);
+          debug(e);
         }
       }
     }
   } catch (e) {
-    console.error(e);
+    debug(e);
     // fail silently
   }
 

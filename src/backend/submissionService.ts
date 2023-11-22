@@ -3,12 +3,12 @@ import { SubmissionServiceClient } from '../v1/gen/baserun.grpc-client.js';
 
 let submissionService: SubmissionServiceClient | undefined;
 
-export function getOrCreateSubmissionService() {
+export function getOrCreateSubmissionService({ apiKey }: { apiKey: string }) {
   if (submissionService) {
     return submissionService;
   }
 
-  if (!process.env.BASERUN_API_KEY) {
+  if (!apiKey) {
     throw new Error(
       'Baserun API key is missing. Ensure the BASERUN_API_KEY environment variable is set.',
     );
@@ -21,7 +21,7 @@ export function getOrCreateSubmissionService() {
   const callCredentials = credentials.createFromMetadataGenerator(
     (_unused, callback) => {
       const metadata = new Metadata();
-      metadata.add('authorization', `Bearer ${process.env.BASERUN_API_KEY}`);
+      metadata.add('authorization', `Bearer ${apiKey}`);
       callback(null, metadata);
     },
   );

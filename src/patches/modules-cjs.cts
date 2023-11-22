@@ -45,3 +45,6 @@ try {
   debug('anthropic module not found');
   // fail silently
 }
+
+// just a polyfill
+export const modulesPromise = Promise.resolve();

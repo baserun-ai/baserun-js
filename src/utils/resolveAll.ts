@@ -92,7 +92,7 @@ function resolveFromPackageSync(
             }
           }
         } catch (e) {
-          console.error(e);
+          debug(e);
         }
       }
     }
@@ -167,7 +167,7 @@ async function resolveFromPackage(
             }
           }
         } catch (e) {
-          console.error(e);
+          debug(e);
         }
       }
     }

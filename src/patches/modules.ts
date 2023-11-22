@@ -44,6 +44,7 @@ async function resolveAnthropic() {
 }
 
 // get them in parallel
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-//@ts-ignore
-await Promise.all([resolveOpenai(), resolveAnthropic()]);
+export const modulesPromise = Promise.all([
+  resolveOpenai(),
+  resolveAnthropic(),
+]);

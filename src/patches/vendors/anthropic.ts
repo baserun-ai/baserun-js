@@ -6,7 +6,7 @@ import {
 } from '../../types.js';
 import { DEFAULT_USAGE } from '../constants.js';
 import { patch } from '../patch.js';
-import { anthropic } from '../modules.js';
+import { anthropic, modulesPromise } from '../modules.js';
 
 export class AnthropicWrapper {
   static resolver(
@@ -74,7 +74,8 @@ export class AnthropicWrapper {
     return response;
   }
 
-  static init(log: (entry: AutoLLMLog) => Promise<void>) {
+  static async init(log: (entry: AutoLLMLog) => Promise<void>) {
+    await modulesPromise;
     for (const mod of anthropic) {
       AnthropicWrapper.patch(mod, log);
     }

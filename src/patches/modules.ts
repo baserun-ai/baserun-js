@@ -47,3 +47,7 @@ async function resolveAnthropic() {
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 //@ts-ignore
 await Promise.all([resolveOpenai(), resolveAnthropic()]);
+
+const modulesPromise = Promise.resolve();
+
+export { modulesPromise };

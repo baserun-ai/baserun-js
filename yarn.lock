@@ -1091,6 +1091,13 @@
   resolved "https://registry.yarnpkg.com/@types/chai/-/chai-4.3.10.tgz#2ad2959d1767edee5b0e4efb1a0cd2b500747317"
   integrity sha512-of+ICnbqjmFCiixUnqRulbylyXQrPqIGf/B3Jax1wIF3DvSheysQxAWvqHhZiW3IQrycvokcLcFQlveGp+vyNg==
 
+"@types/debug@^4.1.12":
+  version "4.1.12"
+  resolved "https://registry.yarnpkg.com/@types/debug/-/debug-4.1.12.tgz#a155f21690871953410df4b6b6f53187f0500917"
+  integrity sha512-vIChWdVG3LG1SMxEvI/AK+FWJthlrqlTu7fbrlywTkkaONwk/UAGaULXRlf8vkzFBLVm0zkMdCquhL5aOjhXPQ==
+  dependencies:
+    "@types/ms" "*"
+
 "@types/google-protobuf@^3.15.10":
   version "3.15.10"
   resolved "https://registry.yarnpkg.com/@types/google-protobuf/-/google-protobuf-3.15.10.tgz#e4dc3e37af6a106a7a76bb86de0078cf3a3b5598"
@@ -1151,6 +1158,11 @@
   version "4.14.201"
   resolved "https://registry.yarnpkg.com/@types/lodash/-/lodash-4.14.201.tgz#76f47cb63124e806824b6c18463daf3e1d480239"
   integrity sha512-y9euML0cim1JrykNxADLfaG0FgD1g/yTHwUs/Jg9ZIU7WKj2/4IW9Lbb1WZbvck78W/lfGXFfe+u2EGfIJXdLQ==
+
+"@types/ms@*":
+  version "0.7.34"
+  resolved "https://registry.yarnpkg.com/@types/ms/-/ms-0.7.34.tgz#10964ba0dee6ac4cd462e2795b6bebd407303433"
+  integrity sha512-nG96G3Wp6acyAgJqGasjODb+acrI7KltPiRxzHPXnP3NgI28bpQDRv53olbqGXbfcgF5aiiHmO3xpwEpS5Ld9g==
 
 "@types/node-fetch@^2.6.4":
   version "2.6.9"
@@ -2159,11 +2171,6 @@ execa@^5.0.0:
     onetime "^5.1.2"
     signal-exit "^3.0.3"
     strip-final-newline "^2.0.0"
-
-exit-hook@^4.0.0:
-  version "4.0.0"
-  resolved "https://registry.yarnpkg.com/exit-hook/-/exit-hook-4.0.0.tgz#c1e16ebd03d3166f837b1502dac755bb5c460d58"
-  integrity sha512-Fqs7ChZm72y40wKjOFXBKg7nJZvQJmewP5/7LtePDdnah/+FH9Hp5sgMujSCMPXlxOAW2//1jrW9pnsY7o20vQ==
 
 exit@^0.1.2:
   version "0.1.2"

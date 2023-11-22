@@ -1,4 +1,7 @@
+import { baserun } from '../../../src/index.js';
 import OpenAI from 'openai';
+
+baserun.init();
 
 const openai = new OpenAI();
 

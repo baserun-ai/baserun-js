@@ -5,6 +5,9 @@ import path from 'node:path';
 import fs from 'node:fs';
 import fsPromise from 'node:fs/promises';
 import resolvePkg from 'resolve-pkg';
+import getDebug from 'debug';
+
+const debug = getDebug('baserun:resolveAll');
 
 // I'd really not like to do this
 // Thank you Node.js
@@ -59,6 +62,8 @@ export async function resolveAllSync(moduleName: string): Promise<string[]> {
       resolveFromPackageSync(p, moduleName, paths);
     });
   }
+
+  debug(paths);
 
   return Array.from(paths);
 }

@@ -27,6 +27,9 @@ import { Timestamp } from './v1/gen/google/protobuf/timestamp.js';
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { isTestEnv } from './utils/isTestEnv.js';
 import { sep } from 'node:path';
+import getDebug from 'debug';
+
+const debug = getDebug('baserun:baserun');
 
 type TraceStorage = {
   run: Run;
@@ -53,24 +56,22 @@ export type SessionOptions<T extends (...args: any[]) => any> = {
   session: T;
 };
 
-import('exit-hook').then(({ default: exitHook }) => {
-  exitHook(() => {
-    if (!global.baserunInitialized) {
-      return;
-    }
-    // warn if there's an unflushed session or test suite
-    if (Baserun.sessionQueue.length > 0) {
-      console.warn(
-        'Baserun: Exiting with unflushed sessions. This should never happen - please report it at https://github.com/baserun-ai/baserun-js',
-      );
-    }
+process.on('exit', () => {
+  if (!global.baserunInitialized) {
+    return;
+  }
+  // warn if there's an unflushed session or test suite
+  if (Baserun.sessionQueue.length > 0) {
+    console.warn(
+      'Baserun: Exiting with unflushed sessions. This should never happen - please report it at https://github.com/baserun-ai/baserun-js',
+    );
+  }
 
-    if (Baserun.startTestSuitePromise) {
-      console.warn(
-        'Baserun: Exiting with unflushed test suite. Ensure you call baserun.flushTestSuite() before exiting.',
-      );
-    }
-  });
+  if (Baserun.startTestSuitePromise) {
+    console.warn(
+      'Baserun: Exiting with unflushed test suite. Ensure you call baserun.flushTestSuite() before exiting.',
+    );
+  }
 });
 
 export class Baserun {
@@ -223,6 +224,8 @@ export class Baserun {
         metadata,
       });
 
+      debug('starting run', run);
+
       return traceLocalStorage.run({ run, args, evals: [] }, async () => {
         try {
           const result = await fn(...args);
@@ -296,6 +299,7 @@ export class Baserun {
 
     const startSessionRequest: StartSessionRequest = { session };
 
+    debug('starting session', session);
     const sessionPromise = new Promise((resolve, reject) => {
       userPromise.then(() => {
         submissionService.startSession(startSessionRequest, (error) => {
@@ -397,6 +401,7 @@ export class Baserun {
       run.sessionId = sessionLocalStorage.getStore()?.session.id ?? '';
     }
 
+    debug('finishing run', run);
     getOrCreateSubmissionService().endRun(endRunRequest, (error) => {
       if (error) {
         console.error('Failed to submit run end to Baserun: ', error);
@@ -461,6 +466,7 @@ export class Baserun {
     session.completionTimestamp = Timestamp.fromDate(new Date());
     const endSessionRequest = { session };
 
+    debug('finishing session', session);
     await new Promise((resolve, reject) => {
       getOrCreateSubmissionService().endSession(endSessionRequest, (error) => {
         if (error) {
@@ -484,6 +490,7 @@ export class Baserun {
           span: logOrSpan,
         };
         logOrSpan.endUser = endUser;
+        debug('submitting span', logOrSpan);
         getOrCreateSubmissionService().submitSpan(spanRequest, (error) => {
           if (error) {
             console.error('Failed to submit span to Baserun: ', error);
@@ -498,6 +505,7 @@ export class Baserun {
           log: logOrSpan,
           run,
         };
+        debug('submitting log', logOrSpan);
         getOrCreateSubmissionService().submitLog(logRequest, (error) => {
           if (error) {
             console.error('Failed to submit log to Baserun: ', error);

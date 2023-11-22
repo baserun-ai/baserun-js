@@ -9,7 +9,10 @@ import {
 } from '../types.js';
 import { patch } from './patch.js';
 import { DEFAULT_USAGE } from './constants.js';
-import { openai } from './modules.js';
+import { modulesPromise, openai } from './modules.js';
+import getDebug from 'debug';
+
+const debug = getDebug('baserun:openai');
 
 interface NewOpenAIError {
   response?: { error?: { message?: string } };
@@ -247,9 +250,13 @@ export class OpenAIWrapper {
   }
 
   static init(log: (entry: AutoLLMLog) => Promise<void>) {
-    for (const mod of openai) {
-      OpenAIWrapper.patch(mod, log);
-    }
+    modulesPromise.then(() => {
+      debug('patching openai', openai.length);
+      for (const mod of openai) {
+        debug('patching', mod);
+        OpenAIWrapper.patch(mod, log);
+      }
+    });
   }
 }
 

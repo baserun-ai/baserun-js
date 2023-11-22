@@ -1,43 +1,16 @@
-/* eslint-disable @typescript-eslint/ban-ts-comment */
+import { resolve } from 'import-meta-resolve';
 import url from 'url';
-
+import { packageDirectorySync, packageDirectory } from 'pkg-dir';
 import path from 'node:path';
 import fs from 'node:fs';
 import fsPromise from 'node:fs/promises';
 import resolvePkg from 'resolve-pkg';
-
-// I'd really not like to do this
-// Thank you Node.js
-// We do this because we want to support a commonjs build
-async function getESModules() {
-  const [
-    { resolve },
-    { packageDirectory, packageDirectorySync },
-    { globby, globbySync },
-  ] = await Promise.all([
-    import('import-meta-resolve'),
-    import('pkg-dir'),
-    import('globby'),
-  ]);
-
-  return {
-    resolve,
-    packageDirectory,
-    packageDirectorySync,
-    globby,
-    globbySync,
-  };
-}
-
-const modulesPromise = getESModules();
+import { globby, globbySync } from 'globby';
 
 // resolves all occurrences of a module name in the current project
-export async function resolveAllSync(moduleName: string): Promise<string[]> {
-  const { resolve, packageDirectorySync, globbySync } = await modulesPromise;
+export function resolveAllSync(moduleName: string): string[] {
   const paths = new Set<string>([]);
 
-  // https://github.com/isaacs/tshy#module-local-state
-  // @ts-ignore
   const naive = resolve(moduleName, import.meta.url);
 
   if (naive) {
@@ -65,13 +38,12 @@ export async function resolveAllSync(moduleName: string): Promise<string[]> {
   return Array.from(paths);
 }
 
-async function resolveFromPackageSync(
+function resolveFromPackageSync(
   packageJsonPath: string,
   moduleName: string,
   paths: Set<string>,
 ) {
   try {
-    const { resolve } = await modulesPromise;
     const pkg = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
     if (pkg?.dependencies) {
       const deps = Object.keys(pkg.dependencies).filter(filterPackage);
@@ -116,11 +88,8 @@ async function resolveFromPackageSync(
 }
 
 export async function resolveAll(moduleName: string): Promise<string[]> {
-  const { globby, packageDirectory, resolve } = await modulesPromise;
   const paths = new Set<string>([]);
 
-  // https://github.com/isaacs/tshy#module-local-state
-  // @ts-ignore
   const naive = resolve(moduleName, import.meta.url);
 
   if (naive) {
@@ -159,7 +128,6 @@ async function resolveFromPackage(
   moduleName: string,
   paths: Set<string>,
 ) {
-  const { resolve } = await modulesPromise;
   try {
     const pkg = JSON.parse(await fsPromise.readFile(packageJsonPath, 'utf8'));
     if (pkg?.dependencies) {

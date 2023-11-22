@@ -6,42 +6,43 @@
  * @typedef {import('./package-json-reader.js').PackageConfig} PackageConfig
  */
 
-import {URL, fileURLToPath} from 'node:url'
-import packageJsonReader from './package-json-reader.js'
+import { URL, fileURLToPath } from 'node:url';
+import packageJsonReader from './package-json-reader.js';
 
 /**
  * @param {URL | string} resolved
  * @returns {PackageConfig}
  */
-export function getPackageScopeConfig(resolved) {
-  let packageJSONUrl = new URL('package.json', resolved)
+export function getPackageScopeConfig(resolved: string | URL) {
+  let packageJSONUrl = new URL('package.json', resolved);
 
+  // eslint-disable-next-line no-constant-condition
   while (true) {
-    const packageJSONPath = packageJSONUrl.pathname
+    const packageJSONPath = packageJSONUrl.pathname;
     if (packageJSONPath.endsWith('node_modules/package.json')) {
-      break
+      break;
     }
 
     const packageConfig = packageJsonReader.read(
       fileURLToPath(packageJSONUrl),
-      {specifier: resolved}
-    )
+      { specifier: resolved } as any,
+    );
 
     if (packageConfig.exists) {
-      return packageConfig
+      return packageConfig;
     }
 
-    const lastPackageJSONUrl = packageJSONUrl
-    packageJSONUrl = new URL('../package.json', packageJSONUrl)
+    const lastPackageJSONUrl = packageJSONUrl;
+    packageJSONUrl = new URL('../package.json', packageJSONUrl);
 
     // Terminates at root where ../package.json equals ../../package.json
     // (can't just check "/package.json" for Windows support).
     if (packageJSONUrl.pathname === lastPackageJSONUrl.pathname) {
-      break
+      break;
     }
   }
 
-  const packageJSONPath = fileURLToPath(packageJSONUrl)
+  const packageJSONPath = fileURLToPath(packageJSONUrl);
 
   return {
     pjsonPath: packageJSONPath,
@@ -50,6 +51,6 @@ export function getPackageScopeConfig(resolved) {
     name: undefined,
     type: 'none',
     exports: undefined,
-    imports: undefined
-  }
+    imports: undefined,
+  };
 }

@@ -3,8 +3,8 @@ import stringify from 'json-stringify-safe';
 import { AutoLLMLog } from './types.js';
 import { Evals } from './evals/evals.js';
 import { Eval } from './evals/types.js';
-import { OpenAIWrapper } from './patches/openai.js';
-import { AnthropicWrapper } from './patches/anthropic.js';
+import { OpenAIWrapper } from './patches/vendors/openai.js';
+import { AnthropicWrapper } from './patches/vendors/anthropic.js';
 import {
   EndRunRequest,
   Run,

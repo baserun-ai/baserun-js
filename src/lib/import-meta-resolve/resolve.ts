@@ -7,19 +7,19 @@
  * @typedef {import('./package-config.js').PackageConfig} PackageConfig
  */
 
-import assert from 'node:assert'
-import {Stats, statSync, realpathSync} from 'node:fs'
-import process from 'node:process'
-import {URL, fileURLToPath, pathToFileURL} from 'node:url'
-import path from 'node:path'
-import {builtinModules} from 'node:module'
-import {defaultGetFormatWithoutErrors} from './get-format.js'
-import {codes} from './errors.js'
-import {getPackageScopeConfig} from './package-config.js'
-import packageJsonReader from './package-json-reader.js'
-import {getConditionsSet} from './utils.js'
+import assert from 'node:assert';
+import { Stats, statSync, realpathSync } from 'node:fs';
+import process from 'node:process';
+import { URL, fileURLToPath, pathToFileURL } from 'node:url';
+import path from 'node:path';
+import { builtinModules } from 'node:module';
+import { defaultGetFormatWithoutErrors } from './get-format.js';
+import { codes } from './errors.js';
+import { getPackageScopeConfig } from './package-config.js';
+import packageJsonReader from './package-json-reader.js';
+import { getConditionsSet } from './utils.js';
 
-const RegExpPrototypeSymbolReplace = RegExp.prototype[Symbol.replace]
+const RegExpPrototypeSymbolReplace = RegExp.prototype[Symbol.replace];
 
 const {
   ERR_NETWORK_IMPORT_DISALLOWED,
@@ -29,22 +29,22 @@ const {
   ERR_MODULE_NOT_FOUND,
   ERR_PACKAGE_IMPORT_NOT_DEFINED,
   ERR_PACKAGE_PATH_NOT_EXPORTED,
-  ERR_UNSUPPORTED_DIR_IMPORT
-} = codes
+  ERR_UNSUPPORTED_DIR_IMPORT,
+} = codes;
 
-const own = {}.hasOwnProperty
+const own = {}.hasOwnProperty;
 
 const invalidSegmentRegEx =
-  /(^|\\|\/)((\.|%2e)(\.|%2e)?|(n|%6e|%4e)(o|%6f|%4f)(d|%64|%44)(e|%65|%45)(_|%5f)(m|%6d|%4d)(o|%6f|%4f)(d|%64|%44)(u|%75|%55)(l|%6c|%4c)(e|%65|%45)(s|%73|%53))?(\\|\/|$)/i
+  /(^|\\|\/)((\.|%2e)(\.|%2e)?|(n|%6e|%4e)(o|%6f|%4f)(d|%64|%44)(e|%65|%45)(_|%5f)(m|%6d|%4d)(o|%6f|%4f)(d|%64|%44)(u|%75|%55)(l|%6c|%4c)(e|%65|%45)(s|%73|%53))?(\\|\/|$)/i;
 const deprecatedInvalidSegmentRegEx =
-  /(^|\\|\/)((\.|%2e)(\.|%2e)?|(n|%6e|%4e)(o|%6f|%4f)(d|%64|%44)(e|%65|%45)(_|%5f)(m|%6d|%4d)(o|%6f|%4f)(d|%64|%44)(u|%75|%55)(l|%6c|%4c)(e|%65|%45)(s|%73|%53))(\\|\/|$)/i
-const invalidPackageNameRegEx = /^\.|%|\\/
-const patternRegEx = /\*/g
-const encodedSepRegEx = /%2f|%5c/i
+  /(^|\\|\/)((\.|%2e)(\.|%2e)?|(n|%6e|%4e)(o|%6f|%4f)(d|%64|%44)(e|%65|%45)(_|%5f)(m|%6d|%4d)(o|%6f|%4f)(d|%64|%44)(u|%75|%55)(l|%6c|%4c)(e|%65|%45)(s|%73|%53))(\\|\/|$)/i;
+const invalidPackageNameRegEx = /^\.|%|\\/;
+const patternRegEx = /\*/g;
+const encodedSepRegEx = /%2f|%5c/i;
 /** @type {Set<string>} */
-const emittedPackageWarnings = new Set()
+const emittedPackageWarnings = new Set();
 
-const doubleSlashRegEx = /[/\\]{2}/
+const doubleSlashRegEx = /[/\\]{2}/;
 
 /**
  *
@@ -57,21 +57,21 @@ const doubleSlashRegEx = /[/\\]{2}/
  * @param {boolean} isTarget
  */
 function emitInvalidSegmentDeprecation(
-  target,
-  request,
-  match,
-  packageJsonUrl,
-  internal,
-  base,
-  isTarget
+  target: string,
+  request: string,
+  match: string,
+  packageJsonUrl: URL,
+  internal: boolean,
+  base: URL,
+  isTarget: boolean,
 ) {
   // @ts-expect-error: apparently it does exist, TS.
   if (process.noDeprecation) {
-    return
+    return;
   }
 
-  const pjsonPath = fileURLToPath(packageJsonUrl)
-  const double = doubleSlashRegEx.exec(isTarget ? target : request) !== null
+  const pjsonPath = fileURLToPath(packageJsonUrl);
+  const double = doubleSlashRegEx.exec(isTarget ? target : request) !== null;
   process.emitWarning(
     `Use of deprecated ${
       double ? 'double slash' : 'leading or trailing slash matching'
@@ -84,8 +84,8 @@ function emitInvalidSegmentDeprecation(
         base ? ` imported from ${fileURLToPath(base)}` : ''
       }.`,
     'DeprecationWarning',
-    'DEP0166'
-  )
+    'DEP0166',
+  );
 }
 
 /**
@@ -95,35 +95,40 @@ function emitInvalidSegmentDeprecation(
  * @param {string} [main]
  * @returns {void}
  */
-function emitLegacyIndexDeprecation(url, packageJsonUrl, base, main) {
+function emitLegacyIndexDeprecation(
+  url: URL,
+  packageJsonUrl: URL,
+  base: URL,
+  main: string,
+) {
   // @ts-expect-error: apparently it does exist, TS.
   if (process.noDeprecation) {
-    return
+    return;
   }
 
-  const format = defaultGetFormatWithoutErrors(url, {parentURL: base.href})
-  if (format !== 'module') return
-  const urlPath = fileURLToPath(url.href)
-  const pkgPath = fileURLToPath(new URL('.', packageJsonUrl))
-  const basePath = fileURLToPath(base)
+  const format = defaultGetFormatWithoutErrors(url, { parentURL: base.href });
+  if (format !== 'module') return;
+  const urlPath = fileURLToPath(url.href);
+  const pkgPath = fileURLToPath(new URL('.', packageJsonUrl));
+  const basePath = fileURLToPath(base);
   if (!main) {
     process.emitWarning(
       `No "main" or "exports" field defined in the package.json for ${pkgPath} resolving the main entry point "${urlPath.slice(
-        pkgPath.length
+        pkgPath.length,
       )}", imported from ${basePath}.\nDefault "index" lookups for the main are deprecated for ES modules.`,
       'DeprecationWarning',
-      'DEP0151'
-    )
+      'DEP0151',
+    );
   } else if (path.resolve(pkgPath, main) !== urlPath) {
     process.emitWarning(
       `Package ${pkgPath} has a "main" field set to "${main}", ` +
         `excluding the full filename and extension to the resolved file at "${urlPath.slice(
-          pkgPath.length
+          pkgPath.length,
         )}", imported from ${basePath}.\n Automatic extension resolution of the "main" field is ` +
         'deprecated for ES modules.',
       'DeprecationWarning',
-      'DEP0151'
-    )
+      'DEP0151',
+    );
   }
 }
 
@@ -131,12 +136,12 @@ function emitLegacyIndexDeprecation(url, packageJsonUrl, base, main) {
  * @param {string} path
  * @returns {Stats}
  */
-function tryStatSync(path) {
+function tryStatSync(path: string) {
   // Note: from Node 15 onwards we can use `throwIfNoEntry: false` instead.
   try {
-    return statSync(path)
+    return statSync(path);
   } catch {
-    return new Stats()
+    return new Stats();
   }
 }
 
@@ -151,10 +156,10 @@ function tryStatSync(path) {
  * @param {URL} url
  * @returns {boolean}
  */
-function fileExists(url) {
-  const stats = statSync(url, {throwIfNoEntry: false})
-  const isFile = stats ? stats.isFile() : undefined
-  return isFile === null || isFile === undefined ? false : isFile
+function fileExists(url: URL) {
+  const stats = statSync(url, { throwIfNoEntry: false });
+  const isFile = stats ? stats.isFile() : undefined;
+  return isFile === null || isFile === undefined ? false : isFile;
 }
 
 /**
@@ -163,13 +168,13 @@ function fileExists(url) {
  * @param {URL} base
  * @returns {URL}
  */
-function legacyMainResolve(packageJsonUrl, packageConfig, base) {
+function legacyMainResolve(packageJsonUrl: URL, packageConfig: any, base: URL) {
   /** @type {URL | undefined} */
-  let guess
+  let guess;
   if (packageConfig.main !== undefined) {
-    guess = new URL(packageConfig.main, packageJsonUrl)
+    guess = new URL(packageConfig.main, packageJsonUrl);
     // Note: fs check redundances will be handled by Descriptor cache here.
-    if (fileExists(guess)) return guess
+    if (fileExists(guess)) return guess;
 
     const tries = [
       `./${packageConfig.main}.js`,
@@ -177,14 +182,14 @@ function legacyMainResolve(packageJsonUrl, packageConfig, base) {
       `./${packageConfig.main}.node`,
       `./${packageConfig.main}/index.js`,
       `./${packageConfig.main}/index.json`,
-      `./${packageConfig.main}/index.node`
-    ]
-    let i = -1
+      `./${packageConfig.main}/index.node`,
+    ];
+    let i = -1;
 
     while (++i < tries.length) {
-      guess = new URL(tries[i], packageJsonUrl)
-      if (fileExists(guess)) break
-      guess = undefined
+      guess = new URL(tries[i], packageJsonUrl);
+      if (fileExists(guess)) break;
+      guess = undefined;
     }
 
     if (guess) {
@@ -192,32 +197,32 @@ function legacyMainResolve(packageJsonUrl, packageConfig, base) {
         guess,
         packageJsonUrl,
         base,
-        packageConfig.main
-      )
-      return guess
+        packageConfig.main,
+      );
+      return guess;
     }
     // Fallthrough.
   }
 
-  const tries = ['./index.js', './index.json', './index.node']
-  let i = -1
+  const tries = ['./index.js', './index.json', './index.node'];
+  let i = -1;
 
   while (++i < tries.length) {
-    guess = new URL(tries[i], packageJsonUrl)
-    if (fileExists(guess)) break
-    guess = undefined
+    guess = new URL(tries[i], packageJsonUrl);
+    if (fileExists(guess)) break;
+    guess = undefined;
   }
 
   if (guess) {
-    emitLegacyIndexDeprecation(guess, packageJsonUrl, base, packageConfig.main)
-    return guess
+    emitLegacyIndexDeprecation(guess, packageJsonUrl, base, packageConfig.main);
+    return guess;
   }
 
   // Not found.
   throw new ERR_MODULE_NOT_FOUND(
     fileURLToPath(new URL('.', packageJsonUrl)),
-    fileURLToPath(base)
-  )
+    fileURLToPath(base),
+  );
 }
 
 /**
@@ -226,58 +231,60 @@ function legacyMainResolve(packageJsonUrl, packageConfig, base) {
  * @param {boolean} [preserveSymlinks]
  * @returns {URL}
  */
-function finalizeResolution(resolved, base, preserveSymlinks) {
+function finalizeResolution(
+  resolved: URL,
+  base: URL,
+  preserveSymlinks: boolean,
+) {
   if (encodedSepRegEx.exec(resolved.pathname) !== null) {
     throw new ERR_INVALID_MODULE_SPECIFIER(
       resolved.pathname,
       'must not include encoded "/" or "\\" characters',
-      fileURLToPath(base)
-    )
+      fileURLToPath(base),
+    );
   }
 
   /** @type {string} */
-  let filePath
+  let filePath;
 
   try {
-    filePath = fileURLToPath(resolved)
+    filePath = fileURLToPath(resolved);
   } catch (error) {
-    const cause = /** @type {ErrnoException} */ (error)
-    Object.defineProperty(cause, 'input', {value: String(resolved)})
-    Object.defineProperty(cause, 'module', {value: String(base)})
-    throw cause
+    const cause = /** @type {ErrnoException} */ error;
+    Object.defineProperty(cause, 'input', { value: String(resolved) });
+    Object.defineProperty(cause, 'module', { value: String(base) });
+    throw cause;
   }
 
   const stats = tryStatSync(
-    filePath.endsWith('/') ? filePath.slice(-1) : filePath
-  )
+    filePath.endsWith('/') ? filePath.slice(-1) : filePath,
+  );
 
   if (stats.isDirectory()) {
-    const error = new ERR_UNSUPPORTED_DIR_IMPORT(filePath, fileURLToPath(base))
-    // @ts-expect-error Add this for `import.meta.resolve`.
-    error.url = String(resolved)
-    throw error
+    const error = new ERR_UNSUPPORTED_DIR_IMPORT(filePath, fileURLToPath(base));
+    error.url = String(resolved);
+    throw error;
   }
 
   if (!stats.isFile()) {
     const error = new ERR_MODULE_NOT_FOUND(
       filePath || resolved.pathname,
       base && fileURLToPath(base),
-      true
-    )
-    // @ts-expect-error Add this for `import.meta.resolve`.
-    error.url = String(resolved)
-    throw error
+      true,
+    );
+    error.url = String(resolved);
+    throw error;
   }
 
   if (!preserveSymlinks) {
-    const real = realpathSync(filePath)
-    const {search, hash} = resolved
-    resolved = pathToFileURL(real + (filePath.endsWith(path.sep) ? '/' : ''))
-    resolved.search = search
-    resolved.hash = hash
+    const real = realpathSync(filePath);
+    const { search, hash } = resolved;
+    resolved = pathToFileURL(real + (filePath.endsWith(path.sep) ? '/' : ''));
+    resolved.search = search;
+    resolved.hash = hash;
   }
 
-  return resolved
+  return resolved;
 }
 
 /**
@@ -286,12 +293,16 @@ function finalizeResolution(resolved, base, preserveSymlinks) {
  * @param {URL} base
  * @returns {Error}
  */
-function importNotDefined(specifier, packageJsonUrl, base) {
+function importNotDefined(
+  specifier: string,
+  packageJsonUrl: URL | undefined,
+  base: URL,
+) {
   return new ERR_PACKAGE_IMPORT_NOT_DEFINED(
     specifier,
     packageJsonUrl && fileURLToPath(new URL('.', packageJsonUrl)),
-    fileURLToPath(base)
-  )
+    fileURLToPath(base),
+  );
 }
 
 /**
@@ -300,12 +311,12 @@ function importNotDefined(specifier, packageJsonUrl, base) {
  * @param {URL} base
  * @returns {Error}
  */
-function exportsNotFound(subpath, packageJsonUrl, base) {
+function exportsNotFound(subpath: string, packageJsonUrl: URL, base: URL) {
   return new ERR_PACKAGE_PATH_NOT_EXPORTED(
     fileURLToPath(new URL('.', packageJsonUrl)),
     subpath,
-    base && fileURLToPath(base)
-  )
+    base && fileURLToPath(base),
+  );
 }
 
 /**
@@ -316,15 +327,21 @@ function exportsNotFound(subpath, packageJsonUrl, base) {
  * @param {URL} [base]
  * @returns {never}
  */
-function throwInvalidSubpath(request, match, packageJsonUrl, internal, base) {
+function throwInvalidSubpath(
+  request: string,
+  match: string,
+  packageJsonUrl: URL,
+  internal: boolean,
+  base: URL,
+) {
   const reason = `request is not a valid match in pattern "${match}" for the "${
     internal ? 'imports' : 'exports'
-  }" resolution of ${fileURLToPath(packageJsonUrl)}`
+  }" resolution of ${fileURLToPath(packageJsonUrl)}`;
   throw new ERR_INVALID_MODULE_SPECIFIER(
     request,
     reason,
-    base && fileURLToPath(base)
-  )
+    base && fileURLToPath(base),
+  );
 }
 
 /**
@@ -335,19 +352,25 @@ function throwInvalidSubpath(request, match, packageJsonUrl, internal, base) {
  * @param {URL} [base]
  * @returns {Error}
  */
-function invalidPackageTarget(subpath, target, packageJsonUrl, internal, base) {
+function invalidPackageTarget(
+  subpath: string,
+  target: unknown,
+  packageJsonUrl: URL,
+  internal: boolean,
+  base: URL,
+) {
   target =
     typeof target === 'object' && target !== null
       ? JSON.stringify(target, null, '')
-      : `${target}`
+      : `${target}`;
 
   return new ERR_INVALID_PACKAGE_TARGET(
     fileURLToPath(new URL('.', packageJsonUrl)),
     subpath,
     target,
     internal,
-    base && fileURLToPath(base)
-  )
+    base && fileURLToPath(base),
+  );
 }
 
 /**
@@ -363,26 +386,26 @@ function invalidPackageTarget(subpath, target, packageJsonUrl, internal, base) {
  * @returns {URL}
  */
 function resolvePackageTargetString(
-  target,
-  subpath,
-  match,
-  packageJsonUrl,
-  base,
-  pattern,
-  internal,
-  isPathMap,
-  conditions
-) {
+  target: string,
+  subpath: string,
+  match: string,
+  packageJsonUrl: URL,
+  base: URL,
+  pattern: boolean,
+  internal: boolean,
+  isPathMap: boolean,
+  conditions: Set<string> | undefined,
+): any {
   if (subpath !== '' && !pattern && target[target.length - 1] !== '/')
-    throw invalidPackageTarget(match, target, packageJsonUrl, internal, base)
+    throw invalidPackageTarget(match, target, packageJsonUrl, internal, base);
 
   if (!target.startsWith('./')) {
     if (internal && !target.startsWith('../') && !target.startsWith('/')) {
-      let isURL = false
+      let isURL = false;
 
       try {
-        new URL(target)
-        isURL = true
+        new URL(target);
+        isURL = true;
       } catch {
         // Continue regardless of error.
       }
@@ -392,15 +415,15 @@ function resolvePackageTargetString(
           ? RegExpPrototypeSymbolReplace.call(
               patternRegEx,
               target,
-              () => subpath
+              () => subpath,
             )
-          : target + subpath
+          : target + subpath;
 
-        return packageResolve(exportTarget, packageJsonUrl, conditions)
+        return packageResolve(exportTarget, packageJsonUrl, conditions);
       }
     }
 
-    throw invalidPackageTarget(match, target, packageJsonUrl, internal, base)
+    throw invalidPackageTarget(match, target, packageJsonUrl, internal, base);
   }
 
   if (invalidSegmentRegEx.exec(target.slice(2)) !== null) {
@@ -408,14 +431,14 @@ function resolvePackageTargetString(
       if (!isPathMap) {
         const request = pattern
           ? match.replace('*', () => subpath)
-          : match + subpath
+          : match + subpath;
         const resolvedTarget = pattern
           ? RegExpPrototypeSymbolReplace.call(
               patternRegEx,
               target,
-              () => subpath
+              () => subpath,
             )
-          : target
+          : target;
         emitInvalidSegmentDeprecation(
           resolvedTarget,
           request,
@@ -423,36 +446,36 @@ function resolvePackageTargetString(
           packageJsonUrl,
           internal,
           base,
-          true
-        )
+          true,
+        );
       }
     } else {
-      throw invalidPackageTarget(match, target, packageJsonUrl, internal, base)
+      throw invalidPackageTarget(match, target, packageJsonUrl, internal, base);
     }
   }
 
-  const resolved = new URL(target, packageJsonUrl)
-  const resolvedPath = resolved.pathname
-  const packagePath = new URL('.', packageJsonUrl).pathname
+  const resolved = new URL(target, packageJsonUrl);
+  const resolvedPath = resolved.pathname;
+  const packagePath = new URL('.', packageJsonUrl).pathname;
 
   if (!resolvedPath.startsWith(packagePath))
-    throw invalidPackageTarget(match, target, packageJsonUrl, internal, base)
+    throw invalidPackageTarget(match, target, packageJsonUrl, internal, base);
 
-  if (subpath === '') return resolved
+  if (subpath === '') return resolved;
 
   if (invalidSegmentRegEx.exec(subpath) !== null) {
     const request = pattern
       ? match.replace('*', () => subpath)
-      : match + subpath
+      : match + subpath;
     if (deprecatedInvalidSegmentRegEx.exec(subpath) === null) {
       if (!isPathMap) {
         const resolvedTarget = pattern
           ? RegExpPrototypeSymbolReplace.call(
               patternRegEx,
               target,
-              () => subpath
+              () => subpath,
             )
-          : target
+          : target;
         emitInvalidSegmentDeprecation(
           resolvedTarget,
           request,
@@ -460,11 +483,11 @@ function resolvePackageTargetString(
           packageJsonUrl,
           internal,
           base,
-          false
-        )
+          false,
+        );
       }
     } else {
-      throwInvalidSubpath(request, match, packageJsonUrl, internal, base)
+      throwInvalidSubpath(request, match, packageJsonUrl, internal, base);
     }
   }
 
@@ -473,22 +496,22 @@ function resolvePackageTargetString(
       RegExpPrototypeSymbolReplace.call(
         patternRegEx,
         resolved.href,
-        () => subpath
-      )
-    )
+        () => subpath,
+      ),
+    );
   }
 
-  return new URL(subpath, resolved)
+  return new URL(subpath, resolved);
 }
 
 /**
  * @param {string} key
  * @returns {boolean}
  */
-function isArrayIndex(key) {
-  const keyNumber = Number(key)
-  if (`${keyNumber}` !== key) return false
-  return keyNumber >= 0 && keyNumber < 0xff_ff_ff_ff
+function isArrayIndex(key: string) {
+  const keyNumber = Number(key);
+  if (`${keyNumber}` !== key) return false;
+  return keyNumber >= 0 && keyNumber < 0xff_ff_ff_ff;
 }
 
 /**
@@ -504,16 +527,16 @@ function isArrayIndex(key) {
  * @returns {URL | null}
  */
 function resolvePackageTarget(
-  packageJsonUrl,
-  target,
-  subpath,
-  packageSubpath,
-  base,
-  pattern,
-  internal,
-  isPathMap,
-  conditions
-) {
+  packageJsonUrl: URL,
+  target: unknown,
+  subpath: string,
+  packageSubpath: string,
+  base: URL,
+  pattern: boolean,
+  internal: boolean,
+  isPathMap: boolean,
+  conditions: Set<string> | undefined,
+): any {
   if (typeof target === 'string') {
     return resolvePackageTargetString(
       target,
@@ -524,23 +547,23 @@ function resolvePackageTarget(
       pattern,
       internal,
       isPathMap,
-      conditions
-    )
+      conditions,
+    );
   }
 
   if (Array.isArray(target)) {
     /** @type {Array<unknown>} */
-    const targetList = target
-    if (targetList.length === 0) return null
+    const targetList = target;
+    if (targetList.length === 0) return null;
 
     /** @type {ErrnoException | null | undefined} */
-    let lastException
-    let i = -1
+    let lastException;
+    let i = -1;
 
     while (++i < targetList.length) {
-      const targetItem = targetList[i]
+      const targetItem = targetList[i];
       /** @type {URL | null} */
-      let resolveResult
+      let resolveResult;
       try {
         resolveResult = resolvePackageTarget(
           packageJsonUrl,
@@ -551,54 +574,54 @@ function resolvePackageTarget(
           pattern,
           internal,
           isPathMap,
-          conditions
-        )
-      } catch (error) {
-        const exception = /** @type {ErrnoException} */ (error)
-        lastException = exception
-        if (exception.code === 'ERR_INVALID_PACKAGE_TARGET') continue
-        throw error
+          conditions,
+        );
+      } catch (error: any) {
+        const exception = /** @type {ErrnoException} */ error;
+        lastException = exception;
+        if (exception.code === 'ERR_INVALID_PACKAGE_TARGET') continue;
+        throw error;
       }
 
-      if (resolveResult === undefined) continue
+      if (resolveResult === undefined) continue;
 
       if (resolveResult === null) {
-        lastException = null
-        continue
+        lastException = null;
+        continue;
       }
 
-      return resolveResult
+      return resolveResult;
     }
 
     if (lastException === undefined || lastException === null) {
-      return null
+      return null;
     }
 
-    throw lastException
+    throw lastException;
   }
 
   if (typeof target === 'object' && target !== null) {
-    const keys = Object.getOwnPropertyNames(target)
-    let i = -1
+    const keys = Object.getOwnPropertyNames(target);
+    let i = -1;
 
     while (++i < keys.length) {
-      const key = keys[i]
+      const key = keys[i];
       if (isArrayIndex(key)) {
         throw new ERR_INVALID_PACKAGE_CONFIG(
           fileURLToPath(packageJsonUrl),
           base,
-          '"exports" cannot contain numeric property keys.'
-        )
+          '"exports" cannot contain numeric property keys.',
+        );
       }
     }
 
-    i = -1
+    i = -1;
 
     while (++i < keys.length) {
-      const key = keys[i]
+      const key = keys[i];
       if (key === 'default' || (conditions && conditions.has(key))) {
         // @ts-expect-error: indexable.
-        const conditionalTarget = /** @type {unknown} */ (target[key])
+        const conditionalTarget = /** @type {unknown} */ target[key];
         const resolveResult = resolvePackageTarget(
           packageJsonUrl,
           conditionalTarget,
@@ -608,18 +631,18 @@ function resolvePackageTarget(
           pattern,
           internal,
           isPathMap,
-          conditions
-        )
-        if (resolveResult === undefined) continue
-        return resolveResult
+          conditions,
+        );
+        if (resolveResult === undefined) continue;
+        return resolveResult;
       }
     }
 
-    return null
+    return null;
   }
 
   if (target === null) {
-    return null
+    return null;
   }
 
   throw invalidPackageTarget(
@@ -627,8 +650,8 @@ function resolvePackageTarget(
     target,
     packageJsonUrl,
     internal,
-    base
-  )
+    base,
+  );
 }
 
 /**
@@ -637,31 +660,35 @@ function resolvePackageTarget(
  * @param {URL} base
  * @returns {boolean}
  */
-function isConditionalExportsMainSugar(exports, packageJsonUrl, base) {
-  if (typeof exports === 'string' || Array.isArray(exports)) return true
-  if (typeof exports !== 'object' || exports === null) return false
+function isConditionalExportsMainSugar(
+  exports: unknown,
+  packageJsonUrl: URL,
+  base: URL,
+) {
+  if (typeof exports === 'string' || Array.isArray(exports)) return true;
+  if (typeof exports !== 'object' || exports === null) return false;
 
-  const keys = Object.getOwnPropertyNames(exports)
-  let isConditionalSugar = false
-  let i = 0
-  let j = -1
+  const keys = Object.getOwnPropertyNames(exports);
+  let isConditionalSugar = false;
+  let i = 0;
+  let j = -1;
   while (++j < keys.length) {
-    const key = keys[j]
-    const curIsConditionalSugar = key === '' || key[0] !== '.'
+    const key = keys[j];
+    const curIsConditionalSugar = key === '' || key[0] !== '.';
     if (i++ === 0) {
-      isConditionalSugar = curIsConditionalSugar
+      isConditionalSugar = curIsConditionalSugar;
     } else if (isConditionalSugar !== curIsConditionalSugar) {
       throw new ERR_INVALID_PACKAGE_CONFIG(
         fileURLToPath(packageJsonUrl),
         base,
         '"exports" cannot contain some keys starting with \'.\' and some not.' +
           ' The exports object must either be an object of package subpath keys' +
-          ' or an object of main entry condition name keys only.'
-      )
+          ' or an object of main entry condition name keys only.',
+      );
     }
   }
 
-  return isConditionalSugar
+  return isConditionalSugar;
 }
 
 /**
@@ -669,23 +696,27 @@ function isConditionalExportsMainSugar(exports, packageJsonUrl, base) {
  * @param {URL} pjsonUrl
  * @param {URL} base
  */
-function emitTrailingSlashPatternDeprecation(match, pjsonUrl, base) {
+function emitTrailingSlashPatternDeprecation(
+  match: string,
+  pjsonUrl: URL,
+  base: URL,
+) {
   // @ts-expect-error: apparently it does exist, TS.
   if (process.noDeprecation) {
-    return
+    return;
   }
 
-  const pjsonPath = fileURLToPath(pjsonUrl)
-  if (emittedPackageWarnings.has(pjsonPath + '|' + match)) return
-  emittedPackageWarnings.add(pjsonPath + '|' + match)
+  const pjsonPath = fileURLToPath(pjsonUrl);
+  if (emittedPackageWarnings.has(pjsonPath + '|' + match)) return;
+  emittedPackageWarnings.add(pjsonPath + '|' + match);
   process.emitWarning(
     `Use of deprecated trailing slash pattern mapping "${match}" in the ` +
       `"exports" field module resolution of the package at ${pjsonPath}${
         base ? ` imported from ${fileURLToPath(base)}` : ''
       }. Mapping specifiers ending in "/" is no longer supported.`,
     'DeprecationWarning',
-    'DEP0155'
-  )
+    'DEP0155',
+  );
 }
 
 /**
@@ -697,16 +728,16 @@ function emitTrailingSlashPatternDeprecation(match, pjsonUrl, base) {
  * @returns {URL}
  */
 function packageExportsResolve(
-  packageJsonUrl,
-  packageSubpath,
-  packageConfig,
-  base,
-  conditions
+  packageJsonUrl: URL,
+  packageSubpath: string,
+  packageConfig: Record<string, unknown>,
+  base: URL,
+  conditions: Set<string> | undefined,
 ) {
-  let exports = packageConfig.exports
+  let exports = packageConfig.exports;
 
   if (isConditionalExportsMainSugar(exports, packageJsonUrl, base)) {
-    exports = {'.': exports}
+    exports = { '.': exports };
   }
 
   if (
@@ -715,7 +746,7 @@ function packageExportsResolve(
     !packageSubpath.endsWith('/')
   ) {
     // @ts-expect-error: indexable.
-    const target = exports[packageSubpath]
+    const target = exports[packageSubpath];
     const resolveResult = resolvePackageTarget(
       packageJsonUrl,
       target,
@@ -725,23 +756,23 @@ function packageExportsResolve(
       false,
       false,
       false,
-      conditions
-    )
+      conditions,
+    );
     if (resolveResult === null || resolveResult === undefined) {
-      throw exportsNotFound(packageSubpath, packageJsonUrl, base)
+      throw exportsNotFound(packageSubpath, packageJsonUrl, base);
     }
 
-    return resolveResult
+    return resolveResult;
   }
 
-  let bestMatch = ''
-  let bestMatchSubpath = ''
-  const keys = Object.getOwnPropertyNames(exports)
-  let i = -1
+  let bestMatch = '';
+  let bestMatchSubpath = '';
+  const keys = Object.getOwnPropertyNames(exports);
+  let i = -1;
 
   while (++i < keys.length) {
-    const key = keys[i]
-    const patternIndex = key.indexOf('*')
+    const key = keys[i];
+    const patternIndex = key.indexOf('*');
 
     if (
       patternIndex !== -1 &&
@@ -757,11 +788,11 @@ function packageExportsResolve(
         emitTrailingSlashPatternDeprecation(
           packageSubpath,
           packageJsonUrl,
-          base
-        )
+          base,
+        );
       }
 
-      const patternTrailer = key.slice(patternIndex + 1)
+      const patternTrailer = key.slice(patternIndex + 1);
 
       if (
         packageSubpath.length >= key.length &&
@@ -769,18 +800,18 @@ function packageExportsResolve(
         patternKeyCompare(bestMatch, key) === 1 &&
         key.lastIndexOf('*') === patternIndex
       ) {
-        bestMatch = key
+        bestMatch = key;
         bestMatchSubpath = packageSubpath.slice(
           patternIndex,
-          packageSubpath.length - patternTrailer.length
-        )
+          packageSubpath.length - patternTrailer.length,
+        );
       }
     }
   }
 
   if (bestMatch) {
     // @ts-expect-error: indexable.
-    const target = /** @type {unknown} */ (exports[bestMatch])
+    const target = /** @type {unknown} */ exports[bestMatch];
     const resolveResult = resolvePackageTarget(
       packageJsonUrl,
       target,
@@ -790,35 +821,35 @@ function packageExportsResolve(
       true,
       false,
       packageSubpath.endsWith('/'),
-      conditions
-    )
+      conditions,
+    );
 
     if (resolveResult === null || resolveResult === undefined) {
-      throw exportsNotFound(packageSubpath, packageJsonUrl, base)
+      throw exportsNotFound(packageSubpath, packageJsonUrl, base);
     }
 
-    return resolveResult
+    return resolveResult;
   }
 
-  throw exportsNotFound(packageSubpath, packageJsonUrl, base)
+  throw exportsNotFound(packageSubpath, packageJsonUrl, base);
 }
 
 /**
  * @param {string} a
  * @param {string} b
  */
-function patternKeyCompare(a, b) {
-  const aPatternIndex = a.indexOf('*')
-  const bPatternIndex = b.indexOf('*')
-  const baseLengthA = aPatternIndex === -1 ? a.length : aPatternIndex + 1
-  const baseLengthB = bPatternIndex === -1 ? b.length : bPatternIndex + 1
-  if (baseLengthA > baseLengthB) return -1
-  if (baseLengthB > baseLengthA) return 1
-  if (aPatternIndex === -1) return 1
-  if (bPatternIndex === -1) return -1
-  if (a.length > b.length) return -1
-  if (b.length > a.length) return 1
-  return 0
+function patternKeyCompare(a: string, b: string) {
+  const aPatternIndex = a.indexOf('*');
+  const bPatternIndex = b.indexOf('*');
+  const baseLengthA = aPatternIndex === -1 ? a.length : aPatternIndex + 1;
+  const baseLengthB = bPatternIndex === -1 ? b.length : bPatternIndex + 1;
+  if (baseLengthA > baseLengthB) return -1;
+  if (baseLengthB > baseLengthA) return 1;
+  if (aPatternIndex === -1) return 1;
+  if (bPatternIndex === -1) return -1;
+  if (a.length > b.length) return -1;
+  if (b.length > a.length) return 1;
+  return 0;
 }
 
 /**
@@ -827,20 +858,24 @@ function patternKeyCompare(a, b) {
  * @param {Set<string>} [conditions]
  * @returns {URL}
  */
-function packageImportsResolve(name, base, conditions) {
+function packageImportsResolve(
+  name: string,
+  base: URL,
+  conditions: Set<string> | undefined,
+) {
   if (name === '#' || name.startsWith('#/') || name.endsWith('/')) {
-    const reason = 'is not a valid internal imports specifier name'
-    throw new ERR_INVALID_MODULE_SPECIFIER(name, reason, fileURLToPath(base))
+    const reason = 'is not a valid internal imports specifier name';
+    throw new ERR_INVALID_MODULE_SPECIFIER(name, reason, fileURLToPath(base));
   }
 
   /** @type {URL | undefined} */
-  let packageJsonUrl
+  let packageJsonUrl;
 
-  const packageConfig = getPackageScopeConfig(base)
+  const packageConfig = getPackageScopeConfig(base);
 
   if (packageConfig.exists) {
-    packageJsonUrl = pathToFileURL(packageConfig.pjsonPath)
-    const imports = packageConfig.imports
+    packageJsonUrl = pathToFileURL(packageConfig.pjsonPath);
+    const imports = packageConfig.imports;
     if (imports) {
       if (own.call(imports, name) && !name.includes('*')) {
         const resolveResult = resolvePackageTarget(
@@ -852,40 +887,40 @@ function packageImportsResolve(name, base, conditions) {
           false,
           true,
           false,
-          conditions
-        )
+          conditions,
+        );
         if (resolveResult !== null && resolveResult !== undefined) {
-          return resolveResult
+          return resolveResult;
         }
       } else {
-        let bestMatch = ''
-        let bestMatchSubpath = ''
-        const keys = Object.getOwnPropertyNames(imports)
-        let i = -1
+        let bestMatch = '';
+        let bestMatchSubpath = '';
+        const keys = Object.getOwnPropertyNames(imports);
+        let i = -1;
 
         while (++i < keys.length) {
-          const key = keys[i]
-          const patternIndex = key.indexOf('*')
+          const key = keys[i];
+          const patternIndex = key.indexOf('*');
 
           if (patternIndex !== -1 && name.startsWith(key.slice(0, -1))) {
-            const patternTrailer = key.slice(patternIndex + 1)
+            const patternTrailer = key.slice(patternIndex + 1);
             if (
               name.length >= key.length &&
               name.endsWith(patternTrailer) &&
               patternKeyCompare(bestMatch, key) === 1 &&
               key.lastIndexOf('*') === patternIndex
             ) {
-              bestMatch = key
+              bestMatch = key;
               bestMatchSubpath = name.slice(
                 patternIndex,
-                name.length - patternTrailer.length
-              )
+                name.length - patternTrailer.length,
+              );
             }
           }
         }
 
         if (bestMatch) {
-          const target = imports[bestMatch]
+          const target = imports[bestMatch];
           const resolveResult = resolvePackageTarget(
             packageJsonUrl,
             target,
@@ -895,18 +930,18 @@ function packageImportsResolve(name, base, conditions) {
             true,
             true,
             false,
-            conditions
-          )
+            conditions,
+          );
 
           if (resolveResult !== null && resolveResult !== undefined) {
-            return resolveResult
+            return resolveResult;
           }
         }
       }
     }
   }
 
-  throw importNotDefined(name, packageJsonUrl, base)
+  throw importNotDefined(name, packageJsonUrl, base);
 }
 
 // Note: In Node.js, `getPackageType` is here.
@@ -917,40 +952,40 @@ function packageImportsResolve(name, base, conditions) {
  * @param {string} specifier
  * @param {URL} base
  */
-function parsePackageName(specifier, base) {
-  let separatorIndex = specifier.indexOf('/')
-  let validPackageName = true
-  let isScoped = false
+function parsePackageName(specifier: string, base: URL) {
+  let separatorIndex = specifier.indexOf('/');
+  let validPackageName = true;
+  let isScoped = false;
   if (specifier[0] === '@') {
-    isScoped = true
+    isScoped = true;
     if (separatorIndex === -1 || specifier.length === 0) {
-      validPackageName = false
+      validPackageName = false;
     } else {
-      separatorIndex = specifier.indexOf('/', separatorIndex + 1)
+      separatorIndex = specifier.indexOf('/', separatorIndex + 1);
     }
   }
 
   const packageName =
-    separatorIndex === -1 ? specifier : specifier.slice(0, separatorIndex)
+    separatorIndex === -1 ? specifier : specifier.slice(0, separatorIndex);
 
   // Package name cannot have leading . and cannot have percent-encoding or
   // \\ separators.
   if (invalidPackageNameRegEx.exec(packageName) !== null) {
-    validPackageName = false
+    validPackageName = false;
   }
 
   if (!validPackageName) {
     throw new ERR_INVALID_MODULE_SPECIFIER(
       specifier,
       'is not a valid package name',
-      fileURLToPath(base)
-    )
+      fileURLToPath(base),
+    );
   }
 
   const packageSubpath =
-    '.' + (separatorIndex === -1 ? '' : specifier.slice(separatorIndex))
+    '.' + (separatorIndex === -1 ? '' : specifier.slice(separatorIndex));
 
-  return {packageName, packageSubpath, isScoped}
+  return { packageName, packageSubpath, isScoped };
 }
 
 /**
@@ -959,23 +994,27 @@ function parsePackageName(specifier, base) {
  * @param {Set<string> | undefined} conditions
  * @returns {URL}
  */
-function packageResolve(specifier, base, conditions) {
+function packageResolve(
+  specifier: string,
+  base: URL,
+  conditions: Set<string> | undefined,
+) {
   if (builtinModules.includes(specifier)) {
-    return new URL('node:' + specifier)
+    return new URL('node:' + specifier);
   }
 
-  const {packageName, packageSubpath, isScoped} = parsePackageName(
+  const { packageName, packageSubpath, isScoped } = parsePackageName(
     specifier,
-    base
-  )
+    base,
+  );
 
   // ResolveSelf
-  const packageConfig = getPackageScopeConfig(base)
+  const packageConfig = getPackageScopeConfig(base);
 
   // Can’t test.
   /* c8 ignore next 16 */
   if (packageConfig.exists) {
-    const packageJsonUrl = pathToFileURL(packageConfig.pjsonPath)
+    const packageJsonUrl = pathToFileURL(packageConfig.pjsonPath);
     if (
       packageConfig.name === packageName &&
       packageConfig.exports !== undefined &&
@@ -986,84 +1025,84 @@ function packageResolve(specifier, base, conditions) {
         packageSubpath,
         packageConfig,
         base,
-        conditions
-      )
+        conditions,
+      );
     }
   }
 
   let packageJsonUrl = new URL(
     './node_modules/' + packageName + '/package.json',
-    base
-  )
-  let packageJsonPath = fileURLToPath(packageJsonUrl)
+    base,
+  );
+  let packageJsonPath = fileURLToPath(packageJsonUrl);
   /** @type {string} */
-  let lastPath
+  let lastPath;
   do {
-    const stat = tryStatSync(packageJsonPath.slice(0, -13))
+    const stat = tryStatSync(packageJsonPath.slice(0, -13));
     if (!stat.isDirectory()) {
-      lastPath = packageJsonPath
+      lastPath = packageJsonPath;
       packageJsonUrl = new URL(
         (isScoped ? '../../../../node_modules/' : '../../../node_modules/') +
           packageName +
           '/package.json',
-        packageJsonUrl
-      )
-      packageJsonPath = fileURLToPath(packageJsonUrl)
-      continue
+        packageJsonUrl,
+      );
+      packageJsonPath = fileURLToPath(packageJsonUrl);
+      continue;
     }
 
     // Package match.
     const packageConfig = packageJsonReader.read(packageJsonPath, {
       base,
-      specifier
-    })
+      specifier,
+    });
     if (packageConfig.exports !== undefined && packageConfig.exports !== null) {
       return packageExportsResolve(
         packageJsonUrl,
         packageSubpath,
         packageConfig,
         base,
-        conditions
-      )
+        conditions,
+      );
     }
 
     if (packageSubpath === '.') {
-      return legacyMainResolve(packageJsonUrl, packageConfig, base)
+      return legacyMainResolve(packageJsonUrl, packageConfig, base);
     }
 
-    return new URL(packageSubpath, packageJsonUrl)
+    return new URL(packageSubpath, packageJsonUrl);
     // Cross-platform root check.
-  } while (packageJsonPath.length !== lastPath.length)
+  } while (packageJsonPath.length !== lastPath.length);
 
-  throw new ERR_MODULE_NOT_FOUND(packageName, fileURLToPath(base), false)
+  throw new ERR_MODULE_NOT_FOUND(packageName, fileURLToPath(base), false);
 }
 
 /**
  * @param {string} specifier
  * @returns {boolean}
  */
-function isRelativeSpecifier(specifier) {
+function isRelativeSpecifier(specifier: string) {
   if (specifier[0] === '.') {
-    if (specifier.length === 1 || specifier[1] === '/') return true
+    if (specifier.length === 1 || specifier[1] === '/') return true;
     if (
       specifier[1] === '.' &&
       (specifier.length === 2 || specifier[2] === '/')
     ) {
-      return true
+      return true;
     }
   }
 
-  return false
+  return false;
 }
 
 /**
  * @param {string} specifier
  * @returns {boolean}
  */
-function shouldBeTreatedAsRelativeOrAbsolutePath(specifier) {
-  if (specifier === '') return false
-  if (specifier[0] === '/') return true
-  return isRelativeSpecifier(specifier)
+function shouldBeTreatedAsRelativeOrAbsolutePath(specifier: string) {
+  if (specifier === '') return false;
+  if (specifier[0] === '/') return true;
+  return isRelativeSpecifier(specifier);
 }
 
 /**
@@ -1081,35 +1120,40 @@ function shouldBeTreatedAsRelativeOrAbsolutePath(specifier) {
  * @returns {URL}
  *   A URL object to the found thing.
  */
-export function moduleResolve(specifier, base, conditions, preserveSymlinks) {
-  const protocol = base.protocol
-  const isRemote = protocol === 'http:' || protocol === 'https:'
+export function moduleResolve(
+  specifier: string,
+  base: URL,
+  conditions: Set<string>,
+  preserveSymlinks: boolean,
+) {
+  const protocol = base.protocol;
+  const isRemote = protocol === 'http:' || protocol === 'https:';
   // Order swapped from spec for minor perf gain.
   // Ok since relative URLs cannot parse as URLs.
   /** @type {URL | undefined} */
-  let resolved
+  let resolved;
 
   if (shouldBeTreatedAsRelativeOrAbsolutePath(specifier)) {
-    resolved = new URL(specifier, base)
+    resolved = new URL(specifier, base);
   } else if (!isRemote && specifier[0] === '#') {
-    resolved = packageImportsResolve(specifier, base, conditions)
+    resolved = packageImportsResolve(specifier, base, conditions);
   } else {
     try {
-      resolved = new URL(specifier)
+      resolved = new URL(specifier);
     } catch {
       if (!isRemote) {
-        resolved = packageResolve(specifier, base, conditions)
+        resolved = packageResolve(specifier, base, conditions);
       }
     }
   }
 
-  assert(resolved !== undefined, 'expected to be defined')
+  assert(resolved !== undefined, 'expected to be defined');
 
   if (resolved.protocol !== 'file:') {
-    return resolved
+    return resolved;
   }
 
-  return finalizeResolution(resolved, base, preserveSymlinks)
+  return finalizeResolution(resolved, base, preserveSymlinks);
 }
 
 /**
@@ -1117,15 +1161,19 @@ export function moduleResolve(specifier, base, conditions, preserveSymlinks) {
  * @param {URL | undefined} parsed
  * @param {URL | undefined} parsedParentURL
  */
-function checkIfDisallowedImport(specifier, parsed, parsedParentURL) {
+function checkIfDisallowedImport(
+  specifier: string,
+  parsed: URL | undefined,
+  parsedParentURL: URL | undefined,
+) {
   if (parsedParentURL) {
     // Avoid accessing the `protocol` property due to the lazy getters.
-    const parentProtocol = parsedParentURL.protocol
+    const parentProtocol = parsedParentURL.protocol;
 
     if (parentProtocol === 'http:' || parentProtocol === 'https:') {
       if (shouldBeTreatedAsRelativeOrAbsolutePath(specifier)) {
         // Avoid accessing the `protocol` property due to the lazy getters.
-        const parsedProtocol = parsed?.protocol
+        const parsedProtocol = parsed?.protocol;
 
         // `data:` and `blob:` disallowed due to allowing file: access via
         // indirection
@@ -1137,26 +1185,26 @@ function checkIfDisallowedImport(specifier, parsed, parsedParentURL) {
           throw new ERR_NETWORK_IMPORT_DISALLOWED(
             specifier,
             parsedParentURL,
-            'remote imports cannot import from a local location.'
-          )
+            'remote imports cannot import from a local location.',
+          );
         }
 
-        return {url: parsed?.href || ''}
+        return { url: parsed?.href || '' };
       }
 
       if (builtinModules.includes(specifier)) {
         throw new ERR_NETWORK_IMPORT_DISALLOWED(
           specifier,
           parsedParentURL,
-          'remote imports cannot import from a local location.'
-        )
+          'remote imports cannot import from a local location.',
+        );
       }
 
       throw new ERR_NETWORK_IMPORT_DISALLOWED(
         specifier,
         parsedParentURL,
-        'only relative and absolute specifiers are supported.'
-      )
+        'only relative and absolute specifiers are supported.',
+      );
     }
   }
 }
@@ -1177,7 +1225,7 @@ function checkIfDisallowedImport(specifier, parsed, parsedParentURL) {
  * @param {Value} self
  * @returns {Value is URL}
  */
-function isURL(self) {
+function isURL(self: any) {
   return Boolean(
     self &&
       typeof self === 'object' &&
@@ -1186,8 +1234,8 @@ function isURL(self) {
       'protocol' in self &&
       typeof self.protocol === 'string' &&
       self.href &&
-      self.protocol
-  )
+      self.protocol,
+  );
 }
 
 /**
@@ -1196,17 +1244,17 @@ function isURL(self) {
  * @param {unknown} parentURL
  * @returns {asserts parentURL is URL | string | undefined}
  */
-function throwIfInvalidParentURL(parentURL) {
+function throwIfInvalidParentURL(parentURL: unknown) {
   if (parentURL === undefined) {
-    return // Main entry point, so no parent
+    return; // Main entry point, so no parent
   }
 
   if (typeof parentURL !== 'string' && !isURL(parentURL)) {
     throw new codes.ERR_INVALID_ARG_TYPE(
       'parentURL',
       ['string', 'URL'],
-      parentURL
-    )
+      parentURL,
+    );
   }
 }
 
@@ -1215,33 +1263,36 @@ function throwIfInvalidParentURL(parentURL) {
  * @param {{parentURL?: string, conditions?: Array<string>}} context
  * @returns {{url: string, format?: string | null}}
  */
-export function defaultResolve(specifier, context = {}) {
-  const {parentURL} = context
-  assert(parentURL !== undefined, 'expected `parentURL` to be defined')
-  throwIfInvalidParentURL(parentURL)
+export function defaultResolve(
+  specifier: string,
+  context: { parentURL?: string; conditions?: string[] } = {},
+) {
+  const { parentURL } = context;
+  assert(parentURL !== undefined, 'expected `parentURL` to be defined');
+  throwIfInvalidParentURL(parentURL);
 
   /** @type {URL | undefined} */
-  let parsedParentURL
+  let parsedParentURL;
   if (parentURL) {
     try {
-      parsedParentURL = new URL(parentURL)
+      parsedParentURL = new URL(parentURL);
     } catch {
       // Ignore exception
     }
   }
 
   /** @type {URL | undefined} */
-  let parsed
+  let parsed;
   try {
     parsed = shouldBeTreatedAsRelativeOrAbsolutePath(specifier)
       ? new URL(specifier, parsedParentURL)
-      : new URL(specifier)
+      : new URL(specifier);
 
     // Avoid accessing the `protocol` property due to the lazy getters.
-    const protocol = parsed.protocol
+    const protocol = parsed.protocol;
 
     if (protocol === 'data:') {
-      return {url: parsed.href, format: null}
+      return { url: parsed.href, format: null };
     }
   } catch {
     // Ignore exception
@@ -1253,22 +1304,22 @@ export function defaultResolve(specifier, context = {}) {
   const maybeReturn = checkIfDisallowedImport(
     specifier,
     parsed,
-    parsedParentURL
-  )
+    parsedParentURL,
+  );
 
-  if (maybeReturn) return maybeReturn
+  if (maybeReturn) return maybeReturn;
 
   // This must come after checkIfDisallowedImport
-  if (parsed && parsed.protocol === 'node:') return {url: specifier}
+  if (parsed && parsed.protocol === 'node:') return { url: specifier };
 
-  const conditions = getConditionsSet(context.conditions)
+  const conditions = getConditionsSet(context.conditions);
 
-  const url = moduleResolve(specifier, new URL(parentURL), conditions, false)
+  const url = moduleResolve(specifier, new URL(parentURL), conditions, false);
 
   return {
     // Do NOT cast `url` to a string: that will work even when there are real
     // problems, silencing them
     url: url.href,
-    format: defaultGetFormatWithoutErrors(url, {parentURL})
-  }
+    format: defaultGetFormatWithoutErrors(url, { parentURL }),
+  };
 }

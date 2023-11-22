@@ -1,3 +1,5 @@
+/* eslint-disable */
+
 /**
  * @typedef ErrnoExceptionFields
  * @property {number | undefined} [errnode]
@@ -16,16 +18,15 @@
 // Manually “tree shaken” from:
 // <https://github.com/nodejs/node/blob/45f5c9b/lib/internal/errors.js>
 // Last checked on: Nov 2, 2023.
-import v8 from 'node:v8'
-import assert from 'node:assert'
+import v8 from 'node:v8';
+import assert from 'node:assert';
 // Needed for types.
 // eslint-disable-next-line no-unused-vars
-import {URL} from 'node:url'
-import {format, inspect} from 'node:util'
+import { format, inspect } from 'node:util';
 
-const own = {}.hasOwnProperty
+const own = {}.hasOwnProperty;
 
-const classRegExp = /^([A-Z][a-z\d]*)+$/
+const classRegExp = /^([A-Z][a-z\d]*)+$/;
 // Sorted by a rough estimate on most frequently used entries.
 const kTypes = new Set([
   'string',
@@ -37,10 +38,10 @@ const kTypes = new Set([
   'Object',
   'boolean',
   'bigint',
-  'symbol'
-])
+  'symbol',
+]);
 
-export const codes = {}
+export const codes: any = {};
 
 /**
  * Create a list string in the form like 'A and B' or 'A, B, ..., and Z'.
@@ -53,17 +54,17 @@ export const codes = {}
  *   The list type to be inserted before the last element.
  * @returns {string}
  */
-function formatList(array, type = 'and') {
+function formatList(array: any[], type = 'and') {
   return array.length < 3
     ? array.join(` ${type} `)
-    : `${array.slice(0, -1).join(', ')}, ${type} ${array[array.length - 1]}`
+    : `${array.slice(0, -1).join(', ')}, ${type} ${array[array.length - 1]}`;
 }
 
 /** @type {Map<string, MessageFunction | string>} */
-const messages = new Map()
-const nodeInternalPrefix = '__node_internal_'
+const messages = new Map();
+const nodeInternalPrefix = '__node_internal_';
 /** @type {number} */
-let userStackTraceLimit
+let userStackTraceLimit: any;
 
 codes.ERR_INVALID_ARG_TYPE = createError(
   'ERR_INVALID_ARG_TYPE',
@@ -72,87 +73,87 @@ codes.ERR_INVALID_ARG_TYPE = createError(
    * @param {Array<string> | string} expected
    * @param {unknown} actual
    */
-  (name, expected, actual) => {
-    assert(typeof name === 'string', "'name' must be a string")
+  (name: string, expected: string | string[], actual: string) => {
+    assert(typeof name === 'string', "'name' must be a string");
     if (!Array.isArray(expected)) {
-      expected = [expected]
+      expected = [expected];
     }
 
-    let message = 'The '
+    let message = 'The ';
     if (name.endsWith(' argument')) {
       // For cases like 'first argument'
-      message += `${name} `
+      message += `${name} `;
     } else {
-      const type = name.includes('.') ? 'property' : 'argument'
-      message += `"${name}" ${type} `
+      const type = name.includes('.') ? 'property' : 'argument';
+      message += `"${name}" ${type} `;
     }
 
-    message += 'must be '
+    message += 'must be ';
 
     /** @type {Array<string>} */
-    const types = []
+    const types = [];
     /** @type {Array<string>} */
-    const instances = []
+    const instances = [];
     /** @type {Array<string>} */
-    const other = []
+    const other = [];
 
     for (const value of expected) {
       assert(
         typeof value === 'string',
-        'All expected entries have to be of type string'
-      )
+        'All expected entries have to be of type string',
+      );
 
       if (kTypes.has(value)) {
-        types.push(value.toLowerCase())
+        types.push(value.toLowerCase());
       } else if (classRegExp.exec(value) === null) {
         assert(
           value !== 'object',
-          'The value "object" should be written as "Object"'
-        )
-        other.push(value)
+          'The value "object" should be written as "Object"',
+        );
+        other.push(value);
       } else {
-        instances.push(value)
+        instances.push(value);
       }
     }
 
     // Special handle `object` in case other instances are allowed to outline
     // the differences between each other.
     if (instances.length > 0) {
-      const pos = types.indexOf('object')
+      const pos = types.indexOf('object');
       if (pos !== -1) {
-        types.slice(pos, 1)
-        instances.push('Object')
+        types.slice(pos, 1);
+        instances.push('Object');
       }
     }
 
     if (types.length > 0) {
       message += `${types.length > 1 ? 'one of type' : 'of type'} ${formatList(
         types,
-        'or'
-      )}`
-      if (instances.length > 0 || other.length > 0) message += ' or '
+        'or',
+      )}`;
+      if (instances.length > 0 || other.length > 0) message += ' or ';
     }
 
     if (instances.length > 0) {
-      message += `an instance of ${formatList(instances, 'or')}`
-      if (other.length > 0) message += ' or '
+      message += `an instance of ${formatList(instances, 'or')}`;
+      if (other.length > 0) message += ' or ';
     }
 
     if (other.length > 0) {
       if (other.length > 1) {
-        message += `one of ${formatList(other, 'or')}`
+        message += `one of ${formatList(other, 'or')}`;
       } else {
-        if (other[0].toLowerCase() !== other[0]) message += 'an '
-        message += `${other[0]}`
+        if (other[0].toLowerCase() !== other[0]) message += 'an ';
+        message += `${other[0]}`;
       }
     }
 
-    message += `. Received ${determineSpecificType(actual)}`
+    message += `. Received ${determineSpecificType(actual)}`;
 
-    return message
+    return message;
   },
-  TypeError
-)
+  TypeError,
+);
 
 codes.ERR_INVALID_MODULE_SPECIFIER = createError(
   'ERR_INVALID_MODULE_SPECIFIER',
@@ -161,13 +162,13 @@ codes.ERR_INVALID_MODULE_SPECIFIER = createError(
    * @param {string} reason
    * @param {string} [base]
    */
-  (request, reason, base = undefined) => {
+  (request: string, reason: string, base = undefined) => {
     return `Invalid module "${request}" ${reason}${
       base ? ` imported from ${base}` : ''
-    }`
+    }`;
   },
-  TypeError
-)
+  TypeError,
+);
 
 codes.ERR_INVALID_PACKAGE_CONFIG = createError(
   'ERR_INVALID_PACKAGE_CONFIG',
@@ -176,13 +177,13 @@ codes.ERR_INVALID_PACKAGE_CONFIG = createError(
    * @param {string} [base]
    * @param {string} [message]
    */
-  (path, base, message) => {
+  (path: string, base: string, message: string) => {
     return `Invalid package config ${path}${
       base ? ` while importing ${base}` : ''
-    }${message ? `. ${message}` : ''}`
+    }${message ? `. ${message}` : ''}`;
   },
-  Error
-)
+  Error,
+);
 
 codes.ERR_INVALID_PACKAGE_TARGET = createError(
   'ERR_INVALID_PACKAGE_TARGET',
@@ -193,32 +194,38 @@ codes.ERR_INVALID_PACKAGE_TARGET = createError(
    * @param {boolean} [isImport=false]
    * @param {string} [base]
    */
-  (pkgPath, key, target, isImport = false, base = undefined) => {
+  (
+    pkgPath: string,
+    key: string,
+    target: string,
+    isImport = false,
+    base = undefined,
+  ) => {
     const relError =
       typeof target === 'string' &&
       !isImport &&
       target.length > 0 &&
-      !target.startsWith('./')
+      !target.startsWith('./');
     if (key === '.') {
-      assert(isImport === false)
+      assert(isImport === false);
       return (
         `Invalid "exports" main target ${JSON.stringify(target)} defined ` +
         `in the package config ${pkgPath}package.json${
           base ? ` imported from ${base}` : ''
         }${relError ? '; targets must start with "./"' : ''}`
-      )
+      );
     }
 
     return `Invalid "${
       isImport ? 'imports' : 'exports'
     }" target ${JSON.stringify(
-      target
+      target,
     )} defined for '${key}' in the package config ${pkgPath}package.json${
       base ? ` imported from ${base}` : ''
-    }${relError ? '; targets must start with "./"' : ''}`
+    }${relError ? '; targets must start with "./"' : ''}`;
   },
-  Error
-)
+  Error,
+);
 
 codes.ERR_MODULE_NOT_FOUND = createError(
   'ERR_MODULE_NOT_FOUND',
@@ -227,19 +234,19 @@ codes.ERR_MODULE_NOT_FOUND = createError(
    * @param {string} base
    * @param {boolean} [exactUrl]
    */
-  (path, base, exactUrl = false) => {
+  (path: string, base: string, exactUrl = false) => {
     return `Cannot find ${
       exactUrl ? 'module' : 'package'
-    } '${path}' imported from ${base}`
+    } '${path}' imported from ${base}`;
   },
-  Error
-)
+  Error,
+);
 
 codes.ERR_NETWORK_IMPORT_DISALLOWED = createError(
   'ERR_NETWORK_IMPORT_DISALLOWED',
   "import of '%s' by %s is not supported: %s",
-  Error
-)
+  Error,
+);
 
 codes.ERR_PACKAGE_IMPORT_NOT_DEFINED = createError(
   'ERR_PACKAGE_IMPORT_NOT_DEFINED',
@@ -248,13 +255,13 @@ codes.ERR_PACKAGE_IMPORT_NOT_DEFINED = createError(
    * @param {string} packagePath
    * @param {string} base
    */
-  (specifier, packagePath, base) => {
+  (specifier: string, packagePath: string, base: string) => {
     return `Package import specifier "${specifier}" is not defined${
       packagePath ? ` in package ${packagePath}package.json` : ''
-    } imported from ${base}`
+    } imported from ${base}`;
   },
-  TypeError
-)
+  TypeError,
+);
 
 codes.ERR_PACKAGE_PATH_NOT_EXPORTED = createError(
   'ERR_PACKAGE_PATH_NOT_EXPORTED',
@@ -263,24 +270,24 @@ codes.ERR_PACKAGE_PATH_NOT_EXPORTED = createError(
    * @param {string} subpath
    * @param {string} [base]
    */
-  (pkgPath, subpath, base = undefined) => {
+  (pkgPath: string, subpath: string, base = undefined) => {
     if (subpath === '.')
       return `No "exports" main defined in ${pkgPath}package.json${
         base ? ` imported from ${base}` : ''
-      }`
+      }`;
     return `Package subpath '${subpath}' is not defined by "exports" in ${pkgPath}package.json${
       base ? ` imported from ${base}` : ''
-    }`
+    }`;
   },
-  Error
-)
+  Error,
+);
 
 codes.ERR_UNSUPPORTED_DIR_IMPORT = createError(
   'ERR_UNSUPPORTED_DIR_IMPORT',
   "Directory import '%s' is not supported " +
     'resolving ES modules imported from %s',
-  Error
-)
+  Error,
+);
 
 codes.ERR_UNKNOWN_FILE_EXTENSION = createError(
   'ERR_UNKNOWN_FILE_EXTENSION',
@@ -288,11 +295,11 @@ codes.ERR_UNKNOWN_FILE_EXTENSION = createError(
    * @param {string} ext
    * @param {string} path
    */
-  (ext, path) => {
-    return `Unknown file extension "${ext}" for ${path}`
+  (ext: string, path: string) => {
+    return `Unknown file extension "${ext}" for ${path}`;
   },
-  TypeError
-)
+  TypeError,
+);
 
 codes.ERR_INVALID_ARG_VALUE = createError(
   'ERR_INVALID_ARG_VALUE',
@@ -301,21 +308,21 @@ codes.ERR_INVALID_ARG_VALUE = createError(
    * @param {unknown} value
    * @param {string} [reason='is invalid']
    */
-  (name, value, reason = 'is invalid') => {
-    let inspected = inspect(value)
+  (name: string, value: string, reason = 'is invalid') => {
+    let inspected = inspect(value);
 
     if (inspected.length > 128) {
-      inspected = `${inspected.slice(0, 128)}...`
+      inspected = `${inspected.slice(0, 128)}...`;
     }
 
-    const type = name.includes('.') ? 'property' : 'argument'
+    const type = name.includes('.') ? 'property' : 'argument';
 
-    return `The ${type} '${name}' ${reason}. Received ${inspected}`
+    return `The ${type} '${name}' ${reason}. Received ${inspected}`;
   },
-  TypeError
+  TypeError,
   // Note: extra classes have been shaken out.
   // , RangeError
-)
+);
 
 /**
  * Utility function for registering the error codes. Only used here. Exported
@@ -325,12 +332,12 @@ codes.ERR_INVALID_ARG_VALUE = createError(
  * @param {ErrorConstructor} def
  * @returns {new (...args: Array<any>) => Error}
  */
-function createError(sym, value, def) {
+function createError(sym: string, value: any | string, def: ErrorConstructor) {
   // Special case for SystemError that formats the error message differently
   // The SystemErrors only have SystemError as their base classes.
-  messages.set(sym, value)
+  messages.set(sym, value);
 
-  return makeNodeErrorWithCode(def, sym)
+  return makeNodeErrorWithCode(def, sym);
 }
 
 /**
@@ -338,19 +345,18 @@ function createError(sym, value, def) {
  * @param {string} key
  * @returns {ErrorConstructor}
  */
-function makeNodeErrorWithCode(Base, key) {
-  // @ts-expect-error It’s a Node error.
-  return NodeError
+function makeNodeErrorWithCode(Base: ErrorConstructor, key: string) {
+  return NodeError;
   /**
    * @param {Array<unknown>} args
    */
-  function NodeError(...args) {
-    const limit = Error.stackTraceLimit
-    if (isErrorStackTraceLimitWritable()) Error.stackTraceLimit = 0
-    const error = new Base()
+  function NodeError(...args: [any]) {
+    const limit = Error.stackTraceLimit;
+    if (isErrorStackTraceLimitWritable()) Error.stackTraceLimit = 0;
+    const error = new Base();
     // Reset the limit and setting the name property.
-    if (isErrorStackTraceLimitWritable()) Error.stackTraceLimit = limit
-    const message = getMessage(key, args, error)
+    if (isErrorStackTraceLimitWritable()) Error.stackTraceLimit = limit;
+    const message = getMessage(key, args, error);
     Object.defineProperties(error, {
       // Note: no need to implement `kIsNodeError` symbol, would be hard,
       // probably.
@@ -358,23 +364,23 @@ function makeNodeErrorWithCode(Base, key) {
         value: message,
         enumerable: false,
         writable: true,
-        configurable: true
+        configurable: true,
       },
       toString: {
         /** @this {Error} */
         value() {
-          return `${this.name} [${key}]: ${this.message}`
+          return `${this.name} [${key}]: ${this.message}`;
         },
         enumerable: false,
         writable: true,
-        configurable: true
-      }
-    })
+        configurable: true,
+      },
+    });
 
-    captureLargerStackTrace(error)
+    captureLargerStackTrace(error);
     // @ts-expect-error It’s a Node error.
-    error.code = key
-    return error
+    error.code = key;
+    return error;
   }
 }
 
@@ -387,18 +393,18 @@ function isErrorStackTraceLimitWritable() {
   try {
     // @ts-expect-error: not in types?
     if (v8.startupSnapshot.isBuildingSnapshot()) {
-      return false
+      return false;
     }
   } catch {}
 
-  const desc = Object.getOwnPropertyDescriptor(Error, 'stackTraceLimit')
+  const desc = Object.getOwnPropertyDescriptor(Error, 'stackTraceLimit');
   if (desc === undefined) {
-    return Object.isExtensible(Error)
+    return Object.isExtensible(Error);
   }
 
   return own.call(desc, 'writable') && desc.writable !== undefined
     ? desc.writable
-    : desc.set !== undefined
+    : desc.set !== undefined;
 }
 
 /**
@@ -407,12 +413,12 @@ function isErrorStackTraceLimitWritable() {
  * @param {T} fn
  * @returns {T}
  */
-function hideStackFrames(fn) {
+function hideStackFrames(fn: (...args: unknown[]) => unknown) {
   // We rename the functions that will be hidden to cut off the stacktrace
   // at the outermost one
-  const hidden = nodeInternalPrefix + fn.name
-  Object.defineProperty(fn, 'name', {value: hidden})
-  return fn
+  const hidden = nodeInternalPrefix + fn.name;
+  Object.defineProperty(fn, 'name', { value: hidden });
+  return fn;
 }
 
 const captureLargerStackTrace = hideStackFrames(
@@ -421,21 +427,21 @@ const captureLargerStackTrace = hideStackFrames(
    * @returns {Error}
    */
   // @ts-expect-error: fine
-  function (error) {
-    const stackTraceLimitIsWritable = isErrorStackTraceLimitWritable()
+  function (error: Error) {
+    const stackTraceLimitIsWritable = isErrorStackTraceLimitWritable();
     if (stackTraceLimitIsWritable) {
-      userStackTraceLimit = Error.stackTraceLimit
-      Error.stackTraceLimit = Number.POSITIVE_INFINITY
+      userStackTraceLimit = Error.stackTraceLimit;
+      Error.stackTraceLimit = Number.POSITIVE_INFINITY;
     }
 
-    Error.captureStackTrace(error)
+    Error.captureStackTrace(error);
 
     // Reset the limit
-    if (stackTraceLimitIsWritable) Error.stackTraceLimit = userStackTraceLimit
+    if (stackTraceLimitIsWritable) Error.stackTraceLimit = userStackTraceLimit;
 
-    return error
-  }
-)
+    return error;
+  },
+);
 
 /**
  * @param {string} key
@@ -443,31 +449,31 @@ const captureLargerStackTrace = hideStackFrames(
  * @param {Error} self
  * @returns {string}
  */
-function getMessage(key, args, self) {
-  const message = messages.get(key)
-  assert(message !== undefined, 'expected `message` to be found')
+function getMessage(key: string, args: any[], self: Error) {
+  const message = messages.get(key);
+  assert(message !== undefined, 'expected `message` to be found');
 
   if (typeof message === 'function') {
     assert(
       message.length <= args.length, // Default options do not count.
       `Code: ${key}; The provided arguments length (${args.length}) does not ` +
-        `match the required ones (${message.length}).`
-    )
-    return Reflect.apply(message, self, args)
+        `match the required ones (${message.length}).`,
+    );
+    return Reflect.apply(message, self, args);
   }
 
-  const regex = /%[dfijoOs]/g
-  let expectedLength = 0
-  while (regex.exec(message) !== null) expectedLength++
+  const regex = /%[dfijoOs]/g;
+  let expectedLength = 0;
+  while (regex.exec(message) !== null) expectedLength++;
   assert(
     expectedLength === args.length,
     `Code: ${key}; The provided arguments length (${args.length}) does not ` +
-      `match the required ones (${expectedLength}).`
-  )
-  if (args.length === 0) return message
+      `match the required ones (${expectedLength}).`,
+  );
+  if (args.length === 0) return message;
 
-  args.unshift(message)
-  return Reflect.apply(format, null, args)
+  args.unshift(message);
+  return Reflect.apply(format, null, args);
 }
 
 /**
@@ -475,28 +481,28 @@ function getMessage(key, args, self) {
  * @param {unknown} value
  * @returns {string}
  */
-function determineSpecificType(value) {
+function determineSpecificType(value: any) {
   if (value === null || value === undefined) {
-    return String(value)
+    return String(value);
   }
 
   if (typeof value === 'function' && value.name) {
-    return `function ${value.name}`
+    return `function ${value.name}`;
   }
 
   if (typeof value === 'object') {
     if (value.constructor && value.constructor.name) {
-      return `an instance of ${value.constructor.name}`
+      return `an instance of ${value.constructor.name}`;
     }
 
-    return `${inspect(value, {depth: -1})}`
+    return `${inspect(value, { depth: -1 })}`;
   }
 
-  let inspected = inspect(value, {colors: false})
+  let inspected = inspect(value, { colors: false });
 
   if (inspected.length > 28) {
-    inspected = `${inspected.slice(0, 25)}...`
+    inspected = `${inspected.slice(0, 25)}...`;
   }
 
-  return `type ${typeof value} (${inspected})`
+  return `type ${typeof value} (${inspected})`;
 }

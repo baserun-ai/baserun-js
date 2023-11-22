@@ -19,43 +19,46 @@
  * @property {Record<string, unknown> | undefined} imports
  */
 
-import fs from 'node:fs'
-import path from 'node:path'
-import {fileURLToPath} from 'node:url'
-import {codes} from './errors.js'
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { codes } from './errors.js';
 
-const hasOwnProperty = {}.hasOwnProperty
+const hasOwnProperty = {}.hasOwnProperty;
 
-const {ERR_INVALID_PACKAGE_CONFIG} = codes
+const { ERR_INVALID_PACKAGE_CONFIG } = codes;
 
 /** @type {Map<string, PackageConfig>} */
-const cache = new Map()
+const cache = new Map();
 
-const reader = {read}
-export default reader
+const reader = { read };
+export default reader;
 
 /**
  * @param {string} jsonPath
  * @param {{specifier: URL | string, base?: URL}} options
  * @returns {PackageConfig}
  */
-function read(jsonPath, {base, specifier}) {
-  const existing = cache.get(jsonPath)
+function read(
+  jsonPath: string,
+  { base, specifier }: { specifier: URL | string; base?: URL },
+) {
+  const existing = cache.get(jsonPath);
 
   if (existing) {
-    return existing
+    return existing;
   }
 
   /** @type {string | undefined} */
-  let string
+  let string;
 
   try {
-    string = fs.readFileSync(path.toNamespacedPath(jsonPath), 'utf8')
+    string = fs.readFileSync(path.toNamespacedPath(jsonPath), 'utf8');
   } catch (error) {
-    const exception = /** @type {ErrnoException} */ (error)
+    const exception = error as any;
 
     if (exception.code !== 'ENOENT') {
-      throw exception
+      throw exception;
     }
   }
 
@@ -67,51 +70,48 @@ function read(jsonPath, {base, specifier}) {
     name: undefined,
     type: 'none', // Ignore unknown types for forwards compatibility
     exports: undefined,
-    imports: undefined
-  }
+    imports: undefined,
+  };
 
   if (string !== undefined) {
     /** @type {Record<string, unknown>} */
-    let parsed
+    let parsed;
 
     try {
-      parsed = JSON.parse(string)
+      parsed = JSON.parse(string);
     } catch (error_) {
-      const cause = /** @type {ErrnoException} */ (error_)
+      const cause = error_ as any;
       const error = new ERR_INVALID_PACKAGE_CONFIG(
         jsonPath,
         (base ? `"${specifier}" from ` : '') + fileURLToPath(base || specifier),
-        cause.message
-      )
-      // @ts-expect-error: fine.
-      error.cause = cause
-      throw error
+        cause.message,
+      );
+      error.cause = cause;
+      throw error;
     }
 
-    result.exists = true
+    result.exists = true;
 
     if (
       hasOwnProperty.call(parsed, 'name') &&
       typeof parsed.name === 'string'
     ) {
-      result.name = parsed.name
+      result.name = parsed.name;
     }
 
     if (
       hasOwnProperty.call(parsed, 'main') &&
       typeof parsed.main === 'string'
     ) {
-      result.main = parsed.main
+      result.main = parsed.main;
     }
 
     if (hasOwnProperty.call(parsed, 'exports')) {
-      // @ts-expect-error: assume valid.
-      result.exports = parsed.exports
+      result.exports = parsed.exports;
     }
 
     if (hasOwnProperty.call(parsed, 'imports')) {
-      // @ts-expect-error: assume valid.
-      result.imports = parsed.imports
+      result.imports = parsed.imports;
     }
 
     // Ignore unknown types for forwards compatibility
@@ -119,11 +119,11 @@ function read(jsonPath, {base, specifier}) {
       hasOwnProperty.call(parsed, 'type') &&
       (parsed.type === 'commonjs' || parsed.type === 'module')
     ) {
-      result.type = parsed.type
+      result.type = parsed.type;
     }
   }
 
-  cache.set(jsonPath, result)
+  cache.set(jsonPath, result);
 
-  return result
+  return result;
 }

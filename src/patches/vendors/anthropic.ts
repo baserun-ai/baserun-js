@@ -3,10 +3,10 @@ import {
   BaserunProvider,
   BaserunStepType,
   BaserunType,
-} from '../types.js';
-import { DEFAULT_USAGE } from './constants.js';
-import { patch } from './patch.js';
-import { anthropic, modulesPromise } from './modules.js';
+} from '../../types.js';
+import { DEFAULT_USAGE } from '../constants.js';
+import { patch } from '../patch.js';
+import { anthropic } from '../modules.js';
 
 export class AnthropicWrapper {
   static resolver(
@@ -75,11 +75,9 @@ export class AnthropicWrapper {
   }
 
   static init(log: (entry: AutoLLMLog) => Promise<void>) {
-    modulesPromise.then(() => {
-      for (const mod of anthropic) {
-        AnthropicWrapper.patch(mod, log);
-      }
-    });
+    for (const mod of anthropic) {
+      AnthropicWrapper.patch(mod, log);
+    }
   }
 
   static patch(mod: any, log: (entry: AutoLLMLog) => Promise<void>) {

@@ -1,16 +1,21 @@
-import { resolve } from 'import-meta-resolve';
+import { resolve } from '../lib/import-meta-resolve/index.js';
 import url from 'url';
-import { packageDirectorySync, packageDirectory } from 'pkg-dir';
+import {
+  packageDirectorySync,
+  packageDirectory,
+} from '../lib/pkg-dir/index.js';
 import path from 'node:path';
 import fs from 'node:fs';
 import fsPromise from 'node:fs/promises';
 import resolvePkg from 'resolve-pkg';
-import { globby, globbySync } from 'globby';
+import { globby, globbySync } from '../lib/globby/index.js';
 
 // resolves all occurrences of a module name in the current project
 export function resolveAllSync(moduleName: string): string[] {
   const paths = new Set<string>([]);
 
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore
   const naive = resolve(moduleName, import.meta.url);
 
   if (naive) {
@@ -30,7 +35,7 @@ export function resolveAllSync(moduleName: string): string[] {
       expandDirectories: {
         files: ['package.json'],
       },
-    }).forEach((p) => {
+    }).forEach((p: any) => {
       resolveFromPackageSync(p, moduleName, paths);
     });
   }
@@ -90,6 +95,8 @@ function resolveFromPackageSync(
 export async function resolveAll(moduleName: string): Promise<string[]> {
   const paths = new Set<string>([]);
 
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore
   const naive = resolve(moduleName, import.meta.url);
 
   if (naive) {
@@ -112,7 +119,7 @@ export async function resolveAll(moduleName: string): Promise<string[]> {
         });
 
         await Promise.all(
-          files.map(async (p) => {
+          files.map(async (p: any) => {
             await resolveFromPackage(p, moduleName, paths);
           }),
         );

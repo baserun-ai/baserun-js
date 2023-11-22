@@ -11,13 +11,13 @@
  * @typedef {import('./package-json-reader.js').PackageType} PackageType
  */
 
-import {getPackageScopeConfig} from './package-config.js'
+import { getPackageScopeConfig } from './package-config.js';
 
 /**
  * @param {URL} url
  * @returns {PackageType}
  */
-export function getPackageType(url) {
-  const packageConfig = getPackageScopeConfig(url)
-  return packageConfig.type
+export function getPackageType(url: URL) {
+  const packageConfig = getPackageScopeConfig(url);
+  return packageConfig.type;
 }

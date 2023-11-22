@@ -2,9 +2,9 @@
  * @typedef {import('./lib/errors.js').ErrnoException} ErrnoException
  */
 
-import {defaultResolve} from './lib/resolve.js'
+import { defaultResolve } from './resolve.js';
 
-export {moduleResolve} from './lib/resolve.js'
+export { moduleResolve } from './resolve.js';
 
 /**
  * Match `import.meta.resolve` except that `parent` is required (you can pass
@@ -21,27 +21,27 @@ export {moduleResolve} from './lib/resolve.js'
  *   Returns a string to a full `file:`, `data:`, or `node:` URL
  *   to the found thing.
  */
-export function resolve(specifier, parent) {
+export function resolve(specifier: string, parent: string) {
   if (!parent) {
     throw new Error(
-      'Please pass `parent`: `import-meta-resolve` cannot ponyfill that'
-    )
+      'Please pass `parent`: `import-meta-resolve` cannot ponyfill that',
+    );
   }
 
   try {
-    return defaultResolve(specifier, {parentURL: parent}).url
+    return defaultResolve(specifier, { parentURL: parent }).url;
   } catch (error) {
     // See: <https://github.com/nodejs/node/blob/45f5c9b/lib/internal/modules/esm/initialize_import_meta.js#L34>
-    const exception = /** @type {ErrnoException} */ (error)
+    const exception = error as any;
 
     if (
       (exception.code === 'ERR_UNSUPPORTED_DIR_IMPORT' ||
         exception.code === 'ERR_MODULE_NOT_FOUND') &&
       typeof exception.url === 'string'
     ) {
-      return exception.url
+      return exception.url;
     }
 
-    throw error
+    throw error;
   }
 }

@@ -6,10 +6,10 @@ import {
   LLMChatLog,
   LLMCompletionLog,
   Message,
-} from '../types.js';
-import { patch } from './patch.js';
-import { DEFAULT_USAGE } from './constants.js';
-import { modulesPromise, openai } from './modules.js';
+} from '../../types.js';
+import { patch } from '../patch.js';
+import { DEFAULT_USAGE } from '../constants.js';
+import { openai } from '../modules.js';
 import getDebug from 'debug';
 
 const debug = getDebug('baserun:openai');
@@ -250,13 +250,11 @@ export class OpenAIWrapper {
   }
 
   static init(log: (entry: AutoLLMLog) => Promise<void>) {
-    modulesPromise.then(() => {
-      debug('patching openai', openai.length);
-      for (const mod of openai) {
-        debug('patching', mod);
-        OpenAIWrapper.patch(mod, log);
-      }
-    });
+    debug('patching openai', openai.length);
+    for (const mod of openai) {
+      debug('patching', mod);
+      OpenAIWrapper.patch(mod, log);
+    }
   }
 }
 

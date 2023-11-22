@@ -6,7 +6,7 @@ import {
   ModelGradedEvalTypes,
 } from './types.js';
 import { isValidJson } from './json.js';
-import { OpenAIWrapper, getChoiceMessages } from '../patches/openai.js';
+import { OpenAIWrapper, getChoiceMessages } from '../patches/vendors/openai.js';
 import { BaserunProvider, BaserunStepType, BaserunType } from '../types.js';
 import { DEFAULT_USAGE } from '../patches/constants.js';
 import { getTimestamp } from '../utils/helpers.js';

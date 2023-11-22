@@ -26,7 +26,6 @@ import { logToSpanOrLog } from './utils/logToSpan.js';
 import { Timestamp } from './v1/gen/google/protobuf/timestamp.js';
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { isTestEnv } from './utils/isTestEnv.js';
-import exitHook from 'exit-hook';
 import { sep } from 'node:path';
 
 type TraceStorage = {
@@ -54,6 +53,26 @@ export type SessionOptions<T extends (...args: any[]) => any> = {
   session: T;
 };
 
+import('exit-hook').then(({ default: exitHook }) => {
+  exitHook(() => {
+    if (!global.baserunInitialized) {
+      return;
+    }
+    // warn if there's an unflushed session or test suite
+    if (Baserun.sessionQueue.length > 0) {
+      console.warn(
+        'Baserun: Exiting with unflushed sessions. This should never happen - please report it at https://github.com/baserun-ai/baserun-js',
+      );
+    }
+
+    if (Baserun.startTestSuitePromise) {
+      console.warn(
+        'Baserun: Exiting with unflushed test suite. Ensure you call baserun.flushTestSuite() before exiting.',
+      );
+    }
+  });
+});
+
 export class Baserun {
   static evals = new Evals(Baserun._appendToEvals);
   private static _apiKey: string | undefined = process.env.BASERUN_API_KEY;
@@ -63,12 +82,12 @@ export class Baserun {
     AnthropicWrapper.init(Baserun._handleAutoLLM);
   }
 
-  private static runQueue: Run[] = [];
-  private static sessionQueue: Session[] = [];
-  private static sessionPromises: Promise<unknown>[] = [];
+  static runQueue: Run[] = [];
+  static sessionQueue: Session[] = [];
+  static sessionPromises: Promise<unknown>[] = [];
 
-  private static startTestSuitePromise: Promise<unknown> | undefined;
-  private static endTestSuitePromise: Promise<void> | undefined;
+  static startTestSuitePromise: Promise<unknown> | undefined;
+  static endTestSuitePromise: Promise<void> | undefined;
 
   static init(): void {
     if (!Baserun._apiKey) {
@@ -90,21 +109,6 @@ export class Baserun {
     }
 
     Baserun.monkeyPatch();
-
-    exitHook(() => {
-      // warn if there's an unflushed session or test suite
-      if (Baserun.sessionQueue.length > 0) {
-        console.warn(
-          'Baserun: Exiting with unflushed sessions. This should never happen - please report it at https://github.com/baserun-ai/baserun-js',
-        );
-      }
-
-      if (Baserun.startTestSuitePromise) {
-        console.warn(
-          'Baserun: Exiting with unflushed test suite. Ensure you call baserun.flushTestSuite() before exiting.',
-        );
-      }
-    });
   }
 
   static getTestSuite(): TestSuite | undefined {

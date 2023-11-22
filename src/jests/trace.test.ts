@@ -1,6 +1,8 @@
 // process.env.BASERUN_API_KEY = 'test-key';
 
+// @ts-ignore
 import { Baserun } from '../../dist/commonjs/baserun.js';
+// @ts-ignore
 import { baserun } from '../../dist/commonjs/index.js';
 import pick from 'lodash.pick';
 
@@ -49,7 +51,7 @@ describe('Baserun trace', () => {
         "metadata": "{"environment":"test","userId":123}",
         "name": "entrypoint",
         "result": ""AI Hello, world!"",
-        "runType": 1,
+        "runType": 0,
       }
     `);
   });

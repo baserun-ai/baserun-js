@@ -7,7 +7,7 @@ async function resolveOpenai() {
   try {
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
-    const openaiPaths = resolveAllSync('openai');
+    const openaiPaths = await resolveAllSync('openai');
     await Promise.all(
       openaiPaths.map(async (path) => {
         try {
@@ -27,7 +27,7 @@ async function resolveAnthropic() {
   try {
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
-    const anthropicPaths = resolveAllSync('@anthropic-ai/sdk');
+    const anthropicPaths = await resolveAllSync('@anthropic-ai/sdk');
     await Promise.all(
       anthropicPaths.map(async (path) => {
         try {

@@ -21,14 +21,5 @@
     "inlineSources": true
   },
   "include": ["src", "types"],
-  "exclude": ["src/sandbox"]
-
-  // "exclude": [
-  //   "node_modules",
-  //   "src/tests",
-  //   "src/vitests",
-  //   "examples",
-  //   "dist",
-  //   "vitest.config.ts"
-  // ]
+  "exclude": ["src/sandbox", "src/jests"]
 }

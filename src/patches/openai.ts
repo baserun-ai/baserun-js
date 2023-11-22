@@ -247,7 +247,6 @@ export class OpenAIWrapper {
   }
 
   static init(log: (entry: AutoLLMLog) => Promise<void>) {
-    console.log({ openai });
     for (const mod of openai) {
       OpenAIWrapper.patch(mod, log);
     }

@@ -33,15 +33,13 @@ const modulesPromise = getESModules();
 
 // resolves all occurrences of a module name in the current project
 export async function resolveAllSync(moduleName: string): Promise<string[]> {
-  const { resolve, packageDirectorySync, globbySync } = await modulesPromise;
+  const { packageDirectorySync, globbySync } = await modulesPromise;
   const paths = new Set<string>([]);
 
-  // https://github.com/isaacs/tshy#module-local-state
-  // @ts-ignore
-  const naive = resolve(moduleName, import.meta.url);
+  const naive = require.resolve(moduleName);
 
   if (naive) {
-    paths.add(url.fileURLToPath(naive));
+    paths.add(naive);
   }
 
   const pkgDir = packageDirectorySync();
@@ -84,6 +82,7 @@ async function resolveFromPackageSync(
               paths.add(url.fileURLToPath(mod));
             }
           } catch (e) {
+            console.error(e);
             // fail silently
           }
           continue;
@@ -100,6 +99,7 @@ async function resolveFromPackageSync(
                 paths.add(url.fileURLToPath(mod));
               }
             } catch (e) {
+              console.error(e);
               // fail silently
             }
           }
@@ -109,6 +109,7 @@ async function resolveFromPackageSync(
       }
     }
   } catch (e) {
+    console.error(e);
     // fail silently
   }
 
@@ -116,12 +117,10 @@ async function resolveFromPackageSync(
 }
 
 export async function resolveAll(moduleName: string): Promise<string[]> {
-  const { globby, packageDirectory, resolve } = await modulesPromise;
+  const { globby, packageDirectory } = await modulesPromise;
   const paths = new Set<string>([]);
 
-  // https://github.com/isaacs/tshy#module-local-state
-  // @ts-ignore
-  const naive = resolve(moduleName, import.meta.url);
+  const naive = require.resolve(moduleName);
 
   if (naive) {
     paths.add(url.fileURLToPath(naive));
@@ -177,6 +176,7 @@ async function resolveFromPackage(
                 paths.add(url.fileURLToPath(mod));
               }
             } catch (e) {
+              console.error(e);
               // fail silently
             }
           }
@@ -186,6 +186,7 @@ async function resolveFromPackage(
       }
     }
   } catch (e) {
+    console.error(e);
     // fail silently
   }
 

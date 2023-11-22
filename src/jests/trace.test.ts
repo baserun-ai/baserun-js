@@ -1,7 +1,9 @@
 // process.env.BASERUN_API_KEY = 'test-key';
 
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 import { Baserun } from '../../dist/commonjs/baserun.js';
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 import { baserun } from '../../dist/commonjs/index.js';
 import pick from 'lodash.pick';

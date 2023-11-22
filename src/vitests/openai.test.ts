@@ -36,28 +36,29 @@ describe('openai', () => {
   });
 
   test('automatically instruments openai chat completion', async () => {
-    // await sleep(1000);
-    // const mockStartRun = sinon.stub(getOrCreateSubmissionService(), 'startRun');
-    // const mockEndRun = sinon.stub(getOrCreateSubmissionService(), 'endRun');
-
-    const x = await openai.completions.create({
+    await openai.completions.create({
       model: 'gpt-3.5-turbo-instruct',
       prompt: '1+1=',
+      temperature: 0,
     });
 
-    console.log(x);
+    const storedData = storeTestSpy.mock.calls as any;
 
-    const storedData = storeTestSpy.mock.calls;
-    console.log('storedData', storedData);
+    expect(storedData[0][0].completions).toMatchInlineSnapshot(`
+      [
+        {
+          "content": "2
 
-    expect(1).toBe(1);
-
-    // // Assert
-    // expect(mockStartRun.calledOnce).toBe(true);
-    // expect(mockEndRun.calledOnce).toBe(true);
-
-    // // Clean up
-    // mockStartRun.restore();
-    // mockEndRun.restore();
+      This is a basic mathematical equation that states that when you add one to",
+          "finishReason": "length",
+          "functionCall": "",
+          "name": "",
+          "role": undefined,
+          "systemFingerprint": "",
+          "toolCallId": "",
+          "toolCalls": [],
+        },
+      ]
+    `);
   });
 });

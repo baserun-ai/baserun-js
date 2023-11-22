@@ -18,7 +18,12 @@ async function getCompletions(text: string) {
   baserun.log('gptResponse', gptResponse);
 }
 
-const reallyGetCompletions = baserun.trace(getCompletions);
+const reallyGetCompletions = baserun.trace(getCompletions, {
+  metadata: {
+    random: 'metadata whooot',
+  },
+  name: 'funny trace',
+});
 
 async function main() {
   await baserun.session({

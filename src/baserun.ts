@@ -18,11 +18,16 @@ import {
   StartSessionRequest,
   EndUser,
   SubmitUserRequest,
+  StartTestSuiteRequest,
+  TestSuite,
 } from './v1/gen/baserun.js';
 import { getOrCreateSubmissionService } from './backend/submissionService.js';
 import { logToSpanOrLog } from './utils/logToSpan.js';
 import { Timestamp } from './v1/gen/google/protobuf/timestamp.js';
 import { AsyncLocalStorage } from 'node:async_hooks';
+import { isTestEnv } from './utils/isTestEnv.js';
+import exitHook from 'exit-hook';
+import { sep } from 'node:path';
 
 type TraceStorage = {
   run: Run;
@@ -62,6 +67,9 @@ export class Baserun {
   private static sessionQueue: Session[] = [];
   private static sessionPromises: Promise<unknown>[] = [];
 
+  private static startTestSuitePromise: Promise<unknown> | undefined;
+  private static endTestSuitePromise: Promise<void> | undefined;
+
   static init(): void {
     if (!Baserun._apiKey) {
       throw new Error(
@@ -75,8 +83,119 @@ export class Baserun {
 
     global.baserunInitialized = true;
 
+    const isTest = isTestEnv();
+
+    if (isTest) {
+      Baserun.initTestSuite();
+    }
+
     Baserun.monkeyPatch();
+
+    exitHook(() => {
+      // warn if there's an unflushed session or test suite
+      if (Baserun.sessionQueue.length > 0) {
+        console.warn(
+          'Baserun: Exiting with unflushed sessions. This should never happen - please report it at https://github.com/baserun-ai/baserun-js',
+        );
+      }
+
+      if (Baserun.startTestSuitePromise) {
+        console.warn(
+          'Baserun: Exiting with unflushed test suite. Ensure you call baserun.flushTestSuite() before exiting.',
+        );
+      }
+    });
   }
+
+  static getTestSuite(): TestSuite | undefined {
+    return global.baserunTestSuite;
+  }
+
+  static getTestSuiteName(): string {
+    if (global.__vitest_worker__ && global.__vitest_worker__.filepath) {
+      const lastTwo = global.__vitest_worker__.filepath
+        .split(sep)
+        .slice(-2)
+        .join(sep);
+      return `vitest ${lastTwo}`;
+    }
+
+    return 'baserun test';
+  }
+
+  static initTestSuite(): void {
+    const testSuite: TestSuite = {
+      id: v4(),
+      name: Baserun.getTestSuiteName(),
+      startTimestamp: Timestamp.fromDate(new Date()),
+    };
+
+    global.baserunTestSuite = testSuite;
+
+    const startTestSuiteRequest: StartTestSuiteRequest = {
+      testSuite,
+    };
+
+    Baserun.startTestSuitePromise = new Promise((resolve, reject) => {
+      getOrCreateSubmissionService().startTestSuite(
+        startTestSuiteRequest,
+        (error) => {
+          if (error) {
+            console.error(
+              'Failed to submit test suite start to Baserun: ',
+              error,
+            );
+            reject(error);
+          } else {
+            resolve(undefined);
+          }
+        },
+      );
+    });
+
+    return global.baserunTestSuite;
+  }
+
+  static flushTestSuite(): Promise<void> {
+    if (!Baserun.startTestSuitePromise) {
+      throw new Error('Test suite was not initialized');
+    }
+
+    if (!global.baserunTestSuite) {
+      throw new Error('Test suite was not initialized');
+    }
+
+    if (Baserun.endTestSuitePromise) {
+      console.warn('Baserun: Test suite flushing already in progress');
+      return Baserun.endTestSuitePromise;
+    }
+
+    Baserun.endTestSuitePromise = new Promise<void>((resolve, reject) => {
+      Baserun.startTestSuitePromise?.then(() => {
+        global.baserunTestSuite.completionTimestamp = Timestamp.fromDate(
+          new Date(),
+        );
+
+        getOrCreateSubmissionService().endTestSuite(
+          { testSuite: global.baserunTestSuite },
+          (error) => {
+            if (error) {
+              console.error(
+                'Failed to submit test suite end to Baserun: ',
+                error,
+              );
+              reject(error);
+            } else {
+              resolve(undefined);
+            }
+          },
+        );
+      });
+    });
+
+    return Baserun.endTestSuitePromise;
+  }
+
   static trace<T extends (...args: any[]) => any>(
     fn: T,
     traceOptions?: TraceOptions,
@@ -96,7 +215,7 @@ export class Baserun {
     return async (...args: Parameters<T>): Promise<ReturnType<T>> => {
       const run = await Baserun.getOrCreateCurrentRun({
         name,
-        traceType: Run_RunType.PRODUCTION,
+        traceType: isTestEnv() ? Run_RunType.TEST : Run_RunType.PRODUCTION,
         metadata,
       });
 
@@ -161,7 +280,6 @@ export class Baserun {
     const submissionService = getOrCreateSubmissionService();
 
     const userPromise = new Promise((resolve, reject) => {
-      console.log('submit user', endUser);
       submissionService.submitUser(startEndUserRequest, (error) => {
         if (error) {
           console.error('Failed to submit user to Baserun: ', error);
@@ -176,7 +294,6 @@ export class Baserun {
 
     const sessionPromise = new Promise((resolve, reject) => {
       userPromise.then(() => {
-        console.log('start session', session);
         submissionService.startSession(startSessionRequest, (error) => {
           if (error) {
             console.error('Failed to submit session start to Baserun: ', error);
@@ -228,9 +345,7 @@ export class Baserun {
 
     const runId = v4();
     if (!traceType) {
-      traceType = global.baserunTestSuite
-        ? Run_RunType.TEST
-        : Run_RunType.PRODUCTION;
+      traceType = isTestEnv() ? Run_RunType.TEST : Run_RunType.PRODUCTION;
     }
 
     const sessionId = sessionLocalStorage.getStore()?.session.id;
@@ -240,7 +355,7 @@ export class Baserun {
       runType: traceType,
       name,
       metadata: stringify(metadata ?? {}),
-      suiteId: '',
+      suiteId: Baserun.getTestSuite()?.id ?? '',
       sessionId: sessionId ?? '',
       inputs: [],
       error: '',
@@ -257,8 +372,6 @@ export class Baserun {
     }
 
     const startRunRequest: StartRunRequest = { run };
-
-    console.log('start run', run);
 
     return new Promise<Run>((resolve, reject) => {
       getOrCreateSubmissionService().startRun(startRunRequest, (error) => {
@@ -309,7 +422,6 @@ export class Baserun {
   }
 
   static async flush(): Promise<string | undefined> {
-    console.log('flushing');
     if (!global.baserunInitialized) {
       console.warn(
         'Baserun has not been initialized. No data will be flushed.',
@@ -345,7 +457,6 @@ export class Baserun {
     session.completionTimestamp = Timestamp.fromDate(new Date());
     const endSessionRequest = { session };
 
-    console.log('finish session', endSessionRequest);
     await new Promise((resolve, reject) => {
       getOrCreateSubmissionService().endSession(endSessionRequest, (error) => {
         if (error) {
@@ -383,7 +494,6 @@ export class Baserun {
           log: logOrSpan,
           run,
         };
-        console.log('submit log', logRequest);
         getOrCreateSubmissionService().submitLog(logRequest, (error) => {
           if (error) {
             console.error('Failed to submit log to Baserun: ', error);

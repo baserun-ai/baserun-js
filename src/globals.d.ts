@@ -15,3 +15,6 @@ declare var baserunCurrentRun: any | undefined;
 
 // eslint-disable-next-line
 declare var baserunTestSuite: any | undefined;
+
+// eslint-disable-next-line
+declare var __vitest_worker__: any | undefined;

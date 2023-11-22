@@ -1,6 +1,6 @@
 {
   "name": "baserun",
-  "version": "2.0.0-alpha.18",
+  "version": "2.0.0-alpha.19",
   "description": "The Baserun TypeScript SDK",
   "main": "./dist/commonjs/index.js",
   "types": "./dist/commonjs/index.d.ts",
@@ -66,6 +66,7 @@
     "@kaciras/deasync": "^1.0.3",
     "@protobuf-ts/plugin": "^2.9.1",
     "@types/debug": "^4.1.12",
+    "@webassembly/deasync": "^0.1.23-blitz.1",
     "debug": "^4.3.4",
     "fast-glob": "^3.3.2",
     "globby": "^14.0.0",

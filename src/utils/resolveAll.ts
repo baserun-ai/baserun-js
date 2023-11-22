@@ -1,4 +1,6 @@
-import { resolve } from '../lib/import-meta-resolve/index.js';
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
+import { resolve } from 'import-meta-resolve';
 import url from 'url';
 import {
   packageDirectorySync,

@@ -6,8 +6,8 @@ import fs from 'node:fs';
 import fsPromise from 'node:fs/promises';
 import resolvePkg from 'resolve-pkg';
 import getDebug from 'debug';
+import resolve from 'resolve';
 // @ts-ignore
-import { resolve } from '../lib/import-meta-resolve/index.js';
 import {
   packageDirectorySync,
   packageDirectory,
@@ -67,10 +67,9 @@ function resolveFromPackageSync(
       for (const dep of deps) {
         if (dep === moduleName) {
           try {
-            const ur = url.pathToFileURL(packageJsonPath).toString();
-            const mod = resolve(moduleName, ur);
+            const mod = resolve.sync(moduleName, { basedir: packageJsonPath });
             if (mod) {
-              paths.add(url.fileURLToPath(mod));
+              paths.add(mod);
             }
           } catch (e) {
             console.error(e);
@@ -84,10 +83,9 @@ function resolveFromPackageSync(
           });
           if (resolved) {
             try {
-              const ur = url.pathToFileURL(resolved).toString();
-              const mod = resolve(moduleName, ur);
+              const mod = resolve.sync(moduleName, { basedir: resolved });
               if (mod) {
-                paths.add(url.fileURLToPath(mod));
+                paths.add(mod);
               }
             } catch (e) {
               console.error(e);
@@ -159,10 +157,9 @@ async function resolveFromPackage(
           });
           if (resolved) {
             try {
-              const ur = url.pathToFileURL(resolved).toString();
-              const mod = resolve(moduleName, ur);
+              const mod = resolve.sync(moduleName, { basedir: resolved });
               if (mod) {
-                paths.add(url.fileURLToPath(mod));
+                paths.add(mod);
               }
             } catch (e) {
               console.error(e);

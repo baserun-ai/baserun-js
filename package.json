@@ -1,6 +1,6 @@
 {
   "name": "baserun",
-  "version": "2.0.0-alpha.17",
+  "version": "2.0.0-alpha.18",
   "description": "The Baserun TypeScript SDK",
   "main": "./dist/commonjs/index.js",
   "types": "./dist/commonjs/index.d.ts",
@@ -11,7 +11,7 @@
   "scripts": {
     "clean": "rimraf dist",
     "build": "npm run clean && tsc",
-    "prepare": "patch-package && tshy",
+    "prepare": "tshy",
     "test:baserun": "jest --testPathPattern=\"/baserun/\" --config=jest.config.baserun.js",
     "test:normal": "jest --testPathIgnorePatterns=\"/baserun/\"",
     "build:grpc": "protoc --ts_opt client_grpc1 --ts_out ./src/v1/gen --proto_path src/v1/protos src/v1/protos/baserun.proto",
@@ -51,19 +51,19 @@
     "lodash.pick": "^4.4.0",
     "mocha": "^10.2.0",
     "openai": "^4.19.1",
-    "patch-package": "^8.0.0",
     "prettier": "^2.8.8",
     "rimraf": "^5.0.1",
     "sinon": "^17.0.1",
     "ts-jest": "^29.1.1",
     "ts-node": "^10.9.1",
-    "tshy": "^1.8.0",
+    "tshy": "^1.8.1",
     "typescript": "^5.3.2",
     "vitest": "^0.34.6"
   },
   "type": "module",
   "dependencies": {
     "@grpc/grpc-js": "^1.9.9",
+    "@kaciras/deasync": "^1.0.3",
     "@protobuf-ts/plugin": "^2.9.1",
     "@types/debug": "^4.1.12",
     "debug": "^4.3.4",

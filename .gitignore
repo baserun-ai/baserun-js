@@ -4,3 +4,4 @@ dist/
 todo.md
 .tshy
 .tshy-build
+baserun-*.tgz

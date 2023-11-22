@@ -1,3 +1,7 @@
+import getDebug from 'debug';
+
+const debug = getDebug('baserun:modules-cjs');
+
 export const openai: any[] = [];
 export const anthropic: any[] = [];
 
@@ -20,7 +24,7 @@ try {
     }),
   );
 } catch (e) {
-  console.warn('openai module not found');
+  debug('openai module not found');
   // fail silently
 }
 try {
@@ -38,6 +42,6 @@ try {
     }),
   );
 } catch (e) {
-  console.warn('anthropic module not found');
+  debug('anthropic module not found');
   // fail silently
 }

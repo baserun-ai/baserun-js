@@ -1,7 +1,7 @@
 {
   "name": "baserun",
-  "version": "2.0.0-alpha.10",
-  "description": "",
+  "version": "2.0.0-alpha.11",
+  "description": "The Baserun TypeScript SDK",
   "main": "./dist/commonjs/index.js",
   "types": "./dist/commonjs/index.d.ts",
   "files": [

@@ -29,6 +29,7 @@ import { isTestEnv } from './utils/isTestEnv.js';
 import { sep } from 'node:path';
 import getDebug from 'debug';
 import { SubmissionServiceClient } from './v1/gen/baserun.grpc-client.js';
+import { track } from './utils/track.js';
 
 const debug = getDebug('baserun:baserun');
 
@@ -92,6 +93,8 @@ export class Baserun {
 
   static runQueue: Run[] = [];
   static sessionQueue: Session[] = [];
+  static runCreationPromises: Record<string, Promise<Run>> = {};
+
   static sessionPromises: Promise<unknown>[] = [];
 
   static startTestSuitePromise: Promise<unknown> | undefined;
@@ -99,36 +102,42 @@ export class Baserun {
   static submissionService: SubmissionServiceClient;
 
   static async init({ apiKey }: InitOptions = {}): Promise<void> {
-    debug('initializing Baserun');
-    if (global.baserunInitialized) {
-      debug('already intialized');
-      return;
-    }
+    await track(async () => {
+      debug('initializing Baserun');
+      if (global.baserunInitialized) {
+        debug('already intialized');
+        return;
+      }
 
-    Baserun._apiKey = apiKey ?? process.env.BASERUN_API_KEY;
+      Baserun._apiKey = apiKey ?? process.env.BASERUN_API_KEY;
 
-    if (!Baserun._apiKey) {
-      throw new Error(
-        'Baserun API key is missing. Ensure the BASERUN_API_KEY environment variable is set.',
-      );
-    }
+      if (!Baserun._apiKey) {
+        throw new Error(
+          'Baserun API key is missing. Ensure the BASERUN_API_KEY environment variable is set.',
+        );
+      }
 
-    Baserun.submissionService = getOrCreateSubmissionService({
-      apiKey: Baserun._apiKey,
-    });
+      await track(async () => {
+        Baserun.submissionService = getOrCreateSubmissionService({
+          apiKey: Baserun._apiKey!,
+        });
+      }, 'Baserun.init.getOrCreateSubmissionService');
 
-    const isTest = isTestEnv();
+      await track(async () => {
+        const isTest = isTestEnv();
 
-    if (isTest) {
-      Baserun.initTestSuite();
-    }
+        if (isTest) {
+          Baserun.initTestSuite();
+        }
 
-    debug('starting monkey patching');
-    await Baserun.monkeyPatch();
+        debug('starting monkey patching');
+        await Baserun.monkeyPatch();
+      }, 'Baserun.init.monkeyPatch');
 
-    debug('done monkey patching');
+      debug('done monkey patching');
 
-    global.baserunInitialized = true;
+      global.baserunInitialized = true;
+    }, 'Baserun.init');
   }
 
   static getTestSuite(): TestSuite | undefined {
@@ -362,10 +371,10 @@ export class Baserun {
     completionTimestamp?: Date;
     traceType?: Run_RunType;
     metadata?: object;
-  }): Promise<Run> {
+  }): Run {
     const currentRun = Baserun.getCurrentRun();
     if (currentRun) {
-      return Promise.resolve(currentRun);
+      return currentRun;
     }
 
     const runId = v4();
@@ -398,16 +407,21 @@ export class Baserun {
 
     const startRunRequest: StartRunRequest = { run };
 
-    return new Promise<Run>((resolve, reject) => {
-      Baserun.submissionService.startRun(startRunRequest, (error) => {
-        if (error) {
-          console.error('Failed to submit run start to Baserun: ', error);
-          reject(error);
-        } else {
-          resolve(run);
-        }
-      });
-    });
+    Baserun.runCreationPromises[run.runId] = new Promise<Run>(
+      (resolve, reject) => {
+        Baserun.submissionService.startRun(startRunRequest, (error) => {
+          delete Baserun.runCreationPromises[run.runId];
+          if (error) {
+            console.error('Failed to submit run start to Baserun: ', error);
+            reject(error);
+          } else {
+            resolve(run);
+          }
+        });
+      },
+    );
+
+    return run;
   }
 
   static finishRun(run: Run): void {
@@ -496,8 +510,16 @@ export class Baserun {
     });
   }
 
-  static submitLogOrSpan(logOrSpan: ProtoLog | Span, run: Run): Promise<void> {
+  static async submitLogOrSpan(
+    logOrSpan: ProtoLog | Span,
+    run: Run,
+  ): Promise<void> {
     const endUser = sessionLocalStorage.getStore()?.session?.endUser;
+
+    const runCreationPromise = Baserun.runCreationPromises[run.runId];
+    if (runCreationPromise) {
+      await runCreationPromise;
+    }
 
     return new Promise((resolve, reject) => {
       // handle Log
@@ -536,7 +558,7 @@ export class Baserun {
   }
 
   static async _handleAutoLLM(logEntry: AutoLLMLog): Promise<void> {
-    const run = await Baserun.getOrCreateCurrentRun({
+    const run = Baserun.getOrCreateCurrentRun({
       name: `${logEntry.provider} ${logEntry.type}`,
       startTimestamp: new Date(logEntry.startTimestamp),
       completionTimestamp: new Date(logEntry.completionTimestamp),

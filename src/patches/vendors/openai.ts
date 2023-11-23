@@ -12,6 +12,7 @@ import { DEFAULT_USAGE } from '../constants.js';
 import { modulesPromise, openai } from '../modules.js';
 import getDebug from 'debug';
 import OpenAI from 'openai';
+import { track } from '../../utils/track.js';
 
 const debug = getDebug('baserun:openai');
 
@@ -252,14 +253,16 @@ export class OpenAIWrapper {
 
   static async init(log: (entry: AutoLLMLog) => Promise<void>) {
     debug('patching openai', openai.length);
-    await modulesPromise;
-    for (const mod of openai) {
-      debug('patching', mod);
-      OpenAIWrapper.patch(mod, log);
-    }
+    await track(async () => {
+      await modulesPromise;
+      for (const mod of openai) {
+        debug('patching', mod);
+        OpenAIWrapper.patch(mod, log);
+      }
 
-    debug({ OpenAI });
-    OpenAIWrapper.patch(OpenAI, log);
+      debug({ OpenAI });
+      OpenAIWrapper.patch(OpenAI, log);
+    }, 'patching openai');
   }
 }
 

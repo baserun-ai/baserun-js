@@ -1,6 +1,6 @@
 {
   "name": "baserun",
-  "version": "2.0.0-alpha.36",
+  "version": "2.0.0-alpha.37",
   "description": "The Baserun TypeScript SDK",
   "main": "./dist/commonjs/index.js",
   "types": "./dist/commonjs/index.d.ts",
@@ -81,7 +81,7 @@
     "uuid": "^9.0.0"
   },
   "peerDependencies": {
-    "openai": "^3.2.1 || ^4.0.0"
+    "openai": "^4.19.0"
   },
   "tshy": {
     "exports": {

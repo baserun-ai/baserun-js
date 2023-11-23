@@ -1,6 +1,6 @@
 {
   "name": "baserun",
-  "version": "2.0.0-alpha.23",
+  "version": "2.0.0-alpha.25",
   "description": "The Baserun TypeScript SDK",
   "main": "./dist/commonjs/index.js",
   "types": "./dist/commonjs/index.d.ts",
@@ -19,7 +19,8 @@
     "vitest": "vitest",
     "lint": "eslint --fix --ext .js,.ts .",
     "format": "prettier --write \"**/*.{js,ts}\"",
-    "watch": "tsc --watch"
+    "watch": "tsc --watch",
+    "publish:alpha": "rimraf dist && rimraf .tshy && npm run prepare && yarn publish --tag=alpha"
   },
   "keywords": [],
   "author": "",

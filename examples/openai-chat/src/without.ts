@@ -1,11 +1,9 @@
 import { baserun } from '../../../src/index.js';
 import OpenAI from 'openai';
 
-baserun.init();
-
-const openai = new OpenAI();
-
 async function doItMooIt() {
+  await baserun.init();
+  const openai = new OpenAI();
   const messages = [
     {
       role: 'user',

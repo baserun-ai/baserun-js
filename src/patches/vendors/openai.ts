@@ -11,6 +11,7 @@ import { patch } from '../patch.js';
 import { DEFAULT_USAGE } from '../constants.js';
 import { modulesPromise, openai } from '../modules.js';
 import getDebug from 'debug';
+import OpenAI from 'openai';
 
 const debug = getDebug('baserun:openai');
 
@@ -256,6 +257,9 @@ export class OpenAIWrapper {
       debug('patching', mod);
       OpenAIWrapper.patch(mod, log);
     }
+
+    debug({ OpenAI });
+    OpenAIWrapper.patch(OpenAI, log);
   }
 }
 

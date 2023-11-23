@@ -1,5 +1,7 @@
 import { credentials, Metadata } from '@grpc/grpc-js';
 import { SubmissionServiceClient } from '../v1/gen/baserun.grpc-client.js';
+import getDebug from 'debug';
+const debug = getDebug('baserun:submissionService');
 
 let submissionService: SubmissionServiceClient | undefined;
 
@@ -18,6 +20,9 @@ export function getOrCreateSubmissionService({ apiKey }: { apiKey: string }) {
   const sslCreds = process.env.SSL_KEY_CHAIN
     ? credentials.createSsl(Buffer.from(process.env.SSL_KEY_CHAIN, 'utf-8'))
     : credentials.createSsl();
+
+  debug({ grpcBase, sslCreds });
+
   const callCredentials = credentials.createFromMetadataGenerator(
     (_unused, callback) => {
       const metadata = new Metadata();

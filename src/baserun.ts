@@ -99,6 +99,12 @@ export class Baserun {
   static submissionService: SubmissionServiceClient;
 
   static async init({ apiKey }: InitOptions = {}): Promise<void> {
+    debug('initializing Baserun');
+    if (global.baserunInitialized) {
+      debug('already intialized');
+      return;
+    }
+
     Baserun._apiKey = apiKey ?? process.env.BASERUN_API_KEY;
 
     if (!Baserun._apiKey) {
@@ -111,19 +117,18 @@ export class Baserun {
       apiKey: Baserun._apiKey,
     });
 
-    if (global.baserunInitialized) {
-      return;
-    }
-
-    global.baserunInitialized = true;
-
     const isTest = isTestEnv();
 
     if (isTest) {
       Baserun.initTestSuite();
     }
 
+    debug('starting monkey patching');
     await Baserun.monkeyPatch();
+
+    debug('done monkey patching');
+
+    global.baserunInitialized = true;
   }
 
   static getTestSuite(): TestSuite | undefined {

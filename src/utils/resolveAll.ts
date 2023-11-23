@@ -12,44 +12,61 @@ import fsPromise from 'node:fs/promises';
 import resolvePkg from 'resolve-pkg';
 import { globby, globbySync } from '../lib/globby/index.js';
 import getDebug from 'debug';
+import { pathToFileURL } from 'url';
 const debug = getDebug('baserun:resolveAll');
+
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
+const importMetaUrl = import.meta?.url || pathToFileURL(__filename);
 
 // resolves all occurrences of a module name in the current project
 export function resolveAllSync(moduleName: string): string[] {
-  const paths = new Set<string>([]);
+  // we definitely want to at least patch the moduleName itself
+  const paths = new Set<string>([moduleName]);
 
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  // @ts-ignore
-  const naive = resolve(moduleName, import.meta.url);
+  try {
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    const naive = resolve(moduleName, importMetaUrl);
 
-  if (naive) {
-    paths.add(url.fileURLToPath(naive));
-  }
-
-  let currentDir = process.cwd();
-  while (currentDir.split(path.sep).length > 2) {
-    const pkgDir = packageDirectorySync({ cwd: currentDir });
-
-    if (pkgDir) {
-      debug({ currentDir, pkgDir });
-      const packageJsonPath = path.join(pkgDir, 'package.json');
-
-      resolveFromPackageSync(packageJsonPath, moduleName, paths);
-
-      // we go two levels deep because we want to catch packages/package-name/
-      globbySync(['**/package.json', '!node_modules'], {
-        cwd: pkgDir,
-        deep: 2,
-        expandDirectories: {
-          files: ['package.json'],
-        },
-      }).forEach((p: any) => {
-        resolveFromPackageSync(p, moduleName, paths);
-      });
+    if (naive) {
+      paths.add(url.fileURLToPath(naive));
     }
 
-    currentDir = path.dirname(currentDir);
+    let currentDir = process.cwd();
+
+    let count = 0;
+    while (currentDir.split(path.sep).length > 2) {
+      const pkgDir = packageDirectorySync({ cwd: currentDir });
+
+      if (pkgDir) {
+        debug({ currentDir, pkgDir });
+        const packageJsonPath = path.join(pkgDir, 'package.json');
+
+        resolveFromPackageSync(packageJsonPath, moduleName, paths);
+
+        // we go two levels deep because we want to catch packages/package-name/
+        globbySync(['**/package.json', '!node_modules'], {
+          cwd: pkgDir,
+          deep: 2,
+          expandDirectories: {
+            files: ['package.json'],
+          },
+        }).forEach((p: any) => {
+          resolveFromPackageSync(p, moduleName, paths);
+        });
+      }
+
+      currentDir = path.dirname(currentDir);
+      if (count++ > 3) {
+        break;
+      }
+    }
+  } catch (e) {
+    debug(e);
   }
+
+  debug(paths);
 
   return Array.from(paths);
 }
@@ -108,7 +125,7 @@ export async function resolveAll(moduleName: string): Promise<string[]> {
 
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   // @ts-ignore
-  const naive = resolve(moduleName, import.meta.url);
+  const naive = resolve(moduleName, importMetaUrl);
 
   if (naive) {
     paths.add(url.fileURLToPath(naive));

@@ -1,6 +1,11 @@
 import { resolveAllSync } from '../utils/resolveAll.js';
+import getDebug from 'debug';
+// import OpenAI from 'openai';
+
+const debug = getDebug('baserun:modules');
 
 export const openai: any[] = [];
+// debug({ OpenAI });
 export const anthropic: any[] = [];
 
 async function resolveOpenai() {
@@ -10,16 +15,34 @@ async function resolveOpenai() {
     const openaiPaths = resolveAllSync('openai');
     await Promise.all(
       openaiPaths.map(async (path) => {
+        let mod;
         try {
-          const mod = await import(path);
+          mod = await import(path);
+          debug('imported', mod, mod.default);
           openai.push(mod.default);
         } catch (e) {
-          // fail silently
+          debug(e);
+        }
+        if (!mod) {
+          try {
+            mod = module.require(path);
+            openai.push(mod);
+          } catch (e) {
+            debug(e);
+          }
+        }
+        if (!mod) {
+          try {
+            mod = require(path);
+            openai.push(mod);
+          } catch (e) {
+            debug(e);
+          }
         }
       }),
     );
   } catch (e) {
-    // fail silently
+    debug(e);
   }
 }
 
@@ -34,12 +57,12 @@ async function resolveAnthropic() {
           const mod = await import(path);
           anthropic.push(mod.default);
         } catch (e) {
-          // fail silently
+          debug(e);
         }
       }),
     );
   } catch (e) {
-    // fail silently
+    debug(e);
   }
 }
 

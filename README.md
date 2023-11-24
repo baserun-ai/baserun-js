@@ -49,9 +49,9 @@ const chatCompletion = await openai.chat.completions.create({
 });
 ```
 
-### 4. Check out the logs
+### 4. Check out the traces
 
-Now head over to [https://www.baserun.ai/monitoring/traces](https://www.baserun.ai/monitoring/traces) and have a look at the logs that were just created.
+Now head over to [https://www.baserun.ai/monitoring/traces](https://www.baserun.ai/monitoring/traces) and have a look at the traces that were just created.
 
 ## Documentation
 

@@ -24,6 +24,9 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "devDependencies": {
     "@anthropic-ai/sdk": "^0.9.1",
     "@bufbuild/buf": "^1.28.1",

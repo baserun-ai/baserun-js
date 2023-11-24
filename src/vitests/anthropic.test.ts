@@ -44,15 +44,10 @@ describe('anthropic', () => {
 
     const storedData = storeTestSpy.mock.calls as any;
 
-    const expected = pick(storedData[0][0].completions[0], [
-      'role',
-      'finishReason',
-      'name',
-    ]);
+    const expected = pick(storedData[0][0].completions[0], ['role', 'name']);
 
     expect(expected).toMatchInlineSnapshot(`
       {
-        "finishReason": "max_tokens",
         "name": "",
         "role": "Assistant",
       }

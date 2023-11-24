@@ -20,6 +20,7 @@ import {
   SubmitUserRequest,
   StartTestSuiteRequest,
   TestSuite,
+  SubmitEvalRequest,
 } from './v1/gen/baserun.js';
 import { getOrCreateSubmissionService } from './backend/submissionService.js';
 import { logToSpanOrLog } from './utils/logToSpan.js';
@@ -100,6 +101,8 @@ export class Baserun {
   static startTestSuitePromise: Promise<unknown> | undefined;
   static endTestSuitePromise: Promise<void> | undefined;
   static submissionService: SubmissionServiceClient;
+
+  static submitEvalPromises: Promise<void>[] = [];
 
   static async init({ apiKey }: InitOptions = {}): Promise<void> {
     debug('initializing Baserun');
@@ -240,10 +243,6 @@ export class Baserun {
     fn: T,
     traceOptions?: TraceOptions | string,
   ): (...args: Parameters<T>) => Promise<ReturnType<T>> {
-    if (!Baserun.ensureInitialized()) {
-      return fn;
-    }
-
     if (typeof traceOptions === 'string') {
       traceOptions = { name: traceOptions };
     }
@@ -520,6 +519,13 @@ export class Baserun {
         session = Baserun.sessionQueue.shift();
       }
 
+      // for sure I'd be able to write this in a better way
+      let evalPromise = Baserun.submitEvalPromises.shift();
+      while (evalPromise) {
+        promises.push(evalPromise);
+        evalPromise = Baserun.submitEvalPromises.shift();
+      }
+
       await Promise.all(promises);
     }, 'Baserun.flush');
   }
@@ -621,14 +627,43 @@ export class Baserun {
     }, 'Baserun._handleAutoLLM');
   }
 
-  // todo
   static _appendToEvals(evalEntry: Eval<any>): void {
+    if (!Baserun.ensureInitialized()) {
+      return;
+    }
+
     const store = traceLocalStorage.getStore();
-    if (store) {
-      store.evals.push(evalEntry);
-    } else {
+
+    if (!store) {
       throw new Error('Evals can only happens within a trace');
     }
+
+    const submitEvalRequest: SubmitEvalRequest = {
+      eval: {
+        name: evalEntry.name,
+        payload: stringify(evalEntry.payload),
+        result: '{}',
+        score: evalEntry.score,
+        submission: '{}',
+        type: evalEntry.type,
+      },
+      run: store.run,
+    };
+
+    Baserun.submitEvalPromises.push(
+      new Promise((resolve, reject) => {
+        Baserun.submissionService.submitEval(submitEvalRequest, (error) => {
+          if (error) {
+            debug('Failed to submit eval to Baserun: ', error);
+            reject(error);
+          } else {
+            resolve(undefined);
+          }
+        });
+      }),
+    );
+
+    store.evals.push(evalEntry);
   }
 }
 

@@ -245,8 +245,8 @@ export class Evals {
   custom(
     name: string,
     submission: string,
-    fn: (submission: string) => boolean,
-  ): boolean {
+    fn: (submission: string) => number,
+  ): number {
     const result = fn(submission);
     this._storeEvalData({
       name,
@@ -263,8 +263,8 @@ export class Evals {
   async customAsync(
     name: string,
     submission: string,
-    fn: (submission: string) => Promise<boolean>,
-  ): Promise<boolean> {
+    fn: (submission: string) => Promise<number>,
+  ): Promise<number> {
     const result = await fn(submission);
     this._storeEvalData({
       name,

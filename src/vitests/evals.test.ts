@@ -40,13 +40,13 @@ describe('evals', () => {
       '"{\\"submission\\":\\"lol\\",\\"expected\\":[\\"lol\\"]}"',
     );
 
-    expect(storedData[0][0].run.name).toMatchInlineSnapshot(`"match"`);
+    expect(storedData[0][0].run.name).toMatchInlineSnapshot(`"match run"`);
   });
 
   test('eq', async () => {
     await baserun.trace(async () => {
       baserun.evals.eq('eq', 'lol', 'lol');
-    }, 'match')();
+    }, 'eq')();
 
     const storedData = storeTestSpy.mock.calls;
 
@@ -55,7 +55,7 @@ describe('evals', () => {
       '"{\\"submission\\":\\"lol\\",\\"expected\\":[\\"lol\\"]}"',
     );
 
-    expect(storedData[0][0].run.name).toMatchInlineSnapshot('"match"');
+    expect(storedData[0][0].run.name).toMatchInlineSnapshot('"eq"');
   });
 
   test('equals', async () => {
@@ -171,7 +171,7 @@ describe('evals', () => {
 
   test('custom', async () => {
     await baserun.trace(async () => {
-      baserun.evals.custom('custom', '{}', (v) => JSON.parse(v));
+      baserun.evals.custom('custom', '{}', (v) => (v ? 5 : 6));
     }, 'custom run')();
 
     const storedData = storeTestSpy.mock.calls;
@@ -186,9 +186,7 @@ describe('evals', () => {
 
   test('customAsync', async () => {
     await baserun.trace(async () => {
-      baserun.evals.customAsync('customAsync', '{}', async (v) =>
-        JSON.parse(v),
-      );
+      baserun.evals.customAsync('customAsync', '{}', async (v) => (v ? 5 : 6));
     }, 'customAsync run')();
 
     const storedData = storeTestSpy.mock.calls;
@@ -198,7 +196,9 @@ describe('evals', () => {
       '"{\\"submission\\":\\"{}\\"}"',
     );
 
-    expect(storedData[0][0].run.name).toMatchInlineSnapshot('"custom run"');
+    expect(storedData[0][0].run.name).toMatchInlineSnapshot(
+      '"customAsync run"',
+    );
   });
 
   test(

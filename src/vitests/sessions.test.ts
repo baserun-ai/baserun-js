@@ -67,8 +67,6 @@ describe('sessions', () => {
       user: 'bob@rob.com',
     });
 
-    console.log({ sessionId, data });
-
     const storedData = submitLogSpy.mock.calls as any;
 
     const [span1] = storedData[0];
@@ -160,11 +158,10 @@ describe('sessions', () => {
       await Promise.all([trace(), trace()]);
     };
 
-    const data = await baserun.session({
+    await baserun.session({
       session,
       user: 'bobby-brown@bobob.bob',
     });
-    console.log(data);
 
     const storedData = submitLogSpy.mock.calls as any;
 

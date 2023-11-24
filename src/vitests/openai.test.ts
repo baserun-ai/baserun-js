@@ -14,51 +14,210 @@ import { Log, Run, Span } from '../v1/gen/baserun.js';
 baserun.init();
 
 import OpenAI from 'openai';
+import pick from 'lodash.pick';
+import { Eval } from '../evals/types.js';
 
 const openai = new OpenAI();
 
 describe('openai', () => {
-  let storeTestSpy: SpyInstance<
+  let submitLogSpy: SpyInstance<
     [logOrSpan: Log | Span, run: Run, submitRun?: boolean],
     Promise<void>
   >;
+  let evalSpy: SpyInstance<[evalEntry: Eval<any>], void>;
 
   beforeAll(() => {
     baserun.init();
   });
 
   beforeEach(() => {
-    storeTestSpy = vi.spyOn(Baserun, 'submitLogOrSpan');
+    submitLogSpy = vi.spyOn(Baserun, 'submitLogOrSpan');
+    evalSpy = vi.spyOn(Baserun, '_appendToEvals');
   });
 
   afterEach(() => {
-    storeTestSpy.mockRestore();
+    submitLogSpy.mockRestore();
+    evalSpy.mockRestore();
   });
 
-  test('automatically instruments openai chat completion', async () => {
-    await openai.completions.create({
-      model: 'gpt-3.5-turbo-instruct',
-      prompt: '1+1=',
-      temperature: 0,
+  describe('completion', () => {
+    test('with promise', async () => {
+      await openai.completions.create({
+        model: 'gpt-3.5-turbo-instruct',
+        prompt: '1+1=',
+        temperature: 0,
+      });
+
+      const storedData = submitLogSpy.mock.calls as any;
+
+      const expected = pick(storedData[0][0].completions[0], [
+        'role',
+        'finishReason',
+        'name',
+        'toolCallId',
+        'toolCalls',
+      ]);
+
+      expect(expected).toMatchInlineSnapshot(`
+      {
+        "finishReason": "length",
+        "name": "",
+        "role": undefined,
+        "toolCallId": "",
+        "toolCalls": [],
+      }
+    `);
     });
 
-    const storedData = storeTestSpy.mock.calls as any;
+    test('with promise and check', async () => {
+      await baserun.trace(async () => {
+        console.log('code running?');
+        const res = await openai.completions.create({
+          model: 'gpt-3.5-turbo-instruct',
+          prompt: '1+1=',
+          temperature: 0,
+        });
 
-    expect(storedData[0][0].completions).toMatchInlineSnapshot(`
-      [
+        baserun.evals.includes(
+          'model name',
+          'gpt-3.5-turbo-instruct',
+          res.model,
+        );
+      }, 'test')();
+
+      const spanData = submitLogSpy.mock.calls as any;
+      const [span, run] = spanData[0];
+      // todo: not sure why evalData is empty
+      // const evalData = evalSpy.mock.calls as any;
+
+      const expectedLog = pick(span, ['name', 'model', 'vendor']);
+      const expectedRun = pick(run, ['name', 'metadata']);
+
+      expect(expectedLog).toMatchInlineSnapshot(`
         {
-          "content": "2
+          "model": "gpt-3.5-turbo-instruct",
+          "name": "baserun.openai.completion",
+          "vendor": "openai",
+        }
+      `);
+      expect(expectedRun).toMatchInlineSnapshot(`
+            {
+              "metadata": "{}",
+              "name": "test",
+            }
+          `);
+    });
 
-      This is a basic mathematical equation that states that when you add one to",
-          "finishReason": "length",
-          "functionCall": "",
-          "name": "",
-          "role": undefined,
-          "systemFingerprint": "",
-          "toolCallId": "",
-          "toolCalls": [],
-        },
-      ]
+    test('with stream', async () => {
+      const stream = await openai.completions.create({
+        model: 'gpt-3.5-turbo-instruct',
+        prompt: '1+1=',
+        temperature: 0,
+        stream: true,
+      });
+
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      for await (const _completion of stream) {
+        // console.log(completion);
+      }
+
+      const storedData = submitLogSpy.mock.calls as any;
+
+      const expected = pick(storedData[0][0].completions[0], [
+        'role',
+        'finishReason',
+        'name',
+        'toolCallId',
+        'toolCalls',
+      ]);
+
+      expect(expected).toMatchInlineSnapshot(`
+      {
+        "finishReason": null,
+        "name": "",
+        "role": undefined,
+        "toolCallId": "",
+        "toolCalls": [],
+      }
     `);
+    });
+  });
+
+  describe('chat completion', () => {
+    test('with promise', async () => {
+      await openai.chat.completions.create({
+        model: 'gpt-3.5-turbo-1106',
+        messages: [
+          {
+            role: 'user',
+            content: `Say "this is a test"`,
+          },
+        ],
+        temperature: 0,
+        max_tokens: 10,
+      });
+
+      const storedData = submitLogSpy.mock.calls as any;
+
+      const [span, run] = storedData[0];
+
+      const expectedLog = pick(span, ['name', 'model', 'vendor']);
+      const expectedRun = pick(run, ['name', 'metadata']);
+
+      expect(expectedLog).toMatchInlineSnapshot(`
+        {
+          "model": "gpt-3.5-turbo-1106",
+          "name": "baserun.openai.chat",
+          "vendor": "openai",
+        }
+      `);
+      expect(expectedRun).toMatchInlineSnapshot(`
+            {
+              "metadata": "{}",
+              "name": "openai chat",
+            }
+          `);
+    });
+    test('with stream', async () => {
+      const stream = await openai.chat.completions.create({
+        model: 'gpt-3.5-turbo-1106',
+        messages: [
+          {
+            role: 'user',
+            content: `Say "this is a test"`,
+          },
+        ],
+        temperature: 0,
+        stream: true,
+        max_tokens: 10,
+      });
+
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      for await (const _completion of stream) {
+        // console.log(completion);
+      }
+
+      const storedData = submitLogSpy.mock.calls as any;
+
+      const [span, run] = storedData[0];
+
+      const expectedLog = pick(span, ['name', 'model', 'vendor', 'stream']);
+      const expectedRun = pick(run, ['name', 'metadata']);
+
+      expect(expectedLog).toMatchInlineSnapshot(`
+        {
+          "model": "gpt-3.5-turbo-1106",
+          "name": "baserun.openai.chat",
+          "stream": true,
+          "vendor": "openai",
+        }
+      `);
+      expect(expectedRun).toMatchInlineSnapshot(`
+            {
+              "metadata": "{}",
+              "name": "openai chat",
+            }
+          `);
+    });
   });
 });

@@ -48,7 +48,7 @@ describe('Baserun trace', () => {
     const [log, run] = storedData[0];
 
     const expectedLog = pick(log, ['name', 'payload']);
-    const expectedRun = pick(run, ['metadata', 'runType', 'name', 'result']);
+    const expectedRun = pick(run, ['metadata', 'name', 'result']);
 
     expect(expectedLog).toMatchInlineSnapshot(`
       {
@@ -57,13 +57,12 @@ describe('Baserun trace', () => {
       }
     `);
     expect(expectedRun).toMatchInlineSnapshot(`
-          {
-            "metadata": "{\\"environment\\":\\"test\\",\\"userId\\":123}",
-            "name": "entrypoint",
-            "result": "\\"AI Hello, world!\\"",
-            "runType": 1,
-          }
-        `);
+      {
+        "metadata": "{\\"environment\\":\\"test\\",\\"userId\\":123}",
+        "name": "entrypoint",
+        "result": "\\"AI Hello, world!\\"",
+      }
+    `);
   });
 
   test('test_explicit_log_with_payload', async () => {

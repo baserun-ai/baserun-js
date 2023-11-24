@@ -4,6 +4,7 @@ export default defineConfig({
   test: {
     include: ['src/vitests/*.test.ts'],
   },
+
   plugins: [
     // {
     //   name: 'whoooot',

@@ -1,8 +1,6 @@
 import { baserun } from '../../../src/index.js';
 import OpenAI from 'openai';
 
-baserun.init();
-
 const openai = new OpenAI();
 async function getCompletions(text: string) {
   const gptResponse = await openai.chat.completions.create({
@@ -26,6 +24,7 @@ const reallyGetCompletions = baserun.trace(getCompletions, {
 });
 
 async function main() {
+  await baserun.init();
   await baserun.session({
     session() {
       return reallyGetCompletions('test');

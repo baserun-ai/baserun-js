@@ -102,42 +102,38 @@ export class Baserun {
   static submissionService: SubmissionServiceClient;
 
   static async init({ apiKey }: InitOptions = {}): Promise<void> {
+    debug('initializing Baserun');
+    if (global.baserunInitialized) {
+      debug('already intialized');
+      return;
+    }
+
+    Baserun._apiKey = apiKey ?? process.env.BASERUN_API_KEY;
+
+    if (!Baserun._apiKey) {
+      throw new Error(
+        'Baserun API key is missing. Ensure the BASERUN_API_KEY environment variable is set.',
+      );
+    }
+
+    Baserun.submissionService = getOrCreateSubmissionService({
+      apiKey: Baserun._apiKey!,
+    });
+
     await track(async () => {
-      debug('initializing Baserun');
-      if (global.baserunInitialized) {
-        debug('already intialized');
-        return;
+      const isTest = isTestEnv();
+
+      if (isTest) {
+        Baserun.initTestSuite();
       }
 
-      Baserun._apiKey = apiKey ?? process.env.BASERUN_API_KEY;
+      debug('starting monkey patching');
+      await Baserun.monkeyPatch();
+    }, 'Baserun.init.monkeyPatch');
 
-      if (!Baserun._apiKey) {
-        throw new Error(
-          'Baserun API key is missing. Ensure the BASERUN_API_KEY environment variable is set.',
-        );
-      }
+    debug('done monkey patching');
 
-      await track(async () => {
-        Baserun.submissionService = getOrCreateSubmissionService({
-          apiKey: Baserun._apiKey!,
-        });
-      }, 'Baserun.init.getOrCreateSubmissionService');
-
-      await track(async () => {
-        const isTest = isTestEnv();
-
-        if (isTest) {
-          Baserun.initTestSuite();
-        }
-
-        debug('starting monkey patching');
-        await Baserun.monkeyPatch();
-      }, 'Baserun.init.monkeyPatch');
-
-      debug('done monkey patching');
-
-      global.baserunInitialized = true;
-    }, 'Baserun.init');
+    global.baserunInitialized = true;
   }
 
   static getTestSuite(): TestSuite | undefined {
@@ -229,10 +225,28 @@ export class Baserun {
     return Baserun.endTestSuitePromise;
   }
 
+  private static ensureInitialized(): boolean {
+    if (!global.baserunInitialized) {
+      console.warn(
+        'warning: Baserun was not initialized. Ensure you call baserun.init() before using it.',
+      );
+      return false;
+    }
+
+    return true;
+  }
+
   static trace<T extends (...args: any[]) => any>(
     fn: T,
-    traceOptions?: TraceOptions,
+    traceOptions?: TraceOptions | string,
   ): (...args: Parameters<T>) => Promise<ReturnType<T>> {
+    if (!Baserun.ensureInitialized()) {
+      return fn;
+    }
+
+    if (typeof traceOptions === 'string') {
+      traceOptions = { name: traceOptions };
+    }
     const metadata = traceOptions?.metadata;
     const name = traceOptions?.name ?? fn.name;
 
@@ -275,7 +289,9 @@ export class Baserun {
     sessionId,
     user,
   }: SessionOptions<T>): Promise<ReturnType<T>> {
-    if (!global.baserunInitialized) return fn();
+    if (!Baserun.ensureInitialized()) {
+      return fn();
+    }
 
     const traceStore = traceLocalStorage.getStore();
 
@@ -448,7 +464,9 @@ export class Baserun {
   }
 
   static log(name: string, payload: object | string): void {
-    if (!global.baserunInitialized) return;
+    if (!Baserun.ensureInitialized()) {
+      return;
+    }
 
     const run = Baserun.getCurrentRun();
     if (!run) {

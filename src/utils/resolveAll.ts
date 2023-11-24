@@ -22,7 +22,7 @@ const importMetaUrl = import.meta?.url || pathToFileURL(__filename);
 // resolves all occurrences of a module name in the current project
 export function resolveAllSync(moduleName: string): string[] {
   // we definitely want to at least patch the moduleName itself
-  const paths = new Set<string>([moduleName]);
+  const paths = new Set<string>([]);
 
   try {
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment

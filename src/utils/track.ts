@@ -13,3 +13,26 @@ export async function track<R>(
   debug(`${name || fn.name}: ${end - start}ms ✅`);
   return result;
 }
+
+export function trackSync<R>(fn: (...args: any[]) => R, name?: string): R {
+  const start = performance.now();
+  const result = fn();
+
+  const end = performance.now();
+  debug(`${name || fn.name}: ${end - start}ms ✅`);
+  return result;
+}
+
+export function trackFnSync<R>(
+  fn: (...args: any[]) => R,
+  name?: string,
+): (...args: any[]) => R {
+  return (...args: any[]) => {
+    const start = performance.now();
+    const result = fn(...args);
+
+    const end = performance.now();
+    debug(`${name || fn.name}: ${end - start}ms ✅`);
+    return result;
+  };
+}

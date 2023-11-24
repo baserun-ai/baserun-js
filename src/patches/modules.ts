@@ -23,7 +23,6 @@ const resolveOpenai = () =>
           let mod;
           try {
             mod = await import(path);
-            debug('imported', mod, mod.default);
             openai.push(mod.default);
           } catch (e) {
             debug(e);

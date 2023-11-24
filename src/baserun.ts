@@ -246,7 +246,7 @@ export class Baserun {
     }
 
     return async (...args: Parameters<T>): Promise<ReturnType<T>> => {
-      const run = await Baserun.getOrCreateCurrentRun({
+      const run = Baserun.getOrCreateCurrentRun({
         name,
         traceType: isTestEnv() ? Run_RunType.TEST : Run_RunType.PRODUCTION,
         metadata,
@@ -409,7 +409,9 @@ export class Baserun {
 
     Baserun.runCreationPromises[run.runId] = new Promise<Run>(
       (resolve, reject) => {
+        const before = Date.now();
         Baserun.submissionService.startRun(startRunRequest, (error) => {
+          debug(`submitted run start in ${Date.now() - before}ms`, run.name);
           delete Baserun.runCreationPromises[run.runId];
           if (error) {
             console.error('Failed to submit run start to Baserun: ', error);
@@ -424,7 +426,7 @@ export class Baserun {
     return run;
   }
 
-  static finishRun(run: Run): void {
+  static finishRun(run: Run): Promise<void> {
     run.completionTimestamp = Timestamp.fromDate(new Date());
     const endRunRequest: EndRunRequest = { run };
 
@@ -433,10 +435,15 @@ export class Baserun {
     }
 
     debug('finishing run', run);
-    Baserun.submissionService.endRun(endRunRequest, (error) => {
-      if (error) {
-        console.error('Failed to submit run end to Baserun: ', error);
-      }
+    return new Promise((resolve, reject) => {
+      Baserun.submissionService.endRun(endRunRequest, (error) => {
+        if (error) {
+          console.error('Failed to submit run end to Baserun: ', error);
+          reject(error);
+        } else {
+          resolve();
+        }
+      });
     });
   }
 
@@ -461,36 +468,42 @@ export class Baserun {
     Baserun.submitLogOrSpan(log, run);
   }
 
-  static async flush(): Promise<string | undefined> {
-    if (!global.baserunInitialized) {
-      console.warn(
-        'Baserun has not been initialized. No data will be flushed.',
-      );
-      return;
-    }
+  static async flush(): Promise<void> {
+    // todo: flush these all in parallel
+    debug('flushing');
+    await track(async () => {
+      if (!global.baserunInitialized) {
+        console.warn(
+          'Baserun has not been initialized. No data will be flushed.',
+        );
+        return;
+      }
 
-    // finish all outstanding runs
-    let run = Baserun.runQueue.shift();
-    while (run) {
-      await Baserun.finishRun(run);
-      run = Baserun.runQueue.shift();
-    }
+      const promises: Promise<void | unknown>[] = [];
 
-    // finish all outstanding session initializations
-    let sessionPromise = Baserun.sessionPromises.shift();
-    while (sessionPromise) {
-      await sessionPromise;
-      sessionPromise = Baserun.sessionPromises.shift();
-    }
+      // finish all outstanding runs
+      let run = Baserun.runQueue.shift();
+      while (run) {
+        promises.push(Baserun.finishRun(run));
+        run = Baserun.runQueue.shift();
+      }
 
-    // finish all outstanding sessions
-    let session = Baserun.sessionQueue.shift();
-    while (session) {
-      await Baserun.finishSession(session);
-      session = Baserun.sessionQueue.shift();
-    }
+      // finish all outstanding session initializations
+      let sessionPromise = Baserun.sessionPromises.shift();
+      while (sessionPromise) {
+        promises.push(sessionPromise);
+        sessionPromise = Baserun.sessionPromises.shift();
+      }
 
-    return;
+      // finish all outstanding sessions
+      let session = Baserun.sessionQueue.shift();
+      while (session) {
+        promises.push(Baserun.finishSession(session));
+        session = Baserun.sessionQueue.shift();
+      }
+
+      await Promise.all(promises);
+    }, 'Baserun.flush');
   }
 
   static async finishSession(session: Session): Promise<void> {
@@ -514,60 +527,65 @@ export class Baserun {
     logOrSpan: ProtoLog | Span,
     run: Run,
   ): Promise<void> {
-    const endUser = sessionLocalStorage.getStore()?.session?.endUser;
+    return track(async () => {
+      const endUser = sessionLocalStorage.getStore()?.session?.endUser;
 
-    const runCreationPromise = Baserun.runCreationPromises[run.runId];
-    if (runCreationPromise) {
-      await runCreationPromise;
-    }
-
-    return new Promise((resolve, reject) => {
-      // handle Log
-      if (isSpan(logOrSpan)) {
-        const spanRequest: SubmitSpanRequest = {
-          run,
-          span: logOrSpan,
-        };
-        logOrSpan.endUser = endUser;
-        debug('submitting span', logOrSpan);
-        Baserun.submissionService.submitSpan(spanRequest, (error) => {
-          if (error) {
-            console.error('Failed to submit span to Baserun: ', error);
-            reject(error);
-          } else {
-            resolve(undefined);
-          }
-        });
-        // otherwise it must be a Span
-      } else {
-        const logRequest: SubmitLogRequest = {
-          log: logOrSpan,
-          run,
-        };
-        debug('submitting log', logOrSpan);
-        Baserun.submissionService.submitLog(logRequest, (error) => {
-          if (error) {
-            console.error('Failed to submit log to Baserun: ', error);
-            reject(error);
-          } else {
-            resolve(undefined);
-          }
-        });
+      const runCreationPromise = Baserun.runCreationPromises[run.runId];
+      if (runCreationPromise) {
+        await runCreationPromise;
       }
-    });
+
+      return new Promise((resolve, reject) => {
+        // handle Log
+        const before = Date.now();
+        if (isSpan(logOrSpan)) {
+          const spanRequest: SubmitSpanRequest = {
+            run,
+            span: logOrSpan,
+          };
+          logOrSpan.endUser = endUser;
+          Baserun.submissionService.submitSpan(spanRequest, (error) => {
+            debug(`submitted span in ${Date.now() - before}ms`, logOrSpan.name);
+            if (error) {
+              console.error('Failed to submit span to Baserun: ', error);
+              reject(error);
+            } else {
+              resolve(undefined);
+            }
+          });
+          // otherwise it must be a Span
+        } else {
+          const logRequest: SubmitLogRequest = {
+            log: logOrSpan,
+            run,
+          };
+          Baserun.submissionService.submitLog(logRequest, (error) => {
+            debug(`submitted log in ${Date.now() - before}ms`, logOrSpan.name);
+            if (error) {
+              console.error('Failed to submit log to Baserun: ', error);
+              reject(error);
+            } else {
+              resolve(undefined);
+            }
+          });
+        }
+      });
+    }, `Baserun.submitLogOrSpan ${logOrSpan.name}`);
   }
 
   static async _handleAutoLLM(logEntry: AutoLLMLog): Promise<void> {
-    const run = Baserun.getOrCreateCurrentRun({
-      name: `${logEntry.provider} ${logEntry.type}`,
-      startTimestamp: new Date(logEntry.startTimestamp),
-      completionTimestamp: new Date(logEntry.completionTimestamp),
-      // todo: add metadata
-    });
+    return track(async () => {
+      const run = Baserun.getOrCreateCurrentRun({
+        name: `${logEntry.provider} ${logEntry.type}`,
+        startTimestamp: new Date(logEntry.startTimestamp),
+        completionTimestamp: new Date(logEntry.completionTimestamp),
+        // todo: add metadata
+      });
 
-    const span = logToSpanOrLog(logEntry, run.runId);
+      const span = logToSpanOrLog(logEntry, run.runId);
 
-    return Baserun.submitLogOrSpan(span, run);
+      return Baserun.submitLogOrSpan(span, run);
+    }, 'Baserun._handleAutoLLM');
   }
 
   // todo

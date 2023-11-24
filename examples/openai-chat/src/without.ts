@@ -1,5 +1,6 @@
 import { baserun } from '../../../src/index.js';
 import OpenAI from 'openai';
+import { track } from '../../../src/utils/track.js';
 
 async function doItMooIt() {
   await baserun.init();
@@ -10,10 +11,15 @@ async function doItMooIt() {
       content: `Say "this is a test ${(Math.random() * 100) | 0}"`,
     },
   ] as any;
-  const chatCompletion = await openai.chat.completions.create({
-    messages,
-    model: 'gpt-3.5-turbo',
-  });
+
+  const chatCompletion = await track(
+    () =>
+      openai.chat.completions.create({
+        messages,
+        model: 'gpt-3.5-turbo',
+      }),
+    'openai.chat.completions.create',
+  );
 
   messages.push(chatCompletion.choices[0].message);
 
@@ -22,12 +28,14 @@ async function doItMooIt() {
     content: `Are you really really sure???`,
   });
 
-  const chatCompletion2 = await openai.chat.completions.create({
-    messages,
-    model: 'gpt-3.5-turbo',
-  });
+  return chatCompletion;
 
-  return chatCompletion2;
+  // const chatCompletion2 = await openai.chat.completions.create({
+  //   messages,
+  //   model: 'gpt-3.5-turbo',
+  // });
+
+  // return chatCompletion2;
 }
 
 const getCompletion = doItMooIt;

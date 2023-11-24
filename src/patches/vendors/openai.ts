@@ -256,11 +256,9 @@ export class OpenAIWrapper {
     await track(async () => {
       await modulesPromise;
       for (const mod of openai) {
-        debug('patching', mod);
         OpenAIWrapper.patch(mod, log);
       }
 
-      debug({ OpenAI });
       OpenAIWrapper.patch(OpenAI, log);
     }, 'patching openai');
   }

@@ -224,4 +224,13 @@ describe('openai', () => {
     expect(data1.sessionId).toBe(sessionId1);
     expect(data2.sessionId).toBe(sessionId2);
   });
+
+  test('session with top level log', async () => {
+    await baserun.session({
+      async session() {
+        baserun.log('TestEvent', 'whatever');
+      },
+      user: 'bobob',
+    });
+  });
 });

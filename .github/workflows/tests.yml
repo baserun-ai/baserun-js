@@ -28,9 +28,19 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node-version }}
-          cache: "npm"
+          cache: 'npm'
       #- run: npm run build --if-present
       - name: Execute Unit tests
       - run: npm i
-	    - run: npm run test:test
-	    - run: npm run test:normal
+      - name: Execute Unit Tests
+        run: npm run test:test
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          BASERUN_API_KEY: ${{ secrets.BASERUN_API_KEY }}
+      - name: Execute Normal Tests
+        run: npm run test:normal
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          BASERUN_API_KEY: ${{ secrets.BASERUN_API_KEY }}

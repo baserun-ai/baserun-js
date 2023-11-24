@@ -283,13 +283,13 @@ export class Baserun {
     };
   }
 
-  static session<T extends (...args: any[]) => any>({
+  static async session<T extends (...args: any[]) => any>({
     session: fn,
     sessionId,
     user,
-  }: SessionOptions<T>): Promise<ReturnType<T>> {
+  }: SessionOptions<T>): Promise<{ sessionId?: string; data: ReturnType<T> }> {
     if (!Baserun.ensureInitialized()) {
-      return fn();
+      return { data: await fn() };
     }
 
     const traceStore = traceLocalStorage.getStore();
@@ -298,7 +298,7 @@ export class Baserun {
       console.warn(
         'baserun.session was called inside of an existing Baserun decorated trace. The session will be ignored.',
       );
-      return fn();
+      return { data: await fn() };
     }
 
     const sessionStore = sessionLocalStorage.getStore();
@@ -306,7 +306,7 @@ export class Baserun {
       console.warn(
         `baserun.session can't be nested. Session with id ${sessionStore.session.id} is already active`,
       );
-      return fn();
+      return { data: await fn() };
     }
 
     const endUser: EndUser = {
@@ -358,8 +358,8 @@ export class Baserun {
 
     return sessionLocalStorage.run({ session }, async () => {
       try {
-        const result = await fn();
-        return result;
+        const data = await fn();
+        return { sessionId: actualSessionId, data };
       } finally {
         /* Already silently catches all errors and warns */
         await Baserun.flush();

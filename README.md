@@ -27,6 +27,9 @@ export BASERUN_API_KEY="your_api_key_here"
 
 ### 3. Start monitoring
 
+Baserun will automatically trace all the calls to OpenAI and Anthropic.
+A simple `await baserun.init()` is enough to set everything up.
+
 ```typescript
 import OpenAI from 'openai';
 import { baserun } from 'baserun';

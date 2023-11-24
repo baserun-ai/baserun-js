@@ -1,7 +1,6 @@
 name: Runs tests
 
 on:
-  push:
   pull_request:
 
 jobs:

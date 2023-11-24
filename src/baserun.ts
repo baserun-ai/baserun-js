@@ -441,7 +441,13 @@ export class Baserun {
     return run;
   }
 
-  static finishRun(run: Run): Promise<void> {
+  static async finishRun(run: Run): Promise<void> {
+    const runCreationPromise = Baserun.runCreationPromises[run.runId];
+
+    if (runCreationPromise) {
+      await runCreationPromise;
+    }
+
     run.completionTimestamp = Timestamp.fromDate(new Date());
     const endRunRequest: EndRunRequest = { run };
 

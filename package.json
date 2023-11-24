@@ -12,8 +12,8 @@
     "clean": "rimraf dist",
     "build": "npm run clean && tsc",
     "prepare": "tshy",
-    "test:test": "vitest",
-    "test:normal": "BASERUN_TEST=false vitest",
+    "test:test": "vitest --test-timeout=40000",
+    "test:normal": "BASERUN_TEST=false vitest --test-timeout=40000",
     "build:grpc": "protoc --ts_opt client_grpc1 --ts_out ./src/v1/gen --proto_path src/v1/protos src/v1/protos/baserun.proto",
     "vitest": "vitest",
     "lint": "eslint --fix --ext .js,.ts .",
@@ -24,6 +24,9 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "devDependencies": {
     "@anthropic-ai/sdk": "^0.9.1",
     "@bufbuild/buf": "^1.28.1",

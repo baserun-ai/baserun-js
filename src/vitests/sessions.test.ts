@@ -37,7 +37,7 @@ describe('sessions', () => {
   });
 
   test('session', async () => {
-    const { sessionId, data } = await baserun.session({
+    await baserun.session({
       async session() {
         await baserun.trace(async () => {
           baserun.log('lets go', 'omg');

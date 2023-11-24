@@ -201,62 +201,50 @@ describe('evals', () => {
     );
   });
 
-  test(
-    'modelGradedFact',
-    async () => {
-      const score = await baserun.trace(async () => {
-        return await baserun.evals.modelGradedFact(
-          'modelGradedFact',
-          'Who is the president of the United States?',
-          'Donald Trump',
-          'Bob the Builder',
-        );
-      }, 'modelGradedFact run')();
+  test('modelGradedFact', async () => {
+    const score = await baserun.trace(async () => {
+      return await baserun.evals.modelGradedFact(
+        'modelGradedFact',
+        'Who is the president of the United States?',
+        'Donald Trump',
+        'Bob the Builder',
+      );
+    }, 'modelGradedFact run')();
 
-      const storedData = storeTestSpy.mock.calls;
+    const storedData = storeTestSpy.mock.calls;
 
-      const payload = JSON.parse(storedData[0][0].eval.payload);
-      const pickedPayload = pick(payload, ['question', 'expert']);
+    const payload = JSON.parse(storedData[0][0].eval.payload);
+    const pickedPayload = pick(payload, ['question', 'expert']);
 
-      // eslint-disable-next-line prettier/prettier
-      expect(pickedPayload).toMatchInlineSnapshot(`
+    // eslint-disable-next-line prettier/prettier
+    expect(pickedPayload).toMatchInlineSnapshot(`
         {
           "expert": "Donald Trump",
           "question": "Who is the president of the United States?",
         }
       `);
 
-      expect(score).toMatchInlineSnapshot('"D"');
-    },
-    {
-      timeout: 20000,
-    },
-  );
+    expect(score).toMatchInlineSnapshot('"D"');
+  });
 
-  test(
-    'modelGradedClosedQA',
-    async () => {
-      const score = await baserun.trace(async () => {
-        return await baserun.evals.modelGradedClosedQA(
-          'modelGradedFact',
-          'Who is the president of the United States?',
-          'Donald Trump',
-          'Could this person actually be the president of the United States?',
-        );
-      }, 'modelGradedFact run')();
+  test('modelGradedClosedQA', async () => {
+    const score = await baserun.trace(async () => {
+      return await baserun.evals.modelGradedClosedQA(
+        'modelGradedFact',
+        'Who is the president of the United States?',
+        'Donald Trump',
+        'Could this person actually be the president of the United States?',
+      );
+    }, 'modelGradedFact run')();
 
-      const storedData = storeTestSpy.mock.calls;
+    const storedData = storeTestSpy.mock.calls;
 
-      const payload = JSON.parse(storedData[0][0].eval.payload);
-      const pickedPayload = pick(payload, ['question', 'expert']);
+    const payload = JSON.parse(storedData[0][0].eval.payload);
+    const pickedPayload = pick(payload, ['question', 'expert']);
 
-      // eslint-disable-next-line prettier/prettier
-      expect(pickedPayload).toMatchInlineSnapshot('{}');
+    // eslint-disable-next-line prettier/prettier
+    expect(pickedPayload).toMatchInlineSnapshot('{}');
 
-      expect(score).toMatchInlineSnapshot('"Yes"');
-    },
-    {
-      timeout: 20000,
-    },
-  );
+    expect(score).toMatchInlineSnapshot('"Yes"');
+  });
 });

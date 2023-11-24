@@ -1,17 +1,8 @@
-# This workflow will do a clean installation of node dependencies, cache/restore them, build the source code and run tests across different versions of node
-# For more information see: https://help.github.com/actions/language-and-framework-guides/using-nodejs-with-github-actions
-
 name: Runs tests
 
 on:
   push:
-    branches:
-      - main
-      - '*'
   pull_request:
-    branches:
-      - main
-      - '*'
 
 jobs:
   build:
@@ -19,7 +10,7 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [16.x]
+        node-version: [16.x, 20.x, 21.x]
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
 
     steps:
@@ -28,9 +19,12 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node-version }}
-          cache: "npm"
-      #- run: npm run build --if-present
-      - name: Execute Unit tests
-      - run: npm i
-	    - run: npm run test:test
-	    - run: npm run test:normal
+          cache: 'npm'
+      - name: Install Dependencies
+        run: npm i
+      - name: Build
+        run: npm run build --if-present
+      - name: Execute Unit Tests
+        run: npm run test:test
+      - name: Execute Normal Tests
+        run: npm run test:normal

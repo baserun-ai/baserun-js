@@ -253,13 +253,20 @@ export class OpenAIWrapper {
 
   static async init(log: (entry: AutoLLMLog) => Promise<void>) {
     debug('patching openai', openai.length);
+    const patchedModules: any[] = [];
     await track(async () => {
       await modulesPromise;
       for (const mod of openai) {
+        if (patchedModules.includes(mod)) {
+          continue;
+        }
+        patchedModules.push(mod);
         OpenAIWrapper.patch(mod, log);
       }
 
-      OpenAIWrapper.patch(OpenAI, log);
+      if (!patchedModules.includes(OpenAI)) {
+        OpenAIWrapper.patch(OpenAI, log);
+      }
     }, 'patching openai');
   }
 }

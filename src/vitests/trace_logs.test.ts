@@ -17,7 +17,7 @@ import { Log, Run, Span } from '../v1/gen/baserun.js';
 
 describe('Baserun trace', () => {
   let storeTestSpy: SpyInstance<
-    [logOrSpan: Log | Span, run: Run],
+    [logOrSpan: Log | Span, run: Run, submitRun?: boolean],
     Promise<void>
   >;
 

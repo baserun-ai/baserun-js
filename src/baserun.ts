@@ -465,7 +465,7 @@ export class Baserun {
       runId: run.runId,
     };
 
-    Baserun.submitLogOrSpan(log, run);
+    Baserun.submitLogOrSpan(log, run, false);
   }
 
   static async flush(): Promise<void> {
@@ -526,6 +526,7 @@ export class Baserun {
   static async submitLogOrSpan(
     logOrSpan: ProtoLog | Span,
     run: Run,
+    submitRun?: boolean,
   ): Promise<void> {
     return track(async () => {
       const endUser = sessionLocalStorage.getStore()?.session?.endUser;
@@ -535,7 +536,9 @@ export class Baserun {
         await runCreationPromise;
       }
 
-      return new Promise((resolve, reject) => {
+      const promises: Promise<void | unknown>[] = [];
+
+      const spanPromise = new Promise((resolve, reject) => {
         // handle Log
         const before = Date.now();
         if (isSpan(logOrSpan)) {
@@ -570,21 +573,33 @@ export class Baserun {
           });
         }
       });
+
+      promises.push(spanPromise);
+
+      if (submitRun) {
+        promises.push(Baserun.finishRun(run));
+      }
+
+      await Promise.all(promises);
+
+      return undefined;
     }, `Baserun.submitLogOrSpan ${logOrSpan.name}`);
   }
 
   static async _handleAutoLLM(logEntry: AutoLLMLog): Promise<void> {
     return track(async () => {
+      // is there a run already? if not we're creating one here
+      const autoCreatedRun = !Baserun.getCurrentRun();
+
       const run = Baserun.getOrCreateCurrentRun({
         name: `${logEntry.provider} ${logEntry.type}`,
         startTimestamp: new Date(logEntry.startTimestamp),
         completionTimestamp: new Date(logEntry.completionTimestamp),
-        // todo: add metadata
       });
 
       const span = logToSpanOrLog(logEntry, run.runId);
 
-      return Baserun.submitLogOrSpan(span, run);
+      return Baserun.submitLogOrSpan(span, run, autoCreatedRun);
     }, 'Baserun._handleAutoLLM');
   }
 

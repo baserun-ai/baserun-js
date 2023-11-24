@@ -19,7 +19,7 @@ const openai = new OpenAI();
 
 describe('openai', () => {
   let storeTestSpy: SpyInstance<
-    [logOrSpan: Log | Span, run: Run],
+    [logOrSpan: Log | Span, run: Run, submitRun?: boolean],
     Promise<void>
   >;
 

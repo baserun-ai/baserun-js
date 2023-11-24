@@ -1,4 +1,4 @@
-import { AutoLLMLog } from '../types';
+import { AutoLLMLog } from '../types.js';
 
 export enum EvalType {
   Match = 'match',

@@ -1,11 +1,13 @@
-import { AutoLLMLog } from '../types';
-import { getTimestamp } from '../helpers';
+import { AutoLLMLog } from '../types.js';
+import { getTimestamp } from '../utils/helpers.js';
+import { track } from '../utils/track.js';
 
 export type ResolverFn = (
   symbol: string,
   args: any[],
-  startTime: number,
-  endTime: number,
+  startTime: Date,
+  endTime: Date,
+  isStream: boolean,
   response?: any,
   error?: any,
 ) => AutoLLMLog;
@@ -63,6 +65,7 @@ export function generatePatchedMethod({
             args,
             startTime,
             streamEndTime,
+            isStream,
             streamResponse,
             streamError,
           );
@@ -73,7 +76,10 @@ export function generatePatchedMethod({
       return streamingWrapper();
     } else {
       try {
-        const originalResponse = await boundOriginal(...args);
+        const originalResponse = await track(
+          () => boundOriginal(...args),
+          `patch: ${symbol}`,
+        );
         response =
           (await processResponse?.(originalResponse)) ?? originalResponse;
         return originalResponse;
@@ -87,10 +93,11 @@ export function generatePatchedMethod({
           args,
           startTime,
           endTime,
+          isStream,
           response,
           error,
         );
-        await log(logEntry);
+        await track(() => log(logEntry), 'patch: log');
       }
     }
   };

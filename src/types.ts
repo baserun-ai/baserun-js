@@ -1,4 +1,10 @@
-import { Eval } from './evals/types';
+import {
+  ChatCompletionMessageToolCall,
+  ChatCompletionTool,
+  ChatCompletionToolChoiceOption,
+} from 'openai/resources/index.js';
+
+import { Eval } from './evals/types.js';
 
 export enum BaserunProvider {
   Anthropic = 'anthropic',
@@ -13,39 +19,53 @@ export enum BaserunType {
 export enum BaserunStepType {
   Log = 'log',
   AutoLLM = 'auto_llm',
-  CustomLLM = 'custom_llm',
 }
 
-interface LLMChatLog {
+export type Message = {
+  role: string;
+  content: string;
+  finish_reason: string;
+  tool_calls?: ChatCompletionMessageToolCall[];
+};
+
+export interface LLMChatLog {
   stepType: BaserunStepType.AutoLLM;
-  type: BaserunType;
+  type: BaserunType.Chat;
   provider: BaserunProvider;
   config: object;
-  messages: Array<{ role: string; content: string }>;
-  output: string;
-  startTimestamp: number;
-  completionTimestamp: number;
-  usage: {
+  promptMessages: Message[];
+  choices?: Message[];
+  logId: string;
+  startTimestamp: Date;
+  completionTimestamp: Date;
+  isStream: boolean;
+  usage?: {
     prompt_tokens: number;
     completion_tokens: number;
     total_tokens: number;
   };
+  errorStack?: string;
+  tools?: ChatCompletionTool[];
+  toolChoice?: ChatCompletionToolChoiceOption;
 }
 
-interface LLMCompletionLog {
+export interface LLMCompletionLog {
   stepType: BaserunStepType.AutoLLM;
-  type: BaserunType;
+  type: BaserunType.Completion;
   provider: BaserunProvider;
   config: object;
   prompt: { content: string };
-  output: string;
-  startTimestamp: number;
-  completionTimestamp: number;
-  usage: {
+  choices?: Message[];
+  startTimestamp: Date;
+  completionTimestamp: Date;
+  logId?: string;
+  isStream: boolean;
+  usage?: {
     prompt_tokens: number;
     completion_tokens: number;
     total_tokens: number;
   };
+  errorStack?: string;
 }
 
 export type AutoLLMLog = LLMChatLog | LLMCompletionLog;
@@ -64,13 +84,13 @@ export enum TraceType {
   Production = 'Production',
 }
 
-interface BaseTrace {
+export interface BaseTrace {
   type: TraceType;
   testName: string;
   testInputs: string[];
   id: string;
-  startTimestamp: number;
-  completionTimestamp: number;
+  startTimestamp: Date;
+  completionTimestamp: Date;
   steps: Log[];
   metadata?: object;
   evals?: Eval<any>[];

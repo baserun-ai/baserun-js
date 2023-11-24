@@ -1,337 +1,680 @@
 import { v4 } from 'uuid';
 import stringify from 'json-stringify-safe';
+import { AutoLLMLog } from './types.js';
+import { Evals } from './evals/evals.js';
+import { Eval } from './evals/types.js';
+import { OpenAIWrapper } from './patches/vendors/openai.js';
+import { AnthropicWrapper } from './patches/vendors/anthropic.js';
 import {
-  AutoLLMLog,
-  BaserunStepType,
-  Log,
-  StandardLog,
-  Trace,
-  TraceType,
-} from './types';
-import { OpenAIEdgeWrapper } from './patches/openai_edge';
-import { getTimestamp } from './helpers';
-import { Evals } from './evals/evals';
-import { Eval } from './evals/types';
-import { OpenAIWrapper } from './patches/openai';
-import { AnthropicWrapper } from './patches/anthropic';
-import { loadModule } from './loader';
+  EndRunRequest,
+  Run,
+  StartRunRequest,
+  Log as ProtoLog,
+  SubmitLogRequest,
+  SubmitSpanRequest,
+  Span,
+  Run_RunType,
+  Session,
+  StartSessionRequest,
+  EndUser,
+  SubmitUserRequest,
+  StartTestSuiteRequest,
+  TestSuite,
+  SubmitEvalRequest,
+} from './v1/gen/baserun.js';
+import { getOrCreateSubmissionService } from './backend/submissionService.js';
+import { logToSpanOrLog } from './utils/logToSpan.js';
+import { Timestamp } from './v1/gen/google/protobuf/timestamp.js';
+import { AsyncLocalStorage } from 'node:async_hooks';
+import { isTestEnv } from './utils/isTestEnv.js';
+import { sep } from 'node:path';
+import getDebug from 'debug';
+import { SubmissionServiceClient } from './v1/gen/baserun.grpc-client.js';
+import { track } from './utils/track.js';
 
-const TraceExecutionIdKey = 'baserun_trace_execution_id';
-const TraceNameKey = 'baserun_trace_name';
-const TraceInputsKey = 'baserun_trace_inputs';
-const TraceStartTimestampKey = 'baserun_trace_start_timestamp';
-const TraceBufferKey = 'baserun_trace_buffer';
-const TraceTypeKey = 'baserun_trace_type';
-const TraceMetadataKey = 'baserun_trace_metadata';
-const TraceEvalsKey = 'baserun_trace_evals';
+const debug = getDebug('baserun:baserun');
 
-type FetchInstance = (
-  input: URL | RequestInfo,
-  init?: RequestInit,
-) => Promise<Response>;
+type TraceStorage = {
+  run: Run;
+  args: any[];
+  evals: Eval<any>[];
+};
 
-let fetch: FetchInstance;
-if (typeof globalThis.fetch === 'undefined') {
-  fetch = loadModule(module, 'node-fetch');
-} else {
-  fetch = globalThis.fetch;
-}
+type SessionStorage = {
+  session: Session;
+  userIdentifier?: string;
+};
+
+const traceLocalStorage = new AsyncLocalStorage<TraceStorage>();
+const sessionLocalStorage = new AsyncLocalStorage<SessionStorage>();
+
+export type TraceOptions = {
+  metadata?: any;
+  name?: string;
+};
+
+export type SessionOptions<T extends (...args: any[]) => any> = {
+  user: string;
+  sessionId?: string;
+  session: T;
+};
+
+process.on('exit', () => {
+  if (!global.baserunInitialized) {
+    return;
+  }
+  // warn if there's an unflushed session or test suite
+  if (Baserun.sessionQueue.length > 0) {
+    console.warn(
+      'Baserun: Exiting with unflushed sessions. This should never happen - please report it at https://github.com/baserun-ai/baserun-js',
+    );
+  }
+
+  if (Baserun.startTestSuitePromise) {
+    console.warn(
+      'Baserun: Exiting with unflushed test suite. Ensure you call baserun.flushTestSuite() before exiting.',
+    );
+  }
+});
+
+type InitOptions = {
+  apiKey?: string;
+};
 
 export class Baserun {
   static evals = new Evals(Baserun._appendToEvals);
-  static _apiKey: string | undefined = process.env.BASERUN_API_KEY;
-  static _apiUrl: string =
-    process.env.BASERUN_API_URL ?? 'https://baserun.ai/api/v1';
+  private static _apiKey: string | undefined = process.env.BASERUN_API_KEY;
 
-  static monkeyPatch(): void {
-    OpenAIEdgeWrapper.init(Baserun._handleAutoLLM);
-    OpenAIWrapper.init(Baserun._handleAutoLLM);
-    AnthropicWrapper.init(Baserun._handleAutoLLM);
+  static monkeyPatch(): Promise<[void, void]> {
+    return Promise.all([
+      OpenAIWrapper.init(Baserun._handleAutoLLM),
+      AnthropicWrapper.init(Baserun._handleAutoLLM),
+    ]);
   }
 
-  static init(): void {
+  static runQueue: Run[] = [];
+  static sessionQueue: Session[] = [];
+  static runCreationPromises: Record<string, Promise<Run>> = {};
+
+  static sessionPromises: Promise<unknown>[] = [];
+
+  static startTestSuitePromise: Promise<unknown> | undefined;
+  static endTestSuitePromise: Promise<void> | undefined;
+  static submissionService: SubmissionServiceClient;
+
+  static submitEvalPromises: Promise<void>[] = [];
+
+  static async init({ apiKey }: InitOptions = {}): Promise<void> {
+    debug('initializing Baserun');
+    if (global.baserunInitialized) {
+      debug('already intialized');
+      return;
+    }
+
+    Baserun._apiKey = apiKey ?? process.env.BASERUN_API_KEY;
+
     if (!Baserun._apiKey) {
       throw new Error(
         'Baserun API key is missing. Ensure the BASERUN_API_KEY environment variable is set.',
       );
     }
 
-    if (global.baserunInitialized) {
-      return;
-    }
+    Baserun.submissionService = getOrCreateSubmissionService({
+      apiKey: Baserun._apiKey!,
+    });
+
+    await track(async () => {
+      const isTest = isTestEnv();
+
+      if (isTest) {
+        Baserun.initTestSuite();
+      }
+
+      debug('starting monkey patching');
+      await Baserun.monkeyPatch();
+    }, 'Baserun.init.monkeyPatch');
+
+    debug('done monkey patching');
 
     global.baserunInitialized = true;
-    global.baserunTraces = [];
-
-    Baserun.monkeyPatch();
   }
 
-  static markTraceStart(
-    type: TraceType,
-    name: string,
-    inputs: string[] = [],
-    metadata?: object,
-  ): Map<string, any> | undefined {
-    if (!global.baserunInitialized) {
-      return;
-    }
-
-    const traceStore = new Map();
-    traceStore.set(TraceExecutionIdKey, v4());
-    traceStore.set(TraceNameKey, name);
-    traceStore.set(
-      TraceInputsKey,
-      inputs.map((input) => stringify(input)),
-    );
-    traceStore.set(TraceStartTimestampKey, getTimestamp());
-    traceStore.set(TraceTypeKey, type);
-    traceStore.set(TraceBufferKey, []);
-    traceStore.set(TraceMetadataKey, metadata);
-    return traceStore;
+  static getTestSuite(): TestSuite | undefined {
+    return global.baserunTestSuite;
   }
 
-  static markTraceEnd(
-    {
-      error,
-      result,
-    }: {
-      error?: Error;
-      result?: string | null;
-    },
-    traceStore?: Map<string, any>,
-  ): void {
-    if (!global.baserunInitialized) {
-      return;
+  static getTestSuiteName(): string {
+    if (global.__vitest_worker__ && global.__vitest_worker__.filepath) {
+      const lastTwo = global.__vitest_worker__.filepath
+        .split(sep)
+        .slice(-2)
+        .join(sep);
+      return `vitest ${lastTwo}`;
     }
 
-    if (!traceStore) {
-      return;
-    }
-
-    const traceExecutionId = traceStore.get(TraceExecutionIdKey);
-    const name = traceStore.get(TraceNameKey);
-    const inputs = traceStore.get(TraceInputsKey);
-    const startTimestamp = traceStore.get(TraceStartTimestampKey);
-    const buffer = traceStore.get(TraceBufferKey);
-    const type = traceStore.get(TraceTypeKey);
-    const metadata = traceStore.get(TraceMetadataKey);
-    const evals = traceStore.get(TraceEvalsKey);
-    const completionTimestamp = getTimestamp();
-    if (error) {
-      Baserun._storeTrace({
-        type,
-        testName: name,
-        testInputs: inputs,
-        id: traceExecutionId,
-        error: String(error),
-        startTimestamp,
-        completionTimestamp,
-        steps: buffer || [],
-        metadata,
-        evals,
-      });
-    } else {
-      Baserun._storeTrace({
-        type,
-        testName: name,
-        testInputs: inputs,
-        id: traceExecutionId,
-        result: result ?? '',
-        startTimestamp,
-        completionTimestamp,
-        steps: buffer || [],
-        metadata,
-        evals,
-      });
-    }
+    return 'baserun test';
   }
 
-  static test(
-    target: any,
-    propertyKey: string,
-    descriptor: PropertyDescriptor,
-  ): PropertyDescriptor {
-    const originalMethod = descriptor.value;
-
-    descriptor.value = async function (...args: any[]): Promise<any> {
-      if (!global.baserunInitialized) return originalMethod.apply(this, args);
-
-      global.baserunTraceStore = Baserun.markTraceStart(
-        TraceType.Test,
-        originalMethod.name,
-      );
-      try {
-        let result = originalMethod.apply(this, args);
-        if (result instanceof Promise) {
-          result = await result;
-        }
-        Baserun.markTraceEnd({ result }, global.baserunTraceStore);
-      } catch (e) {
-        Baserun.markTraceEnd({ error: e as Error }, global.baserunTraceStore);
-      } finally {
-        global.baserunTraceStore = undefined;
-      }
+  static initTestSuite(): void {
+    const testSuite: TestSuite = {
+      id: v4(),
+      name: Baserun.getTestSuiteName(),
+      startTimestamp: Timestamp.fromDate(new Date()),
     };
 
-    return descriptor;
-  }
+    global.baserunTestSuite = testSuite;
 
-  static log(name: string, payload: object | string): void {
-    if (!global.baserunInitialized) return;
-
-    const store = global.baserunTraceStore;
-
-    if (!store || !store.has(TraceExecutionIdKey)) {
-      console.info(
-        'baserun.log was called outside of a Baserun decorated trace. The log will be ignored.',
-      );
-      return;
-    }
-
-    const logEntry: StandardLog = {
-      stepType: BaserunStepType.Log,
-      name,
-      payload,
-      timestamp: getTimestamp(),
+    const startTestSuiteRequest: StartTestSuiteRequest = {
+      testSuite,
     };
 
-    Baserun._appendToBuffer(logEntry);
+    Baserun.startTestSuitePromise = new Promise((resolve, reject) => {
+      Baserun.submissionService.startTestSuite(
+        startTestSuiteRequest,
+        (error) => {
+          if (error) {
+            console.error(
+              'Failed to submit test suite start to Baserun: ',
+              error,
+            );
+            reject(error);
+          } else {
+            resolve(undefined);
+          }
+        },
+      );
+    });
+
+    return global.baserunTestSuite;
+  }
+
+  static flushTestSuite(): Promise<void> {
+    if (!Baserun.startTestSuitePromise) {
+      throw new Error('Test suite was not initialized');
+    }
+
+    if (!global.baserunTestSuite) {
+      throw new Error('Test suite was not initialized');
+    }
+
+    if (Baserun.endTestSuitePromise) {
+      console.warn('Baserun: Test suite flushing already in progress');
+      return Baserun.endTestSuitePromise;
+    }
+
+    Baserun.endTestSuitePromise = new Promise<void>((resolve, reject) => {
+      Baserun.startTestSuitePromise?.then(() => {
+        global.baserunTestSuite.completionTimestamp = Timestamp.fromDate(
+          new Date(),
+        );
+
+        Baserun.submissionService.endTestSuite(
+          { testSuite: global.baserunTestSuite },
+          (error) => {
+            if (error) {
+              console.error(
+                'Failed to submit test suite end to Baserun: ',
+                error,
+              );
+              reject(error);
+            } else {
+              resolve(undefined);
+            }
+          },
+        );
+      });
+    });
+
+    return Baserun.endTestSuitePromise;
+  }
+
+  private static ensureInitialized(): boolean {
+    if (!global.baserunInitialized) {
+      console.warn(
+        'warning: Baserun was not initialized. Ensure you call baserun.init() before using it.',
+      );
+      return false;
+    }
+
+    return true;
   }
 
   static trace<T extends (...args: any[]) => any>(
     fn: T,
-    metadata?: object,
+    traceOptions?: TraceOptions | string,
   ): (...args: Parameters<T>) => Promise<ReturnType<T>> {
-    if (!global.baserunInitialized) return fn;
+    if (typeof traceOptions === 'string') {
+      traceOptions = { name: traceOptions };
+    }
+    const metadata = traceOptions?.metadata;
+    const name = traceOptions?.name ?? fn.name;
 
-    const store = global.baserunTraceStore;
-    if (store && store.has(TraceExecutionIdKey)) {
-      console.info(
+    const store = traceLocalStorage.getStore();
+
+    if (store?.run) {
+      console.warn(
         'baserun.trace was called inside of an existing Baserun decorated trace. The new trace will be ignored.',
       );
       return fn;
     }
 
     return async (...args: Parameters<T>): Promise<ReturnType<T>> => {
-      global.baserunTraceStore = Baserun.markTraceStart(
-        TraceType.Production,
-        fn.name,
-        args,
+      const run = Baserun.getOrCreateCurrentRun({
+        name,
+        traceType: isTestEnv() ? Run_RunType.TEST : Run_RunType.PRODUCTION,
         metadata,
-      );
-      try {
-        const result = await fn(...args);
-        Baserun.markTraceEnd(
-          { result: result != null ? stringify(result) : '' },
-          global.baserunTraceStore,
-        );
-        return result;
-      } catch (err) {
-        Baserun.markTraceEnd({ error: err as Error }, global.baserunTraceStore);
-        throw err;
-      } finally {
-        global.baserunTraceStore = undefined;
-        /* Already silently catches all errors and warns */
-        await Baserun.flush();
-      }
+      });
+
+      debug('starting run', run);
+
+      return traceLocalStorage.run({ run, args, evals: [] }, async () => {
+        try {
+          const result = await fn(...args);
+          run.result = JSON.stringify(result);
+          return result;
+        } catch (err) {
+          run.error = String((err as Error).stack ?? err);
+          throw err;
+        } finally {
+          /* Already silently catches all errors and warns */
+          await Baserun.flush();
+        }
+      });
     };
   }
 
-  static async flush(): Promise<string | undefined> {
-    if (!global.baserunInitialized) {
+  static async session<T extends (...args: any[]) => any>({
+    session: fn,
+    sessionId,
+    user,
+  }: SessionOptions<T>): Promise<{ sessionId?: string; data: ReturnType<T> }> {
+    if (!Baserun.ensureInitialized()) {
+      return { data: await fn() };
+    }
+
+    const traceStore = traceLocalStorage.getStore();
+
+    if (traceStore?.run) {
       console.warn(
-        'Baserun has not been initialized. No data will be flushed.',
+        'baserun.session was called inside of an existing Baserun decorated trace. The session will be ignored.',
+      );
+      return { data: await fn() };
+    }
+
+    const sessionStore = sessionLocalStorage.getStore();
+    if (sessionStore?.session) {
+      console.warn(
+        `baserun.session can't be nested. Session with id ${sessionStore.session.id} is already active`,
+      );
+      return { data: await fn() };
+    }
+
+    const endUser: EndUser = {
+      id: user ?? '',
+      identifier: user ?? '',
+    };
+
+    const actualSessionId = sessionId ?? v4();
+
+    const session: Session = {
+      id: actualSessionId,
+      identifier: actualSessionId,
+      endUser,
+      startTimestamp: Timestamp.fromDate(new Date()),
+    };
+
+    Baserun.sessionQueue.push(session);
+
+    const startEndUserRequest: SubmitUserRequest = { user: endUser };
+
+    const userPromise = new Promise((resolve, reject) => {
+      Baserun.submissionService.submitUser(startEndUserRequest, (error) => {
+        if (error) {
+          console.error('Failed to submit user to Baserun: ', error);
+          reject(error);
+        } else {
+          resolve(undefined);
+        }
+      });
+    });
+
+    const startSessionRequest: StartSessionRequest = { session };
+
+    debug('starting session', session);
+    const sessionPromise = new Promise((resolve, reject) => {
+      userPromise.then(() => {
+        Baserun.submissionService.startSession(startSessionRequest, (error) => {
+          if (error) {
+            console.error('Failed to submit session start to Baserun: ', error);
+            reject(error);
+          } else {
+            resolve(undefined);
+          }
+        });
+      });
+    });
+
+    Baserun.sessionPromises.push(sessionPromise);
+
+    return sessionLocalStorage.run({ session }, async () => {
+      try {
+        const data = await fn();
+        return { sessionId: actualSessionId, data };
+      } finally {
+        /* Already silently catches all errors and warns */
+        await Baserun.flush();
+      }
+    });
+  }
+
+  static getCurrentRun(): Run | undefined {
+    const storage = traceLocalStorage.getStore();
+    if (storage) {
+      return storage.run;
+    }
+  }
+
+  static getOrCreateCurrentRun({
+    name,
+    startTimestamp,
+    completionTimestamp,
+    traceType,
+    metadata,
+  }: {
+    name: string;
+    startTimestamp?: Date;
+    completionTimestamp?: Date;
+    traceType?: Run_RunType;
+    metadata?: object;
+  }): Run {
+    const currentRun = Baserun.getCurrentRun();
+    if (currentRun) {
+      return currentRun;
+    }
+
+    const runId = v4();
+    if (!traceType) {
+      traceType = isTestEnv() ? Run_RunType.TEST : Run_RunType.PRODUCTION;
+    }
+
+    const sessionId = sessionLocalStorage.getStore()?.session.id;
+
+    const run: Run = {
+      runId,
+      runType: traceType,
+      name,
+      metadata: stringify(metadata ?? {}),
+      suiteId: Baserun.getTestSuite()?.id ?? '',
+      sessionId: sessionId ?? '',
+      inputs: [],
+      error: '',
+      result: '',
+      startTimestamp: Timestamp.fromDate(new Date()),
+      completionTimestamp: Timestamp.fromDate(new Date()),
+    };
+
+    Baserun.runQueue.push(run);
+
+    run.startTimestamp = Timestamp.fromDate(startTimestamp ?? new Date());
+    if (completionTimestamp) {
+      run.startTimestamp = Timestamp.fromDate(completionTimestamp);
+    }
+
+    const startRunRequest: StartRunRequest = { run };
+
+    Baserun.runCreationPromises[run.runId] = new Promise<Run>(
+      (resolve, reject) => {
+        const before = Date.now();
+        Baserun.submissionService.startRun(startRunRequest, (error) => {
+          debug(`submitted run start in ${Date.now() - before}ms`, run.name);
+          delete Baserun.runCreationPromises[run.runId];
+          if (error) {
+            console.error('Failed to submit run start to Baserun: ', error);
+            reject(error);
+          } else {
+            resolve(run);
+          }
+        });
+      },
+    );
+
+    return run;
+  }
+
+  static async finishRun(run: Run): Promise<void> {
+    const runCreationPromise = Baserun.runCreationPromises[run.runId];
+
+    if (runCreationPromise) {
+      await runCreationPromise;
+    }
+
+    run.completionTimestamp = Timestamp.fromDate(new Date());
+    const endRunRequest: EndRunRequest = { run };
+
+    if (!run.sessionId) {
+      run.sessionId = sessionLocalStorage.getStore()?.session.id ?? '';
+    }
+
+    debug('finishing run', run);
+    return new Promise((resolve, reject) => {
+      Baserun.submissionService.endRun(endRunRequest, (error) => {
+        if (error) {
+          console.error('Failed to submit run end to Baserun: ', error);
+          reject(error);
+        } else {
+          resolve();
+        }
+      });
+    });
+  }
+
+  static log(name: string, payload: object | string): void {
+    if (!Baserun.ensureInitialized()) {
+      return;
+    }
+
+    const run = Baserun.getCurrentRun();
+    if (!run) {
+      console.warn(
+        'baserun.log was called outside of a Baserun decorated trace. The log will be ignored.',
       );
       return;
     }
 
-    if (global.baserunTraces.length === 0) return;
+    const log: ProtoLog = {
+      name,
+      payload: stringify(payload),
+      timestamp: Timestamp.fromDate(new Date()),
+      runId: run.runId,
+    };
 
-    try {
-      const headers = {
-        Authorization: `Bearer ${Baserun._apiKey}`,
-        'Content-Type': 'application/json',
-      };
-
-      if (
-        global.baserunTraces.every((trace) => trace.type === TraceType.Test)
-      ) {
-        const apiUrl = `${Baserun._apiUrl}/runs`;
-        const response = await fetch(apiUrl, {
-          method: 'POST',
-          headers,
-          body: stringify({ testExecutions: global.baserunTraces }),
-        });
-
-        const data = await response.json();
-        const testRunId = (data as { id: string }).id;
-        const url = new URL(apiUrl);
-        return `${url.protocol}//${url.host}/runs/${testRunId}`;
-      } else if (
-        global.baserunTraces.every(
-          (trace) => trace.type === TraceType.Production,
-        )
-      ) {
-        await fetch(`${Baserun._apiUrl}/traces`, {
-          method: 'POST',
-          headers,
-          body: stringify({ traces: global.baserunTraces }),
-        });
-      } else {
-        console.warn('Inconsistent trace types, skipping Baserun upload');
-      }
-    } catch (error) {
-      console.warn(`Failed to upload results to Baserun: `, error);
-    } finally {
-      global.baserunTraces = [];
-    }
+    Baserun.submitLogOrSpan(log, run, false);
   }
 
-  static _storeTrace(traceData: Trace): void {
-    global.baserunTraces.push(traceData);
+  static async flush(): Promise<void> {
+    // todo: flush these all in parallel
+    debug('flushing');
+    await track(async () => {
+      if (!global.baserunInitialized) {
+        console.warn(
+          'Baserun has not been initialized. No data will be flushed.',
+        );
+        return;
+      }
+
+      const promises: Promise<void | unknown>[] = [];
+
+      // finish all outstanding runs
+      let run = Baserun.runQueue.shift();
+      while (run) {
+        promises.push(Baserun.finishRun(run));
+        run = Baserun.runQueue.shift();
+      }
+
+      // finish all outstanding session initializations
+      let sessionPromise = Baserun.sessionPromises.shift();
+      while (sessionPromise) {
+        promises.push(sessionPromise);
+        sessionPromise = Baserun.sessionPromises.shift();
+      }
+
+      // finish all outstanding sessions
+      let session = Baserun.sessionQueue.shift();
+      while (session) {
+        promises.push(Baserun.finishSession(session));
+        session = Baserun.sessionQueue.shift();
+      }
+
+      // for sure I'd be able to write this in a better way
+      let evalPromise = Baserun.submitEvalPromises.shift();
+      while (evalPromise) {
+        promises.push(evalPromise);
+        evalPromise = Baserun.submitEvalPromises.shift();
+      }
+
+      await Promise.all(promises);
+    }, 'Baserun.flush');
+  }
+
+  static async finishSession(session: Session): Promise<void> {
+    session.completionTimestamp = Timestamp.fromDate(new Date());
+    const endSessionRequest = { session };
+
+    debug('finishing session', session);
+    await new Promise((resolve, reject) => {
+      Baserun.submissionService.endSession(endSessionRequest, (error) => {
+        if (error) {
+          console.error('Failed to submit session end to Baserun: ', error);
+          reject(error);
+        } else {
+          resolve(undefined);
+        }
+      });
+    });
+  }
+
+  static async submitLogOrSpan(
+    logOrSpan: ProtoLog | Span,
+    run: Run,
+    submitRun?: boolean,
+  ): Promise<void> {
+    return track(async () => {
+      const endUser = sessionLocalStorage.getStore()?.session?.endUser;
+
+      const runCreationPromise = Baserun.runCreationPromises[run.runId];
+      if (runCreationPromise) {
+        await runCreationPromise;
+      }
+
+      const promises: Promise<void | unknown>[] = [];
+
+      const spanPromise = new Promise((resolve, reject) => {
+        // handle Log
+        const before = Date.now();
+        if (isSpan(logOrSpan)) {
+          const spanRequest: SubmitSpanRequest = {
+            run,
+            span: logOrSpan,
+          };
+          logOrSpan.endUser = endUser;
+          Baserun.submissionService.submitSpan(spanRequest, (error) => {
+            debug(`submitted span in ${Date.now() - before}ms`, logOrSpan.name);
+            if (error) {
+              console.error('Failed to submit span to Baserun: ', error);
+              reject(error);
+            } else {
+              resolve(undefined);
+            }
+          });
+          // otherwise it must be a Span
+        } else {
+          const logRequest: SubmitLogRequest = {
+            log: logOrSpan,
+            run,
+          };
+          Baserun.submissionService.submitLog(logRequest, (error) => {
+            debug(`submitted log in ${Date.now() - before}ms`, logOrSpan.name);
+            if (error) {
+              console.error('Failed to submit log to Baserun: ', error);
+              reject(error);
+            } else {
+              resolve(undefined);
+            }
+          });
+        }
+      });
+
+      promises.push(spanPromise);
+
+      if (submitRun) {
+        promises.push(Baserun.finishRun(run));
+      }
+
+      await Promise.all(promises);
+
+      return undefined;
+    }, `Baserun.submitLogOrSpan ${logOrSpan.name}`);
   }
 
   static async _handleAutoLLM(logEntry: AutoLLMLog): Promise<void> {
-    const store = global.baserunTraceStore;
-    if (store && store.has(TraceExecutionIdKey)) {
-      Baserun._appendToBuffer(logEntry);
-      return;
-    }
+    return track(async () => {
+      // is there a run already? if not we're creating one here
+      const autoCreatedRun = !Baserun.getCurrentRun();
 
-    global.baserunTraces.push({
-      type: TraceType.Production,
-      testName: `${logEntry.provider} ${logEntry.type}`,
-      testInputs: [],
-      id: v4(),
-      result: String(logEntry.output),
-      startTimestamp: logEntry.startTimestamp,
-      completionTimestamp: logEntry.completionTimestamp,
-      steps: [logEntry],
-      evals: [],
-    });
+      const run = Baserun.getOrCreateCurrentRun({
+        name: `${logEntry.provider} ${logEntry.type}`,
+        startTimestamp: new Date(logEntry.startTimestamp),
+        completionTimestamp: new Date(logEntry.completionTimestamp),
+      });
 
-    await Baserun.flush();
-  }
+      const span = logToSpanOrLog(logEntry, run.runId);
 
-  static _appendToBuffer(logEntry: Log): void {
-    const store = global.baserunTraceStore;
-    if (!store) {
-      return;
-    }
-
-    const buffer = store.get(TraceBufferKey) || [];
-    buffer.push(logEntry);
-    store.set(TraceBufferKey, buffer);
+      return Baserun.submitLogOrSpan(span, run, autoCreatedRun);
+    }, 'Baserun._handleAutoLLM');
   }
 
   static _appendToEvals(evalEntry: Eval<any>): void {
-    const store = global.baserunTraceStore;
-    if (!store) {
+    if (!Baserun.ensureInitialized()) {
       return;
     }
 
-    const evals = store.get(TraceEvalsKey) || [];
-    evals.push(evalEntry);
-    store.set(TraceEvalsKey, evals);
+    const store = traceLocalStorage.getStore();
+
+    if (!store) {
+      throw new Error('Evals can only happens within a trace');
+    }
+
+    const submitEvalRequest: SubmitEvalRequest = {
+      eval: {
+        name: evalEntry.name,
+        payload: stringify(evalEntry.payload),
+        result: '{}',
+        score: evalEntry.score,
+        submission: '{}',
+        type: evalEntry.type,
+      },
+      run: store.run,
+    };
+
+    Baserun.submitEvalPromises.push(
+      // eslint-disable-next-line no-async-promise-executor
+      new Promise(async (resolve, reject) => {
+        await Baserun.runCreationPromises[store.run.runId];
+        Baserun.submissionService.submitEval(submitEvalRequest, (error) => {
+          if (error) {
+            debug('Failed to submit eval to Baserun: ', error);
+            reject(error);
+          } else {
+            resolve(undefined);
+          }
+        });
+      }),
+    );
+
+    store.evals.push(evalEntry);
   }
+}
+
+function isSpan(log: ProtoLog | Span): log is Span {
+  return Object.prototype.hasOwnProperty.call(log, 'spanId');
 }

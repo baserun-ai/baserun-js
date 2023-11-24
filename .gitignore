@@ -1,2 +1,7 @@
 node_modules/
 dist/
+.envrc
+todo.md
+.tshy
+.tshy-build
+baserun-*.tgz

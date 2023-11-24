@@ -4,12 +4,13 @@ import {
   EvalType,
   EvalPayload,
   ModelGradedEvalTypes,
-} from './types';
-import { isValidJson } from './json';
-import { OpenAIWrapper } from '../patches/openai';
-import { BaserunProvider, BaserunStepType, BaserunType } from '../types';
-import { DEFAULT_USAGE } from '../patches/constants';
-import { getTimestamp } from '../helpers';
+} from './types.js';
+import { isValidJson } from './json.js';
+import { getChoiceMessages } from '../patches/vendors/openai.js';
+import { BaserunProvider, BaserunStepType, BaserunType } from '../types.js';
+import { DEFAULT_USAGE } from '../patches/constants.js';
+import { getTimestamp } from '../utils/helpers.js';
+import OpenAI from 'openai';
 
 function getAnswerPrompt(choices: string[]): string {
   const joinedChoices = choices.map((choice) => `"${choice}"`).join(' or ');
@@ -60,6 +61,14 @@ export class Evals {
     this._log = log;
   }
 
+  static openai = (() => {
+    try {
+      return new OpenAI();
+    } catch (e) {
+      return null;
+    }
+  })();
+
   private _storeEvalData<T extends EvalType>({
     name,
     type,
@@ -101,6 +110,23 @@ export class Evals {
     });
     return result;
   }
+
+  eq(name: string, submission: string, expected: string): boolean {
+    const result = submission === expected;
+    this._storeEvalData({
+      name,
+      type: EvalType.Match,
+      result: String(result).toLowerCase(),
+      score: Number(result),
+      payload: {
+        submission,
+        expected: [expected],
+      },
+    });
+    return result;
+  }
+
+  equals = this.eq;
 
   includes(
     name: string,
@@ -200,15 +226,17 @@ export class Evals {
     return result;
   }
 
-  validJson(name: string, submission: string): boolean {
+  validJson(name: string, submission: string | object): boolean {
     const result = isValidJson(submission);
+    const submissionString =
+      typeof submission === 'string' ? submission : JSON.stringify(submission);
     this._storeEvalData({
       name,
       type: EvalType.ValidJson,
       result: String(result).toLowerCase(),
       score: Number(result),
       payload: {
-        submission,
+        submission: submissionString,
       },
     });
     return result;
@@ -217,8 +245,8 @@ export class Evals {
   custom(
     name: string,
     submission: string,
-    fn: (submission: string) => boolean,
-  ): boolean {
+    fn: (submission: string) => number,
+  ): number {
     const result = fn(submission);
     this._storeEvalData({
       name,
@@ -235,8 +263,8 @@ export class Evals {
   async customAsync(
     name: string,
     submission: string,
-    fn: (submission: string) => Promise<boolean>,
-  ): Promise<boolean> {
+    fn: (submission: string) => Promise<number>,
+  ): Promise<number> {
     const result = await fn(submission);
     this._storeEvalData({
       name,
@@ -256,11 +284,17 @@ export class Evals {
     payload: EvalPayloadWithStep[T],
   ): Promise<string> {
     const startTime = getTimestamp();
-    const response = await OpenAIWrapper.originalMethods[
-      'createChatCompletion'
-    ](modelConfig);
+    if (!Evals.openai) {
+      throw new Error('OpenAI API key not set');
+    }
+
+    const response = await Evals.openai.chat.completions.create(modelConfig);
+
     const endTime = getTimestamp();
     const output = response['choices'][0]['message']['content'];
+    if (!output) {
+      throw new Error('OpenAI API returned empty response');
+    }
     const { choice, score } = getChoiceAndScore(output);
     const { messages, ...config } = modelConfig;
     this._storeEvalData({
@@ -274,12 +308,15 @@ export class Evals {
           stepType: BaserunStepType.AutoLLM,
           type: BaserunType.Chat,
           provider: BaserunProvider.OpenAI,
-          output,
+          // output,
           config,
-          messages,
+          promptMessages: messages,
+          logId: response.id,
+          choices: getChoiceMessages(response),
           startTimestamp: startTime,
           completionTimestamp: endTime,
           usage: response.usage ?? DEFAULT_USAGE,
+          isStream: false, // TODO: Set the correct value
         },
       },
     });

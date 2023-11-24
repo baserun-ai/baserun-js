@@ -252,7 +252,7 @@ export class Baserun {
     const store = traceLocalStorage.getStore();
 
     if (store?.run) {
-      console.info(
+      console.warn(
         'baserun.trace was called inside of an existing Baserun decorated trace. The new trace will be ignored.',
       );
       return fn;

@@ -25,6 +25,8 @@ describe('openai', () => {
     Promise<void>
   >;
   let evalSpy: SpyInstance<[evalEntry: Eval<any>], void>;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  let logSpy: any;
 
   beforeAll(() => {
     baserun.init();
@@ -33,11 +35,13 @@ describe('openai', () => {
   beforeEach(() => {
     submitLogSpy = vi.spyOn(Baserun, 'submitLogOrSpan');
     evalSpy = vi.spyOn(Baserun, '_appendToEvals');
+    logSpy = vi.spyOn(global.console, 'warn');
   });
 
   afterEach(() => {
     submitLogSpy.mockRestore();
     evalSpy.mockRestore();
+    logSpy.mockRestore();
   });
 
   test('trace mix', async () => {
@@ -75,7 +79,7 @@ describe('openai', () => {
     expect(span4.name).toBe('TestEvent');
   });
 
-  test.only('parallel traces', async () => {
+  test('parallel traces', async () => {
     const fn = await baserun.trace(async () => {
       baserun.log('lets go', 'omg');
       await openai.completions.create({
@@ -109,5 +113,22 @@ describe('openai', () => {
 
     expect(trace1.length).toBe(4);
     expect(trace2.length).toBe(4);
+  });
+
+  test('reject trace in a trace', async () => {
+    const fn = await baserun.trace(async () => {
+      baserun.log('lets go', 'omg');
+
+      await baserun.trace(async () => {
+        baserun.log('we are nested', 'omg');
+      })();
+    });
+
+    fn();
+
+    // eslint-disable-next-line prettier/prettier
+    expect(logSpy.mock.calls[0][0]).toMatchInlineSnapshot(
+      '"baserun.trace was called inside of an existing Baserun decorated trace. The new trace will be ignored."',
+    );
   });
 });

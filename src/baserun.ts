@@ -657,7 +657,9 @@ export class Baserun {
     };
 
     Baserun.submitEvalPromises.push(
-      new Promise((resolve, reject) => {
+      // eslint-disable-next-line no-async-promise-executor
+      new Promise(async (resolve, reject) => {
+        await Baserun.runCreationPromises[store.run.runId];
         Baserun.submissionService.submitEval(submitEvalRequest, (error) => {
           if (error) {
             debug('Failed to submit eval to Baserun: ', error);

@@ -18,7 +18,7 @@ import groupBy from 'lodash.groupby';
 
 const openai = new OpenAI();
 
-describe('openai', () => {
+describe('sessions', () => {
   let submitLogSpy: SpyInstance<
     [logOrSpan: Log | Span, run: Run, submitRun?: boolean],
     Promise<void>

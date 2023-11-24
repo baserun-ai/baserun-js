@@ -21,8 +21,8 @@ describe('Baserun trace', () => {
     Promise<void>
   >;
 
-  beforeAll(() => {
-    baserun.init();
+  beforeAll(async () => {
+    await baserun.init();
   });
 
   beforeEach(() => {

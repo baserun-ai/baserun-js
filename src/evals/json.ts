@@ -1,4 +1,7 @@
-export function isValidJson(output: string): boolean {
+export function isValidJson(output: string | object): boolean {
+  if (typeof output === 'object') {
+    return true;
+  }
   try {
     JSON.parse(output);
     return true;

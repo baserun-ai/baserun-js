@@ -73,7 +73,6 @@ describe(
 
       test('with promise and check', async () => {
         await baserun.trace(async () => {
-          console.log('code running?');
           const res = await openai.completions.create({
             model: 'gpt-3.5-turbo-instruct',
             prompt: '1+1=',

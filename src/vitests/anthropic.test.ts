@@ -23,9 +23,7 @@ describe('anthropic', () => {
     Promise<void>
   >;
 
-  beforeAll(() => {
-    baserun.init();
-  });
+  beforeAll(() => baserun.init());
 
   beforeEach(() => {
     storeTestSpy = vi.spyOn(Baserun, 'submitLogOrSpan');

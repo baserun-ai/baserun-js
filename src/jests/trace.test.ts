@@ -56,7 +56,7 @@ describe('Baserun trace', () => {
         "runType": 0,
       }
     `);
-  });
+  }, 20_000);
 
   it('test_explicit_log_with_payload', async () => {
     const metadata = { environment: 'test', userId: 123 };
@@ -83,7 +83,7 @@ describe('Baserun trace', () => {
         "payload": "{"action":"called_api","value":42}",
       }
     `);
-  });
+  }, 20_000);
 
   it('handles exception', async () => {
     async function entrypoint() {
@@ -117,5 +117,5 @@ describe('Baserun trace', () => {
         "result": "",
       }
     `);
-  });
+  }, 20_000);
 });

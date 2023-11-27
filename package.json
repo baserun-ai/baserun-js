@@ -14,12 +14,14 @@
     "prepare": "tshy",
     "test:test": "vitest --test-timeout=40000",
     "test:normal": "BASERUN_TEST=false vitest --test-timeout=40000",
+    "jest:trace": "jest src/jests/trace.test.ts",
     "build:grpc": "protoc --ts_opt client_grpc1 --ts_out ./src/v1/gen --proto_path src/v1/protos src/v1/protos/baserun.proto",
     "vitest": "vitest",
     "lint": "eslint --fix --ext .js,.ts .",
     "format": "prettier --write \"**/*.{js,ts}\"",
     "watch": "tsc --watch",
-    "publish:alpha": "rimraf dist && rimraf .tshy && npm run prepare && yarn publish --tag=alpha"
+    "publish:alpha": "rimraf dist && rimraf .tshy && npm run prepare && yarn publish --tag=alpha",
+    "publish:latest": "rimraf dist && rimraf .tshy && npm run prepare && yarn publish --tag=alpha"
   },
   "keywords": [],
   "author": "",

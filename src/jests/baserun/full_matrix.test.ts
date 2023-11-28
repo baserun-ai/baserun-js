@@ -1,9 +1,13 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 
 import { Anthropic, HUMAN_PROMPT, AI_PROMPT } from '@anthropic-ai/sdk';
-import { baserun } from '../../index.js';
+import { baserun } from '../../../dist/commonjs/index.js';
 
 import OpenAI from 'openai';
+
+// don't ask me why jest complains, but it thinks that OpenAI is not "constructable"
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
 const api = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
@@ -14,7 +18,8 @@ const anthropic = new Anthropic({
 
 describe('Baserun end-to-end', () => {
   describe('openai-v4', () => {
-    it('should suggest the Eiffel Tower', async () => {
+    it.only('should suggest the Eiffel Tower', async () => {
+      console.log('wat');
       const completion = await api.completions.create({
         model: 'text-davinci-003',
         temperature: 0.7,

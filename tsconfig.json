@@ -20,6 +20,6 @@
     "sourceMap": true,
     "inlineSources": true
   },
-  "include": ["src", "types"],
-  "exclude": ["src/sandbox", "src/jests"]
+  "include": ["src", "types", "jest-preset.mjs"],
+  "exclude": ["src/sandbox"]
 }

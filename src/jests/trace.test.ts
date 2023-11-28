@@ -13,10 +13,6 @@ jest.mock('node-fetch');
 describe('Baserun trace', () => {
   let storeTestSpy: jest.SpyInstance;
 
-  beforeAll(() => {
-    baserun.init();
-  });
-
   beforeEach(() => {
     storeTestSpy = jest.spyOn(Baserun, 'submitLogOrSpan');
   });
@@ -25,7 +21,7 @@ describe('Baserun trace', () => {
     storeTestSpy.mockRestore();
   });
 
-  it('test_explicit_log', async () => {
+  it.only('test_explicit_log', async () => {
     const metadata = { environment: 'test', userId: 123 };
     async function entrypoint(arg1: string) {
       baserun.log('TestEvent', 'whatever');

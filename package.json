@@ -14,6 +14,7 @@
     "prepare": "tshy",
     "test:test": "vitest --test-timeout=40000",
     "test:normal": "BASERUN_TEST=false vitest --test-timeout=40000",
+    "test:jest": "jest --config=jest.config.baserun.mjs jests/baserun/full_matrix.test.ts",
     "jest:trace": "jest src/jests/trace.test.ts",
     "build:grpc": "protoc --ts_opt client_grpc1 --ts_out ./src/v1/gen --proto_path src/v1/protos src/v1/protos/baserun.proto",
     "vitest": "vitest",

@@ -1,1 +1,3 @@
-export * from './dist/esm/jest/index.js';
+import baserunJest from './dist/commonjs/jest/index.js';
+
+export default baserunJest;

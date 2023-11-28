@@ -247,7 +247,7 @@ export class Baserun {
       traceOptions = { name: traceOptions };
     }
     const metadata = traceOptions?.metadata;
-    const name = traceOptions?.name ?? fn.name;
+    const name = traceOptions?.name ?? (fn.name || 'baserun trace');
 
     const store = traceLocalStorage.getStore();
 

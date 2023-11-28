@@ -1,12 +1,13 @@
 {
   "name": "baserun",
-  "version": "2.0.1-alpha.1",
+  "version": "2.0.1-alpha.2",
   "description": "The Baserun TypeScript SDK",
   "main": "./dist/commonjs/index.js",
   "types": "./dist/commonjs/index.d.ts",
   "files": [
     "dist",
-    "jest-preset.js"
+    "jest-preset.js",
+    "jest-preset.mjs"
   ],
   "scripts": {
     "clean": "rimraf dist",

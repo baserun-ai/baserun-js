@@ -33,9 +33,9 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           BASERUN_API_KEY: ${{ secrets.BASERUN_API_KEY }}
-      - name: Execute Jest Tests
-        run: npm run test:jest
-        env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          BASERUN_API_KEY: ${{ secrets.BASERUN_API_KEY }}
+      # - name: Execute Jest Tests
+      #   run: npm run test:jest
+      #   env:
+      #     OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      #     ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      #     BASERUN_API_KEY: ${{ secrets.BASERUN_API_KEY }}

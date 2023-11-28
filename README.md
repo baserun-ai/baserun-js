@@ -56,6 +56,80 @@ const chatCompletion = await openai.chat.completions.create({
 
 Now head over to [https://www.baserun.ai/monitoring/traces](https://www.baserun.ai/monitoring/traces) and have a look at the traces that were just created.
 
+## Testing
+
+Baserun comes with built-in jest support, allowing you to run evaluations on your prompts, which get reported to the Baserun dashboard.
+
+### How to test
+
+Use our [Jest](https://jestjs.io/docs) preset and start immediately logging to Baserun. By default all OpenAI completion and chat requests will be logged to Baserun. Logs are aggregated by test.
+
+```typescript
+// test_module.spec.ts
+
+import OpenAI from 'openai';
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+
+describe('Baserun end-to-end', () => {
+  it('should suggest the Eiffel Tower', async () => {
+    const chatCompletion = await openai.chat.completions.create({
+      model: 'gpt-3.5-turbo',
+      temperature: 0.7,
+      messages: [
+        {
+          role: 'user',
+          content: 'What are three activities to do in Paris?',
+        },
+      ],
+    });
+
+    expect(chatCompletion.choices[0].message!.content!).toContain(
+      'Eiffel Tower',
+    );
+  });
+});
+```
+
+To run the test and log to baserun:
+
+```bash
+jest --preset baserun test_module.spec.ts
+...
+========================Baserun========================
+Test results available at: https://baserun.ai/runs/<id>
+=======================================================
+```
+
+### Existing presets
+
+If you are already using a Jest preset such as ts-jest you will need to merge the presets in a Jest config
+
+```js
+// jest.config.js or jest.config.baserun.js
+
+const tsPreset = require('ts-jest/jest-preset');
+const baserunPreset = require('baserun/jest-preset');
+
+module.exports = {
+  ...tsPreset,
+  ...baserunPreset,
+  testTimeout: 10000,
+};
+```
+
+Then to run a test and log to baserun:
+
+```bash
+jest test_modules.spec.ts
+...
+========================Baserun========================
+Test results available at: https://baserun.ai/runs/<id>
+=======================================================
+```
+
 ## Documentation
 
 For a deeper dive on all capabilities and more advanced usage, please refer to our [Documentation](https://docs.baserun.ai).

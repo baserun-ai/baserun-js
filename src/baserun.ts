@@ -608,13 +608,13 @@ export class Baserun {
               };
               logOrSpan.endUser = endUser;
               Baserun.submissionService.submitSpan(spanRequest, (error) => {
-                debug(
-                  `submitted span in ${Date.now() - before}ms`,
-                  logOrSpan.name,
-                );
                 if (error) {
                   reject(error);
                 } else {
+                  debug(
+                    `submitted span in ${Date.now() - before}ms`,
+                    logOrSpan.name,
+                  );
                   resolve(undefined);
                 }
               });
@@ -625,13 +625,13 @@ export class Baserun {
                 run,
               };
               Baserun.submissionService.submitLog(logRequest, (error) => {
-                debug(
-                  `submitted log in ${Date.now() - before}ms`,
-                  logOrSpan.name,
-                );
                 if (error) {
                   reject(error);
                 } else {
+                  debug(
+                    `submitted log in ${Date.now() - before}ms`,
+                    logOrSpan.name,
+                  );
                   resolve(undefined);
                 }
               });

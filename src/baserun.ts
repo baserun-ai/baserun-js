@@ -100,6 +100,7 @@ export class Baserun {
   static runQueue: Run[] = [];
   static sessionQueue: Session[] = [];
   static runCreationPromises: Record<string, Promise<Run>> = {};
+  static createdRuns: Record<string, Run> = {};
 
   static sessionPromises: Promise<unknown>[] = [];
 
@@ -282,6 +283,7 @@ export class Baserun {
         name,
         traceType: isTestEnv() ? Run_RunType.TEST : Run_RunType.PRODUCTION,
         metadata,
+        create: true, // force creating a new run
       });
 
       debug('starting run', run);
@@ -402,12 +404,14 @@ export class Baserun {
     completionTimestamp,
     traceType,
     metadata,
+    create,
   }: {
     name: string;
     startTimestamp?: Date;
     completionTimestamp?: Date;
     traceType?: Run_RunType;
     metadata?: object;
+    create?: boolean;
   }): Run {
     if (!global.baserunInitialized) {
       throw new Error(
@@ -416,7 +420,8 @@ export class Baserun {
     }
 
     const currentRun = Baserun.getCurrentRun();
-    if (currentRun) {
+    if (currentRun && !create) {
+      debug('using existing run', currentRun);
       return currentRun;
     }
 
@@ -448,6 +453,12 @@ export class Baserun {
       run.startTimestamp = Timestamp.fromDate(completionTimestamp);
     }
 
+    Baserun.createRun(run);
+
+    return run;
+  }
+
+  static async createRun(run: Run): Promise<Run> {
     const startRunRequest: StartRunRequest = { run };
 
     Baserun.runCreationPromises[run.runId] = new Promise<Run>(
@@ -455,18 +466,18 @@ export class Baserun {
         const before = Date.now();
         Baserun.submissionService.startRun(startRunRequest, (error) => {
           debug(`submitted run start in ${Date.now() - before}ms`, run.name);
-          delete Baserun.runCreationPromises[run.runId];
           if (error) {
-            console.error('Failed to submit run start to Baserun: ', error);
             reject(error);
           } else {
             resolve(run);
+            delete Baserun.runCreationPromises[run.runId];
+            Baserun.createdRuns[run.runId] = run;
           }
         });
       },
     );
 
-    return run;
+    return Baserun.runCreationPromises[run.runId];
   }
 
   static async finishRun(run: Run): Promise<void> {
@@ -597,7 +608,16 @@ export class Baserun {
           new Promise(async (resolve, reject) => {
             const runCreationPromise = Baserun.runCreationPromises[run.runId];
             if (runCreationPromise) {
+              debug(`waiting for run creation promise of ${run.runId}`);
               await runCreationPromise;
+            }
+            if (!Baserun.createdRuns[run.runId]) {
+              debug(`run ${run.runId} not submitted yet, submitting now`);
+              try {
+                await Baserun.createRun(run);
+              } catch (e) {
+                //
+              }
             }
             // handle Log
             const before = Date.now();
@@ -638,10 +658,13 @@ export class Baserun {
             }
           }),
         {
-          retries: 4,
+          retries: 6,
         },
       ).catch((e) => {
-        console.error('Failed to submit log or span to Baserun: ', e);
+        console.error(
+          `Failed to submit log or span "${logOrSpan.name}" to Baserun: `,
+          e,
+        );
       });
 
       promises.push(spanPromise);

@@ -3,6 +3,10 @@ export function isTestEnv() {
     return false;
   }
 
+  if (process.argv.join(' ').includes('jest')) {
+    return true;
+  }
+
   return Boolean(
     process.env.NODE_ENV === 'test' ||
       process.env.VITEST ||

@@ -1,35 +1,41 @@
-import NodeEnvironment from 'jest-environment-node';
+import * as NodeEnv from 'jest-environment-node';
 import { Circus } from '@jest/types';
-// TODO: Make evals work again
-// import { Baserun } from '../baserun.js';
-// import { TraceType } from '../types.js';
+import { Baserun } from '../baserun.js';
 
-// yes this is sad, but needed due to TypeScript not seeing this as a function type
-const AnyNodeEnvironment = NodeEnvironment as any;
+function getTestName(testEntry: Circus.TestEntry) {
+  const namePath = [testEntry.name];
+  let parent: Circus.DescribeBlock | undefined = testEntry.parent;
+  while (
+    parent?.type === 'describeBlock' &&
+    parent.name !== 'ROOT_DESCRIBE_BLOCK'
+  ) {
+    namePath.unshift(parent.name);
+    parent = parent.parent;
+  }
 
-export default class BaserunJestEnvironment extends AnyNodeEnvironment {
-  private _baserunTraceStore: Map<string, any> | undefined;
+  return namePath.join(' > ');
+}
 
+export default class BaserunJestEnvironment extends NodeEnv.TestEnvironment {
+  async setup(): Promise<void> {
+    await super.setup();
+    Baserun.forceTestEnv = true;
+  }
   handleTestEvent = (event: Circus.Event) => {
     if (event.name === 'test_start' && event.test) {
-      const namePath = [event.test.name];
-      let parent: Circus.DescribeBlock | undefined = event.test.parent;
-      while (
-        parent?.type === 'describeBlock' &&
-        parent.name !== 'ROOT_DESCRIBE_BLOCK'
-      ) {
-        namePath.unshift(parent.name);
-        parent = parent.parent;
-      }
+      const oldTestFn = event.test.fn;
 
-      // this._baserunTraceStore = Baserun.markTraceStart(
-      //   TraceType.Test,
-      //   namePath.join(' • '),
-      // );
-      this.global.baserunTraceStore = this._baserunTraceStore;
+      const testName = getTestName(event.test);
+
+      event.test.fn = Baserun.trace(function (this: any, ...args: [any]) {
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        return oldTestFn(...args) as any;
+      }, testName) as any;
     }
 
     if (event.name === 'test_done' && event.test) {
+      // TODO: Remove -> nothing to do here
       // Baserun.markTraceEnd(
       //   {
       //     error: event.test.errors[0],
@@ -37,8 +43,8 @@ export default class BaserunJestEnvironment extends AnyNodeEnvironment {
       //   },
       //   this._baserunTraceStore,
       // );
-      this._baserunTraceStore = undefined;
-      this.global.baserunTraceStore = undefined;
+      // this._baserunTraceStore = undefined;
+      // this.global.baserunTraceStore = undefined;
     }
   };
 }

@@ -1,12 +1,14 @@
 {
   "name": "baserun",
-  "version": "2.0.0",
+  "version": "2.0.1-alpha.18",
   "description": "The Baserun TypeScript SDK",
   "main": "./dist/commonjs/index.js",
   "types": "./dist/commonjs/index.d.ts",
   "files": [
     "dist",
-    "jest-preset.js"
+    "jest-preset.js",
+    "jest-preset.cjs",
+    "jest-preset.mjs"
   ],
   "scripts": {
     "clean": "rimraf dist",
@@ -14,12 +16,15 @@
     "prepare": "tshy",
     "test:test": "vitest --test-timeout=40000",
     "test:normal": "BASERUN_TEST=false vitest --test-timeout=40000",
+    "test:jest": "jest --config=jest.config.baserun.mjs jests/baserun/full_matrix.test.ts",
+    "jest:trace": "jest src/jests/trace.test.ts",
     "build:grpc": "protoc --ts_opt client_grpc1 --ts_out ./src/v1/gen --proto_path src/v1/protos src/v1/protos/baserun.proto",
     "vitest": "vitest",
     "lint": "eslint --fix --ext .js,.ts .",
     "format": "prettier --write \"**/*.{js,ts}\"",
     "watch": "tsc --watch",
-    "publish:alpha": "rimraf dist && rimraf .tshy && npm run prepare && yarn publish --tag=alpha"
+    "publish:alpha": "rimraf dist && rimraf .tshy && npm run prepare && yarn publish --tag=alpha",
+    "publish:latest": "rimraf dist && rimraf .tshy && npm run prepare && yarn publish --tag=alpha"
   },
   "keywords": [],
   "author": "",
@@ -41,6 +46,7 @@
     "@types/lodash.groupby": "^4.6.9",
     "@types/lodash.pick": "^4.4.9",
     "@types/node": "^20.9.0",
+    "@types/promise-retry": "^1.1.6",
     "@types/resolve": "^1.20.6",
     "@types/tmp": "^0.2.3",
     "@types/uuid": "^9.0.2",
@@ -79,6 +85,7 @@
     "json-stringify-safe": "^5.0.1",
     "openai": "^4.19.1",
     "pkg-dir": "^8.0.0",
+    "promise-retry": "^2.0.1",
     "resolve": "^1.22.8",
     "resolve-pkg": "^2.0.0",
     "slash": "^5.1.0",
@@ -90,7 +97,8 @@
   "tshy": {
     "exports": {
       "./package.json": "./package.json",
-      ".": "./src/index.ts"
+      ".": "./src/index.ts",
+      "./jest-preset": "./jest-preset.cjs"
     }
   },
   "exports": {
@@ -104,6 +112,7 @@
         "types": "./dist/commonjs/index.d.ts",
         "default": "./dist/commonjs/index.js"
       }
-    }
+    },
+    "./jest-preset": "./jest-preset.cjs"
   }
 }

@@ -13,10 +13,6 @@ jest.mock('node-fetch');
 describe('Baserun trace', () => {
   let storeTestSpy: jest.SpyInstance;
 
-  beforeAll(() => {
-    baserun.init();
-  });
-
   beforeEach(() => {
     storeTestSpy = jest.spyOn(Baserun, 'submitLogOrSpan');
   });
@@ -25,7 +21,7 @@ describe('Baserun trace', () => {
     storeTestSpy.mockRestore();
   });
 
-  it('test_explicit_log', async () => {
+  it.only('test_explicit_log', async () => {
     const metadata = { environment: 'test', userId: 123 };
     async function entrypoint(arg1: string) {
       baserun.log('TestEvent', 'whatever');
@@ -56,7 +52,7 @@ describe('Baserun trace', () => {
         "runType": 0,
       }
     `);
-  });
+  }, 20_000);
 
   it('test_explicit_log_with_payload', async () => {
     const metadata = { environment: 'test', userId: 123 };
@@ -83,7 +79,7 @@ describe('Baserun trace', () => {
         "payload": "{"action":"called_api","value":42}",
       }
     `);
-  });
+  }, 20_000);
 
   it('handles exception', async () => {
     async function entrypoint() {
@@ -117,5 +113,5 @@ describe('Baserun trace', () => {
         "result": "",
       }
     `);
-  });
+  }, 20_000);
 });

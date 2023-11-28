@@ -1,6 +1,6 @@
 {
   "name": "baserun",
-  "version": "2.0.1-alpha.8",
+  "version": "2.0.1-alpha.9",
   "description": "The Baserun TypeScript SDK",
   "main": "./dist/commonjs/index.js",
   "types": "./dist/commonjs/index.d.ts",
@@ -46,6 +46,7 @@
     "@types/lodash.groupby": "^4.6.9",
     "@types/lodash.pick": "^4.4.9",
     "@types/node": "^20.9.0",
+    "@types/promise-retry": "^1.1.6",
     "@types/resolve": "^1.20.6",
     "@types/tmp": "^0.2.3",
     "@types/uuid": "^9.0.2",
@@ -84,6 +85,7 @@
     "json-stringify-safe": "^5.0.1",
     "openai": "^4.19.1",
     "pkg-dir": "^8.0.0",
+    "promise-retry": "^2.0.1",
     "resolve": "^1.22.8",
     "resolve-pkg": "^2.0.0",
     "slash": "^5.1.0",

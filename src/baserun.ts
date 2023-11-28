@@ -31,6 +31,7 @@ import { sep } from 'node:path';
 import getDebug from 'debug';
 import { SubmissionServiceClient } from './v1/gen/baserun.grpc-client.js';
 import { track } from './utils/track.js';
+import pRetry from 'promise-retry';
 
 const debug = getDebug('baserun:baserun');
 
@@ -595,41 +596,53 @@ export class Baserun {
 
       const promises: Promise<void | unknown>[] = [];
 
-      const spanPromise = new Promise((resolve, reject) => {
-        // handle Log
-        const before = Date.now();
-        if (isSpan(logOrSpan)) {
-          const spanRequest: SubmitSpanRequest = {
-            run,
-            span: logOrSpan,
-          };
-          logOrSpan.endUser = endUser;
-          Baserun.submissionService.submitSpan(spanRequest, (error) => {
-            debug(`submitted span in ${Date.now() - before}ms`, logOrSpan.name);
-            if (error) {
-              console.error('Failed to submit span to Baserun: ', error);
-              reject(error);
+      const spanPromise = pRetry(
+        () =>
+          new Promise((resolve, reject) => {
+            // handle Log
+            const before = Date.now();
+            if (isSpan(logOrSpan)) {
+              const spanRequest: SubmitSpanRequest = {
+                run,
+                span: logOrSpan,
+              };
+              logOrSpan.endUser = endUser;
+              Baserun.submissionService.submitSpan(spanRequest, (error) => {
+                debug(
+                  `submitted span in ${Date.now() - before}ms`,
+                  logOrSpan.name,
+                );
+                if (error) {
+                  console.error('Failed to submit span to Baserun: ', error);
+                  reject(error);
+                } else {
+                  resolve(undefined);
+                }
+              });
+              // otherwise it must be a Span
             } else {
-              resolve(undefined);
+              const logRequest: SubmitLogRequest = {
+                log: logOrSpan,
+                run,
+              };
+              Baserun.submissionService.submitLog(logRequest, (error) => {
+                debug(
+                  `submitted log in ${Date.now() - before}ms`,
+                  logOrSpan.name,
+                );
+                if (error) {
+                  console.error('Failed to submit log to Baserun: ', error);
+                  reject(error);
+                } else {
+                  resolve(undefined);
+                }
+              });
             }
-          });
-          // otherwise it must be a Span
-        } else {
-          const logRequest: SubmitLogRequest = {
-            log: logOrSpan,
-            run,
-          };
-          Baserun.submissionService.submitLog(logRequest, (error) => {
-            debug(`submitted log in ${Date.now() - before}ms`, logOrSpan.name);
-            if (error) {
-              console.error('Failed to submit log to Baserun: ', error);
-              reject(error);
-            } else {
-              resolve(undefined);
-            }
-          });
-        }
-      });
+          }),
+        {
+          retries: 2,
+        },
+      );
 
       promises.push(spanPromise);
 

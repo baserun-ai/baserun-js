@@ -589,16 +589,16 @@ export class Baserun {
     return track(async () => {
       const endUser = Baserun.sessionLocalStorage.getStore()?.session?.endUser;
 
-      const runCreationPromise = Baserun.runCreationPromises[run.runId];
-      if (runCreationPromise) {
-        await runCreationPromise;
-      }
-
       const promises: Promise<void | unknown>[] = [];
 
       const spanPromise = pRetry(
         () =>
-          new Promise((resolve, reject) => {
+          // eslint-disable-next-line no-async-promise-executor
+          new Promise(async (resolve, reject) => {
+            const runCreationPromise = Baserun.runCreationPromises[run.runId];
+            if (runCreationPromise) {
+              await runCreationPromise;
+            }
             // handle Log
             const before = Date.now();
             if (isSpan(logOrSpan)) {

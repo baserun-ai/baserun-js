@@ -597,7 +597,7 @@ export class Baserun {
       const promises: Promise<void | unknown>[] = [];
 
       const spanPromise = pRetry(
-        (err, retry) =>
+        () =>
           new Promise((resolve, reject) => {
             // handle Log
             const before = Date.now();
@@ -613,9 +613,6 @@ export class Baserun {
                   logOrSpan.name,
                 );
                 if (error) {
-                  if (retry > 1) {
-                    console.error('Failed to submit span to Baserun: ', error);
-                  }
                   reject(error);
                 } else {
                   resolve(undefined);
@@ -633,9 +630,6 @@ export class Baserun {
                   logOrSpan.name,
                 );
                 if (error) {
-                  if (retry > 1) {
-                    console.error('Failed to submit log to Baserun: ', error);
-                  }
                   reject(error);
                 } else {
                   resolve(undefined);
@@ -646,7 +640,9 @@ export class Baserun {
         {
           retries: 3,
         },
-      );
+      ).catch((e) => {
+        console.error('Failed to submit log to Baserun: ', e);
+      });
 
       promises.push(spanPromise);
 

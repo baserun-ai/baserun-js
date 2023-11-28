@@ -45,8 +45,11 @@ type SessionStorage = {
   userIdentifier?: string;
 };
 
-const traceLocalStorage = new AsyncLocalStorage<TraceStorage>();
-const sessionLocalStorage = new AsyncLocalStorage<SessionStorage>();
+global.baserunTraceLocalStorage =
+  global.baserunTraceLocalStorage || new AsyncLocalStorage<TraceStorage>();
+
+global.baserunSessionLocalStorage =
+  global.baserunSessionLocalStorage || new AsyncLocalStorage<SessionStorage>();
 
 export type TraceOptions = {
   metadata?: any;
@@ -92,6 +95,7 @@ export class Baserun {
     ]);
   }
 
+  static forceTestEnv: boolean = false;
   static runQueue: Run[] = [];
   static sessionQueue: Session[] = [];
   static runCreationPromises: Record<string, Promise<Run>> = {};
@@ -100,12 +104,30 @@ export class Baserun {
 
   static startTestSuitePromise: Promise<unknown> | undefined;
   static endTestSuitePromise: Promise<void> | undefined;
-  static submissionService: SubmissionServiceClient;
 
   static submitEvalPromises: Promise<void>[] = [];
 
+  static get submissionService(): SubmissionServiceClient {
+    return global.baserunSubmissionService;
+  }
+
+  static get testSuite(): TestSuite | undefined {
+    return global.baserunTestSuite;
+  }
+
+  static get traceLocalStorage(): AsyncLocalStorage<TraceStorage> {
+    return global.baserunTraceLocalStorage;
+  }
+
+  static get sessionLocalStorage(): AsyncLocalStorage<SessionStorage> {
+    return global.baserunSessionLocalStorage;
+  }
+
   static async init({ apiKey }: InitOptions = {}): Promise<void> {
     debug('initializing Baserun');
+
+    // we're using global as this is the only way to share state
+    // when using jest
     if (global.baserunInitialized) {
       debug('already intialized');
       return;
@@ -119,12 +141,12 @@ export class Baserun {
       );
     }
 
-    Baserun.submissionService = getOrCreateSubmissionService({
+    global.baserunSubmissionService = getOrCreateSubmissionService({
       apiKey: Baserun._apiKey!,
     });
 
     await track(async () => {
-      const isTest = isTestEnv();
+      const isTest = Baserun.forceTestEnv || isTestEnv();
 
       if (isTest) {
         Baserun.initTestSuite();
@@ -134,13 +156,9 @@ export class Baserun {
       await Baserun.monkeyPatch();
     }, 'Baserun.init.monkeyPatch');
 
-    debug('done monkey patching');
+    debug('done initializing');
 
     global.baserunInitialized = true;
-  }
-
-  static getTestSuite(): TestSuite | undefined {
-    return global.baserunTestSuite;
   }
 
   static getTestSuiteName(): string {
@@ -249,7 +267,7 @@ export class Baserun {
     const metadata = traceOptions?.metadata;
     const name = traceOptions?.name ?? (fn.name || 'baserun trace');
 
-    const store = traceLocalStorage.getStore();
+    const store = Baserun.traceLocalStorage.getStore();
 
     if (store?.run) {
       console.warn(
@@ -267,19 +285,22 @@ export class Baserun {
 
       debug('starting run', run);
 
-      return traceLocalStorage.run({ run, args, evals: [] }, async () => {
-        try {
-          const result = await fn(...args);
-          run.result = JSON.stringify(result);
-          return result;
-        } catch (err) {
-          run.error = String((err as Error).stack ?? err);
-          throw err;
-        } finally {
-          /* Already silently catches all errors and warns */
-          await Baserun.flush();
-        }
-      });
+      return Baserun.traceLocalStorage.run(
+        { run, args, evals: [] },
+        async () => {
+          try {
+            const result = await fn(...args);
+            run.result = JSON.stringify(result);
+            return result;
+          } catch (err) {
+            run.error = String((err as Error).stack ?? err);
+            throw err;
+          } finally {
+            /* Already silently catches all errors and warns */
+            await Baserun.flush();
+          }
+        },
+      );
     };
   }
 
@@ -292,7 +313,7 @@ export class Baserun {
       return { data: await fn() };
     }
 
-    const traceStore = traceLocalStorage.getStore();
+    const traceStore = Baserun.traceLocalStorage.getStore();
 
     if (traceStore?.run) {
       console.warn(
@@ -301,7 +322,7 @@ export class Baserun {
       return { data: await fn() };
     }
 
-    const sessionStore = sessionLocalStorage.getStore();
+    const sessionStore = Baserun.sessionLocalStorage.getStore();
     if (sessionStore?.session) {
       console.warn(
         `baserun.session can't be nested. Session with id ${sessionStore.session.id} is already active`,
@@ -356,7 +377,7 @@ export class Baserun {
 
     Baserun.sessionPromises.push(sessionPromise);
 
-    return sessionLocalStorage.run({ session }, async () => {
+    return Baserun.sessionLocalStorage.run({ session }, async () => {
       try {
         const data = await fn();
         return { sessionId: actualSessionId, data };
@@ -368,7 +389,7 @@ export class Baserun {
   }
 
   static getCurrentRun(): Run | undefined {
-    const storage = traceLocalStorage.getStore();
+    const storage = Baserun.traceLocalStorage.getStore();
     if (storage) {
       return storage.run;
     }
@@ -387,6 +408,12 @@ export class Baserun {
     traceType?: Run_RunType;
     metadata?: object;
   }): Run {
+    if (!global.baserunInitialized) {
+      throw new Error(
+        'Baserun has not been initialized. Ensure you call baserun.init() before using it.',
+      );
+    }
+
     const currentRun = Baserun.getCurrentRun();
     if (currentRun) {
       return currentRun;
@@ -397,14 +424,14 @@ export class Baserun {
       traceType = isTestEnv() ? Run_RunType.TEST : Run_RunType.PRODUCTION;
     }
 
-    const sessionId = sessionLocalStorage.getStore()?.session.id;
+    const sessionId = Baserun.sessionLocalStorage.getStore()?.session.id;
 
     const run: Run = {
       runId,
       runType: traceType,
       name,
       metadata: stringify(metadata ?? {}),
-      suiteId: Baserun.getTestSuite()?.id ?? '',
+      suiteId: Baserun.testSuite?.id ?? '',
       sessionId: sessionId ?? '',
       inputs: [],
       error: '',
@@ -452,7 +479,7 @@ export class Baserun {
     const endRunRequest: EndRunRequest = { run };
 
     if (!run.sessionId) {
-      run.sessionId = sessionLocalStorage.getStore()?.session.id ?? '';
+      run.sessionId = Baserun.sessionLocalStorage.getStore()?.session.id ?? '';
     }
 
     debug('finishing run', run);
@@ -559,7 +586,7 @@ export class Baserun {
     submitRun?: boolean,
   ): Promise<void> {
     return track(async () => {
-      const endUser = sessionLocalStorage.getStore()?.session?.endUser;
+      const endUser = Baserun.sessionLocalStorage.getStore()?.session?.endUser;
 
       const runCreationPromise = Baserun.runCreationPromises[run.runId];
       if (runCreationPromise) {
@@ -638,10 +665,11 @@ export class Baserun {
       return;
     }
 
-    const store = traceLocalStorage.getStore();
+    const store = Baserun.traceLocalStorage.getStore();
 
     if (!store) {
-      throw new Error('Evals can only happens within a trace');
+      console.warn('Warning: Evals can only happen within a trace');
+      return;
     }
 
     const submitEvalRequest: SubmitEvalRequest = {

@@ -1,5 +1,6 @@
 import { Baserun } from '../baserun.js';
 
-export default function baserunSetup() {
-  return Baserun.init();
+export default async function baserunSetup() {
+  Baserun.forceTestEnv = true;
+  await Baserun.init();
 }

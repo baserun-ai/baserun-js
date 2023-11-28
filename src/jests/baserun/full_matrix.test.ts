@@ -1,6 +1,8 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 
 import { Anthropic, HUMAN_PROMPT, AI_PROMPT } from '@anthropic-ai/sdk';
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
 import { baserun } from '../../../dist/commonjs/index.js';
 
 import OpenAI from 'openai';
@@ -18,8 +20,7 @@ const anthropic = new Anthropic({
 
 describe('Baserun end-to-end', () => {
   describe('openai-v4', () => {
-    it.only('should suggest the Eiffel Tower', async () => {
-      console.log('wat');
+    it('should suggest the Eiffel Tower', async () => {
       const completion = await api.completions.create({
         model: 'text-davinci-003',
         temperature: 0.7,
@@ -47,8 +48,9 @@ describe('Baserun end-to-end', () => {
         stream: true,
       });
 
-      for await (const part of completion) {
-        console.log(part.choices[0]?.text);
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      for await (const _part of completion) {
+        // console.log(part.choices[0]?.text);
       }
     });
 
@@ -91,34 +93,39 @@ describe('Baserun end-to-end', () => {
         stream: true,
       });
 
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       for await (const part of chatCompletion) {
-        console.log(part.choices[0]?.delta.content);
+        // console.log(part.choices[0]?.delta.content);
       }
 
       baserun.log('Whatever', 'Dude');
     });
 
     it('should fail', async () => {
-      const chatCompletion = await api.chat.completions.create({
-        model: 'random-model',
-        temperature: 0.7,
-        messages: [
-          {
-            role: 'user',
-            content: 'What are three activities to do in Egypt?',
-          },
-        ],
-      });
+      expect(async () => {
+        const chatCompletion = await api.chat.completions.create({
+          model: 'random-model',
+          temperature: 0.7,
+          messages: [
+            {
+              role: 'user',
+              content: 'What are three activities to do in Egypt?',
+            },
+          ],
+        });
 
-      baserun.evals.includes(
-        'Includes Pyramid',
-        chatCompletion.choices[0].message!.content!,
-        ['Pyramid'],
-      );
-      baserun.evals.notIncludes(
-        'AI Language check',
-        chatCompletion.choices[0].message!.content!,
-        ['AI Language'],
+        baserun.evals.includes(
+          'Includes Pyramid',
+          chatCompletion.choices[0].message!.content!,
+          ['Pyramid'],
+        );
+        baserun.evals.notIncludes(
+          'AI Language check',
+          chatCompletion.choices[0].message!.content!,
+          ['AI Language'],
+        );
+      }).rejects.toThrowErrorMatchingInlineSnapshot(
+        `"404 The model \`random-model\` does not exist"`,
       );
     });
   });
@@ -132,8 +139,9 @@ describe('Baserun end-to-end', () => {
         stream: true,
       });
 
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       for await (const completion of stream) {
-        console.log(completion.completion);
+        // console.log(completion.completion);
       }
     });
 

@@ -18,3 +18,12 @@ declare var baserunTestSuite: any | undefined;
 
 // eslint-disable-next-line
 declare var __vitest_worker__: any | undefined;
+
+// eslint-disable-next-line
+declare var baserunSubmissionService: any | undefined;
+
+// eslint-disable-next-line
+declare var baserunTraceLocalStorage: any | undefined;
+
+// eslint-disable-next-line
+declare var baserunSessionLocalStorage: any | undefined;

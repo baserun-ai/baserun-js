@@ -1,6 +1,6 @@
 {
   "name": "baserun",
-  "version": "2.0.1-alpha.5",
+  "version": "2.0.1-alpha.6",
   "description": "The Baserun TypeScript SDK",
   "main": "./dist/commonjs/index.js",
   "types": "./dist/commonjs/index.d.ts",
@@ -95,9 +95,7 @@
     "exports": {
       "./package.json": "./package.json",
       ".": "./src/index.ts",
-      "./jest-preset": "./jest-preset.js",
-      "./jest-preset.js": "./jest-preset.js",
-      "./jest-preset.mjs": "./jest-preset.mjs"
+      "./jest-preset": "./jest-preset.cjs"
     }
   },
   "exports": {
@@ -112,8 +110,6 @@
         "default": "./dist/commonjs/index.js"
       }
     },
-    "./jest-preset": "./jest-preset.js",
-    "./jest-preset.js": "./jest-preset.js",
-    "./jest-preset.mjs": "./jest-preset.mjs"
+    "./jest-preset": "./jest-preset.cjs"
   }
 }

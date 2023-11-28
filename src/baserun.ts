@@ -638,10 +638,10 @@ export class Baserun {
             }
           }),
         {
-          retries: 3,
+          retries: 4,
         },
       ).catch((e) => {
-        console.error('Failed to submit log to Baserun: ', e);
+        console.error('Failed to submit log or span to Baserun: ', e);
       });
 
       promises.push(spanPromise);

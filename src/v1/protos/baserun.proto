@@ -138,15 +138,16 @@ message Span {
     optional double top_k = 35;
 
     EndUser end_user = 36;
-    optional string template_id = 37;
+    optional string template_id = 37; // Deprecated, use template_version_id
     optional string template_parameters = 38; // JSONified map<str, any>
-    optional string template_string = 45;
+    optional string template_string = 45; // Deprecated, register_template is required to be done first
+    optional string template_version_id = 46;
 
     optional string tools = 39; // JSONified array<map<str, any>>
     optional string tool_choice = 40; // JSONified map<str, any>
     optional int32 seed = 41;
     optional string response_format = 42;// JSONified map<str, any>
-        
+
     optional string error_stacktrace = 43;
     optional string completion_id = 44;
 }
@@ -170,13 +171,13 @@ message Check {
 }
 
 message Feedback {
-  string name = 1;
+    string name = 1;
     double score = 2;
     string metadata = 3; // JSONified map<string, any>
     EndUser end_user = 4;
 }
 
-message CapturedCompletion {
+message CompletionAnnotations {
     string completion_id = 1;
     repeated Check checks = 2;
     repeated Log logs = 3;
@@ -202,6 +203,7 @@ message Template {
 
     TemplateType template_type = 3;
     repeated TemplateVersion template_versions = 4;
+    optional TemplateVersion active_version = 5;
 }
 
 message TemplateVersion {
@@ -334,12 +336,12 @@ message GetTemplatesResponse {
     repeated Template templates = 1;
 }
 
-message SubmitCaptureRequest {
-    CapturedCompletion capture = 1;
+message SubmitAnnotationsRequest {
+    CompletionAnnotations annotations = 1;
     Run run = 2;
 }
 
-message SubmitCaptureResponse {
+message SubmitAnnotationsResponse {
     string message = 1;
 }
 
@@ -357,5 +359,5 @@ service SubmissionService {
     rpc SubmitModelConfig (SubmitModelConfigRequest) returns (SubmitModelConfigResponse);
     rpc SubmitUser (SubmitUserRequest) returns (SubmitUserResponse);
     rpc GetTemplates (GetTemplatesRequest) returns (GetTemplatesResponse);
-    rpc SubmitCapture (SubmitCaptureRequest) returns (SubmitCaptureResponse);
+    rpc SubmitAnnotations (SubmitAnnotationsRequest) returns (SubmitAnnotationsResponse);
 }

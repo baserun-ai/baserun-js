@@ -4,8 +4,8 @@
 import { SubmissionService } from './baserun.js';
 import type { BinaryWriteOptions } from '@protobuf-ts/runtime';
 import type { BinaryReadOptions } from '@protobuf-ts/runtime';
-import type { SubmitCaptureResponse } from './baserun.js';
-import type { SubmitCaptureRequest } from './baserun.js';
+import type { SubmitAnnotationsResponse } from './baserun.js';
+import type { SubmitAnnotationsRequest } from './baserun.js';
 import type { GetTemplatesResponse } from './baserun.js';
 import type { GetTemplatesRequest } from './baserun.js';
 import type { SubmitUserResponse } from './baserun.js';
@@ -34,7 +34,7 @@ import type { StartRunResponse } from './baserun.js';
 import type { StartRunRequest } from './baserun.js';
 import * as grpc from '@grpc/grpc-js';
 /**
- * @generated from protobuf service baserun.v1.SubmissionService
+ * @generated from protobuf service baserun.js.v1.SubmissionService
  */
 export interface ISubmissionServiceClient {
   /**
@@ -469,38 +469,38 @@ export interface ISubmissionServiceClient {
     ) => void,
   ): grpc.ClientUnaryCall;
   /**
-   * @generated from protobuf rpc: SubmitCapture(baserun.v1.SubmitCaptureRequest) returns (baserun.v1.SubmitCaptureResponse);
+   * @generated from protobuf rpc: SubmitAnnotations(baserun.v1.SubmitAnnotationsRequest) returns (baserun.v1.SubmitAnnotationsResponse);
    */
-  submitCapture(
-    input: SubmitCaptureRequest,
+  submitAnnotations(
+    input: SubmitAnnotationsRequest,
     metadata: grpc.Metadata,
     options: grpc.CallOptions,
     callback: (
       err: grpc.ServiceError | null,
-      value?: SubmitCaptureResponse,
+      value?: SubmitAnnotationsResponse,
     ) => void,
   ): grpc.ClientUnaryCall;
-  submitCapture(
-    input: SubmitCaptureRequest,
+  submitAnnotations(
+    input: SubmitAnnotationsRequest,
     metadata: grpc.Metadata,
     callback: (
       err: grpc.ServiceError | null,
-      value?: SubmitCaptureResponse,
+      value?: SubmitAnnotationsResponse,
     ) => void,
   ): grpc.ClientUnaryCall;
-  submitCapture(
-    input: SubmitCaptureRequest,
+  submitAnnotations(
+    input: SubmitAnnotationsRequest,
     options: grpc.CallOptions,
     callback: (
       err: grpc.ServiceError | null,
-      value?: SubmitCaptureResponse,
+      value?: SubmitAnnotationsResponse,
     ) => void,
   ): grpc.ClientUnaryCall;
-  submitCapture(
-    input: SubmitCaptureRequest,
+  submitAnnotations(
+    input: SubmitAnnotationsRequest,
     callback: (
       err: grpc.ServiceError | null,
-      value?: SubmitCaptureResponse,
+      value?: SubmitAnnotationsResponse,
     ) => void,
   ): grpc.ClientUnaryCall;
 }
@@ -935,34 +935,37 @@ export class SubmissionServiceClient
     );
   }
   /**
-   * @generated from protobuf rpc: SubmitCapture(baserun.v1.SubmitCaptureRequest) returns (baserun.v1.SubmitCaptureResponse);
+   * @generated from protobuf rpc: SubmitAnnotations(baserun.v1.SubmitAnnotationsRequest) returns (baserun.v1.SubmitAnnotationsResponse);
    */
-  submitCapture(
-    input: SubmitCaptureRequest,
+  submitAnnotations(
+    input: SubmitAnnotationsRequest,
     metadata:
       | grpc.Metadata
       | grpc.CallOptions
       | ((
           err: grpc.ServiceError | null,
-          value?: SubmitCaptureResponse,
+          value?: SubmitAnnotationsResponse,
         ) => void),
     options?:
       | grpc.CallOptions
       | ((
           err: grpc.ServiceError | null,
-          value?: SubmitCaptureResponse,
+          value?: SubmitAnnotationsResponse,
         ) => void),
     callback?: (
       err: grpc.ServiceError | null,
-      value?: SubmitCaptureResponse,
+      value?: SubmitAnnotationsResponse,
     ) => void,
   ): grpc.ClientUnaryCall {
     const method = SubmissionService.methods[13];
-    return this.makeUnaryRequest<SubmitCaptureRequest, SubmitCaptureResponse>(
+    return this.makeUnaryRequest<
+      SubmitAnnotationsRequest,
+      SubmitAnnotationsResponse
+    >(
       `/${SubmissionService.typeName}/${method.name}`,
-      (value: SubmitCaptureRequest): Buffer =>
+      (value: SubmitAnnotationsRequest): Buffer =>
         Buffer.from(method.I.toBinary(value, this._binaryOptions)),
-      (value: Buffer): SubmitCaptureResponse =>
+      (value: Buffer): SubmitAnnotationsResponse =>
         method.O.fromBinary(value, this._binaryOptions),
       input,
       metadata as any,

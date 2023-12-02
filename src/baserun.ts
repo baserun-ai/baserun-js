@@ -34,6 +34,7 @@ import { track } from './utils/track.js';
 import pRetry from 'promise-retry';
 
 const debug = getDebug('baserun:baserun');
+const debugVerbose = getDebug('baserun:verbose');
 
 type TraceStorage = {
   run: Run;
@@ -312,6 +313,7 @@ export class Baserun {
     sessionId,
     user,
   }: SessionOptions<T>): Promise<{ sessionId?: string; data: ReturnType<T> }> {
+    debug('calling session()');
     if (!Baserun.ensureInitialized()) {
       return { data: await fn() };
     }
@@ -601,6 +603,8 @@ export class Baserun {
       const endUser = Baserun.sessionLocalStorage.getStore()?.session?.endUser;
 
       const promises: Promise<void | unknown>[] = [];
+
+      debugVerbose('submitting log or span', logOrSpan);
 
       const spanPromise = pRetry(
         () =>

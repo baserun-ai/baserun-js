@@ -32,6 +32,7 @@ import getDebug from 'debug';
 import { SubmissionServiceClient } from './v1/gen/baserun.grpc-client.js';
 import { track } from './utils/track.js';
 import pRetry from 'promise-retry';
+import { Annotation } from './annotation.js';
 
 const debug = getDebug('baserun:baserun');
 const debugVerbose = getDebug('baserun:verbose');
@@ -740,6 +741,10 @@ export class Baserun {
     );
 
     store.evals.push(evalEntry);
+  }
+
+  static annotate(completionId: string): Annotation {
+    return new Annotation(completionId);
   }
 }
 

@@ -32,6 +32,7 @@ export class Annotation {
     this.checks = [];
     this.feedbackList = [];
   }
+
   feedback(name?: string, options?: FeedbackOptions) {
     let { score } = options || {};
     const { thumbsup, stars, metadata } = options || {};
@@ -64,6 +65,7 @@ export class Annotation {
     }
     this.feedbackList.push(feedback);
   }
+
   check(
     name: string,
     methodology: string,
@@ -82,6 +84,7 @@ export class Annotation {
     };
     this.checks.push(check);
   }
+
   checkIncludes(
     name: string,
     expected: string | string[],
@@ -108,6 +111,7 @@ export class Annotation {
       metadata,
     );
   }
+
   log(name: string, metadata: Record<string, any>) {
     const log: Log = {
       runId: this.run?.runId ?? '',
@@ -116,6 +120,7 @@ export class Annotation {
     };
     this.logs.push(log);
   }
+
   submit() {
     const { completionId, checks, logs, feedbackList, run } = this;
     const annotationMessage: CompletionAnnotations = {

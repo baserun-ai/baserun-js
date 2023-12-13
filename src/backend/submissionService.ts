@@ -12,7 +12,7 @@ export class TimeoutError extends Error {
 }
 
 export const getOrCreateSubmissionService = trackFnSync(
-  ({ apiKey }: { apiKey: string }) => {
+  ({ apiKey, grpcTimeout }: { apiKey: string; grpcTimeout?: number }) => {
     if (submissionService) {
       return submissionService;
     }
@@ -56,8 +56,9 @@ export const getOrCreateSubmissionService = trackFnSync(
         if (args.length > 0 && typeof args[1] === 'function') {
           // add timeout to callback
           const callback = args[1];
-          const timeout = 5000;
-          // creating an error here to get a stack trace
+          console.log({ grpcTimeout });
+          const timeout = grpcTimeout || 10_000;
+          // creating an error here to get a sack trace
           // note, that this has a non-zero runtime overhead
           const potentialError = new TimeoutError(
             `baserun: gRPC timeout for ${method} after ${timeout}ms`,

@@ -88,6 +88,7 @@ process.on('exit', () => {
 
 type InitOptions = {
   apiKey?: string;
+  timeout?: number;
 };
 
 export class Baserun {
@@ -134,7 +135,7 @@ export class Baserun {
     return Date.now() + 5000;
   }
 
-  static async init({ apiKey }: InitOptions = {}): Promise<void> {
+  static async init({ apiKey, timeout }: InitOptions = {}): Promise<void> {
     debug('initializing Baserun');
 
     // we're using global as this is the only way to share state
@@ -154,6 +155,7 @@ export class Baserun {
 
     global.baserunSubmissionService = getOrCreateSubmissionService({
       apiKey: Baserun._apiKey!,
+      grpcTimeout: timeout,
     });
 
     await track(async () => {

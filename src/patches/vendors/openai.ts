@@ -21,18 +21,6 @@ interface NewOpenAIError {
 }
 
 export class OpenAIWrapper {
-  static originalMethods: {
-    createCompletion: (config: any) => any;
-    createChatCompletion: (config: any) => any;
-  } = {
-    createCompletion: () => {
-      throw new Error('createCompletion not defined');
-    },
-    createChatCompletion: () => {
-      throw new Error('createChatCompletion not defined');
-    },
-  };
-
   static resolver(
     symbol: string,
     args: any[],
@@ -223,10 +211,6 @@ export class OpenAIWrapper {
         'OpenAI.Completions.prototype.create',
         'OpenAI.Chat.Completions.prototype.create',
       ];
-      OpenAIWrapper.originalMethods = {
-        createCompletion: openaiModule.Completions.prototype.create,
-        createChatCompletion: openaiModule.Chat.Completions.prototype.create,
-      };
 
       patch({
         module: openaiModule,
@@ -257,15 +241,30 @@ export class OpenAIWrapper {
     await track(async () => {
       await modulesPromise;
       for (const mod of openai) {
-        if (patchedModules.includes(mod)) {
+        if (
+          patchedModules.includes(mod) ||
+          !mod ||
+          !mod.Completions ||
+          !mod.Chat
+        ) {
           continue;
         }
-        patchedModules.push(mod);
         OpenAIWrapper.patch(mod, log);
+        patchedModules.push(mod);
       }
 
-      if (!patchedModules.includes(OpenAI)) {
+      if (
+        !patchedModules.includes(OpenAI) &&
+        OpenAI &&
+        OpenAI.Completions &&
+        OpenAI.Chat
+      ) {
         OpenAIWrapper.patch(OpenAI, log);
+        patchedModules.push(OpenAI);
+      }
+
+      if (patchedModules.length === 0) {
+        console.error('baserun: Could not find OpenAI module');
       }
     }, 'patching openai');
   }

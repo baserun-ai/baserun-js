@@ -1,6 +1,6 @@
 {
   "name": "baserun",
-  "version": "2.0.2",
+  "version": "2.0.4",
   "description": "The Baserun TypeScript SDK",
   "main": "./dist/commonjs/index.js",
   "types": "./dist/commonjs/index.d.ts",
@@ -24,7 +24,8 @@
     "format": "prettier --write \"**/*.{js,ts}\"",
     "watch": "tsc --watch",
     "publish:alpha": "rimraf dist && rimraf .tshy && npm run prepare && yarn publish --tag=alpha",
-    "publish:latest": "rimraf dist && rimraf .tshy && npm run prepare && yarn publish --tag=alpha"
+    "publish:beta": "rimraf dist && rimraf .tshy && npm run prepare && yarn publish --tag=beta",
+    "publish:latest": "rimraf dist && rimraf .tshy && npm run prepare && yarn publish"
   },
   "keywords": [],
   "author": "",

@@ -132,7 +132,7 @@ export class Baserun {
   }
 
   static get grpcDeadline(): number {
-    return Date.now() + 5000;
+    return Date.now() + 20_000;
   }
 
   static async init({ apiKey, timeout }: InitOptions = {}): Promise<void> {

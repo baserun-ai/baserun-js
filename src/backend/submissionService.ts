@@ -56,8 +56,7 @@ export const getOrCreateSubmissionService = trackFnSync(
         if (args.length > 0 && typeof args[1] === 'function') {
           // add timeout to callback
           const callback = args[1];
-          console.log({ grpcTimeout });
-          const timeout = grpcTimeout || 10_000;
+          const timeout = grpcTimeout || 20_000;
           // creating an error here to get a sack trace
           // note, that this has a non-zero runtime overhead
           const potentialError = new TimeoutError(

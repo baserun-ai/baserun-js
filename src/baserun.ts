@@ -22,7 +22,10 @@ import {
   TestSuite,
   SubmitEvalRequest,
 } from './v1/gen/baserun.js';
-import { getOrCreateSubmissionService } from './backend/submissionService.js';
+import {
+  TimeoutError,
+  getOrCreateSubmissionService,
+} from './backend/submissionService.js';
 import { logToSpanOrLog } from './utils/logToSpan.js';
 import { Timestamp } from './v1/gen/google/protobuf/timestamp.js';
 import { AsyncLocalStorage } from 'node:async_hooks';
@@ -35,7 +38,6 @@ import pRetry from 'promise-retry';
 import { Annotation } from './annotation.js';
 
 const debug = getDebug('baserun:baserun');
-const debugVerbose = getDebug('baserun:verbose');
 const debugSubmitLogOrSpan = getDebug('baserun:submitLogOrSpan');
 
 type TraceStorage = {
@@ -195,7 +197,7 @@ export class Baserun {
       testSuite,
     };
 
-    Baserun.startTestSuitePromise = new Promise((resolve, reject) => {
+    Baserun.startTestSuitePromise = new Promise((resolve) => {
       Baserun.submissionService.startTestSuite(
         startTestSuiteRequest,
         (error) => {
@@ -204,10 +206,9 @@ export class Baserun {
               'Failed to submit test suite start to Baserun: ',
               error,
             );
-            reject(error);
-          } else {
-            resolve(undefined);
           }
+
+          resolve(undefined);
         },
         { deadline: Baserun.grpcDeadline },
       );
@@ -230,7 +231,7 @@ export class Baserun {
       return Baserun.endTestSuitePromise;
     }
 
-    Baserun.endTestSuitePromise = new Promise<void>((resolve, reject) => {
+    Baserun.endTestSuitePromise = new Promise<void>((resolve) => {
       Baserun.startTestSuitePromise?.then(() => {
         global.baserunTestSuite.completionTimestamp = Timestamp.fromDate(
           new Date(),
@@ -244,10 +245,9 @@ export class Baserun {
                 'Failed to submit test suite end to Baserun: ',
                 error,
               );
-              reject(error);
-            } else {
-              resolve(undefined);
             }
+
+            resolve(undefined);
           },
           { deadline: Baserun.grpcDeadline },
         );
@@ -361,16 +361,15 @@ export class Baserun {
 
     const startEndUserRequest: SubmitUserRequest = { user: endUser };
 
-    const userPromise = new Promise((resolve, reject) => {
+    const userPromise = new Promise((resolve) => {
       Baserun.submissionService.submitUser(
         startEndUserRequest,
         (error) => {
           if (error) {
             console.error('Failed to submit user to Baserun: ', error);
-            reject(error);
-          } else {
-            resolve(undefined);
           }
+
+          resolve(undefined);
         },
         { deadline: Baserun.grpcDeadline },
       );
@@ -379,7 +378,7 @@ export class Baserun {
     const startSessionRequest: StartSessionRequest = { session };
 
     debug('starting session', session);
-    const sessionPromise = new Promise((resolve, reject) => {
+    const sessionPromise = new Promise((resolve) => {
       userPromise.then(() => {
         Baserun.submissionService.startSession(
           startSessionRequest,
@@ -389,10 +388,9 @@ export class Baserun {
                 'Failed to submit session start to Baserun: ',
                 error,
               );
-              reject(error);
-            } else {
-              resolve(undefined);
             }
+
+            resolve(undefined);
           },
           { deadline: Baserun.grpcDeadline },
         );
@@ -482,25 +480,23 @@ export class Baserun {
   static async createRun(run: Run): Promise<Run> {
     const startRunRequest: StartRunRequest = { run };
 
-    Baserun.runCreationPromises[run.runId] = new Promise<Run>(
-      (resolve, reject) => {
-        const before = Date.now();
-        Baserun.submissionService.startRun(
-          startRunRequest,
-          (error) => {
-            debug(`submitted run start in ${Date.now() - before}ms`, run.name);
-            if (error) {
-              reject(error);
-            } else {
-              resolve(run);
-              delete Baserun.runCreationPromises[run.runId];
-              Baserun.createdRuns[run.runId] = run;
-            }
-          },
-          { deadline: Baserun.grpcDeadline },
-        );
-      },
-    );
+    Baserun.runCreationPromises[run.runId] = new Promise<Run>((resolve) => {
+      const before = Date.now();
+      Baserun.submissionService.startRun(
+        startRunRequest,
+        (error) => {
+          debug(`submitted run start in ${Date.now() - before}ms`, run.name);
+          if (error) {
+            console.error(error);
+          }
+
+          resolve(run);
+          delete Baserun.runCreationPromises[run.runId];
+          Baserun.createdRuns[run.runId] = run;
+        },
+        { deadline: Baserun.grpcDeadline },
+      );
+    });
 
     return Baserun.runCreationPromises[run.runId];
   }
@@ -520,16 +516,14 @@ export class Baserun {
     }
 
     debug('finishing run', run);
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       Baserun.submissionService.endRun(
         endRunRequest,
         (error) => {
           if (error) {
             console.error('Failed to submit run end to Baserun: ', error);
-            reject(error);
-          } else {
-            resolve();
           }
+          resolve();
         },
         { deadline: Baserun.grpcDeadline },
       );
@@ -609,16 +603,14 @@ export class Baserun {
     const endSessionRequest = { session };
 
     debug('finishing session', session);
-    await new Promise((resolve, reject) => {
+    await new Promise((resolve) => {
       Baserun.submissionService.endSession(
         endSessionRequest,
         (error) => {
           if (error) {
             console.error('Failed to submit session end to Baserun: ', error);
-            reject(error);
-          } else {
-            resolve(undefined);
           }
+          resolve(undefined);
         },
         { deadline: Baserun.grpcDeadline },
       );
@@ -678,8 +670,13 @@ export class Baserun {
                     logOrSpan.name,
                     error,
                   );
+
                   if (error) {
-                    reject(error);
+                    if (!(error instanceof TimeoutError)) {
+                      reject(error);
+                    } else {
+                      resolve(undefined);
+                    }
                   } else {
                     resolve(undefined);
                   }
@@ -702,7 +699,11 @@ export class Baserun {
                     error,
                   );
                   if (error) {
-                    reject(error);
+                    if (!(error instanceof TimeoutError)) {
+                      reject(error);
+                    } else {
+                      resolve(undefined);
+                    }
                   } else {
                     resolve(undefined);
                   }

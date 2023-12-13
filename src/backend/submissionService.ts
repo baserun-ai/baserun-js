@@ -4,6 +4,13 @@ import { trackFnSync } from '../utils/track.js';
 
 let submissionService: SubmissionServiceClient | undefined;
 
+export class TimeoutError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'TimeoutError';
+  }
+}
+
 export const getOrCreateSubmissionService = trackFnSync(
   ({ apiKey }: { apiKey: string }) => {
     if (submissionService) {
@@ -49,8 +56,10 @@ export const getOrCreateSubmissionService = trackFnSync(
         if (args.length > 0 && typeof args[1] === 'function') {
           // add timeout to callback
           const callback = args[1];
-          const timeout = 200;
-          const potentialError = new Error(
+          const timeout = 5000;
+          // creating an error here to get a stack trace
+          // note, that this has a non-zero runtime overhead
+          const potentialError = new TimeoutError(
             `baserun: gRPC timeout for ${method} after ${timeout}ms`,
           );
           const timeoutId = setTimeout(() => {
@@ -93,20 +102,6 @@ const methodDenyList = {
 };
 
 const filter = new Map(Object.entries(methodDenyList));
-
-function getAllInstanceMethods(instance: any) {
-  let methods: string[] = [];
-  let proto = Object.getPrototypeOf(instance);
-
-  while (proto !== null) {
-    methods = [...methods, ...Object.getOwnPropertyNames(proto)];
-    proto = Object.getPrototypeOf(proto);
-  }
-
-  return methods.filter(
-    (method) => typeof instance[method] === 'function' && !filter.has(method),
-  );
-}
 
 function getAllClassMethods(cls: any) {
   const methods = Object.getOwnPropertyNames(cls.prototype);

@@ -62,10 +62,9 @@ export type TraceOptions = {
   name?: string;
 };
 
-export type SessionOptions<T extends (...args: any[]) => any> = {
+export type SessionOptions = {
   user: string;
   sessionId?: string;
-  session: T;
 };
 
 process.on('exit', () => {
@@ -318,11 +317,10 @@ export class Baserun {
     };
   }
 
-  static async session<T extends (...args: any[]) => any>({
-    session: fn,
-    sessionId,
-    user,
-  }: SessionOptions<T>): Promise<{ sessionId?: string; data: ReturnType<T> }> {
+  static async session<T extends (...args: any[]) => any>(
+    fn: T,
+    { sessionId, user }: SessionOptions,
+  ): Promise<{ sessionId?: string; data: Awaited<ReturnType<T>> }> {
     debug('calling session()');
     if (!Baserun.ensureInitialized()) {
       return { data: await fn() };

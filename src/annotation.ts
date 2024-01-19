@@ -50,6 +50,7 @@ export class Annotation {
       }
     }
 
+    // TODO: why not use this.run?
     const run = Baserun.getOrCreateCurrentRun({ name: DEFAULT_RUN_NAME });
     const feedback: Feedback = {
       name: name ?? 'General Feedback',

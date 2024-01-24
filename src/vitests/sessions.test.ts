@@ -37,8 +37,8 @@ describe('sessions', () => {
   });
 
   test('session', async () => {
-    await baserun.session({
-      async session() {
+    await baserun.session(
+      async function () {
         await baserun.trace(async () => {
           baserun.log('lets go', 'omg');
           await openai.completions.create({
@@ -64,8 +64,10 @@ describe('sessions', () => {
           );
         })();
       },
-      user: 'bob@rob.com',
-    });
+      {
+        user: 'bob@rob.com',
+      },
+    );
 
     const storedData = submitLogSpy.mock.calls as any;
 
@@ -84,8 +86,8 @@ describe('sessions', () => {
 
   test('session with predefined sessionId', async () => {
     const predefinedSessionId = '15f75d3a-8007-4ff2-bada-0a27518ee668';
-    const { sessionId } = await baserun.session({
-      async session() {
+    const { sessionId } = await baserun.session(
+      async function () {
         await baserun.trace(async () => {
           baserun.log('lets go', 'omg');
           await openai.completions.create({
@@ -111,9 +113,11 @@ describe('sessions', () => {
           );
         })();
       },
-      user: 'bob@rob.com',
-      sessionId: predefinedSessionId,
-    });
+      {
+        user: 'bob@rob.com',
+        sessionId: predefinedSessionId,
+      },
+    );
 
     expect(sessionId).toBe(predefinedSessionId);
 
@@ -158,8 +162,7 @@ describe('sessions', () => {
       await Promise.all([trace(), trace()]);
     };
 
-    await baserun.session({
-      session,
+    await baserun.session(session, {
       user: 'bobby-brown@bobob.bob',
     });
 
@@ -206,13 +209,11 @@ describe('sessions', () => {
     };
 
     const [data1, data2] = await Promise.all([
-      baserun.session({
-        session,
+      baserun.session(session, {
         user: 'bobby-brown@bobob.bob',
         sessionId: sessionId1,
       }),
-      baserun.session({
-        session,
+      baserun.session(session, {
         user: 'bobby-brown@bobob.bob',
         sessionId: sessionId2,
       }),
@@ -223,11 +224,13 @@ describe('sessions', () => {
   });
 
   test('session with top level log', async () => {
-    await baserun.session({
-      async session() {
+    await baserun.session(
+      async function () {
         baserun.log('TestEvent', 'whatever');
       },
-      user: 'bobob',
-    });
+      {
+        user: 'bobob',
+      },
+    );
   });
 });

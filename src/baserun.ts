@@ -67,6 +67,15 @@ export type SessionOptions = {
   sessionId?: string;
 };
 
+type RunOptions = {
+  name: string;
+  startTimestamp?: Date;
+  completionTimestamp?: Date;
+  traceType?: Run_RunType;
+  metadata?: object;
+  create?: boolean;
+};
+
 process.on('exit', () => {
   if (!global.baserunInitialized) {
     return;
@@ -289,7 +298,7 @@ export class Baserun {
     }
 
     return async (...args: Parameters<T>): Promise<ReturnType<T>> => {
-      const run = Baserun.getOrCreateCurrentRun({
+      const run = await Baserun.getOrCreateCurrentRunWithEnsureCreated({
         name,
         traceType: isTestEnv() ? Run_RunType.TEST : Run_RunType.PRODUCTION,
         metadata,
@@ -417,21 +426,14 @@ export class Baserun {
     }
   }
 
-  static getOrCreateCurrentRun({
+  private static _getOrCreateCurrentRun({
     name,
     startTimestamp,
     completionTimestamp,
     traceType,
     metadata,
     create,
-  }: {
-    name: string;
-    startTimestamp?: Date;
-    completionTimestamp?: Date;
-    traceType?: Run_RunType;
-    metadata?: object;
-    create?: boolean;
-  }): Run {
+  }: RunOptions): { run: Run; isNew: boolean } {
     if (!global.baserunInitialized) {
       throw new Error(
         'Baserun has not been initialized. Ensure you call baserun.init() before using it.',
@@ -441,7 +443,7 @@ export class Baserun {
     const currentRun = Baserun.getCurrentRun();
     if (currentRun && !create) {
       debug('using existing run', currentRun);
-      return currentRun;
+      return { run: currentRun, isNew: false };
     }
 
     const runId = v4();
@@ -472,8 +474,20 @@ export class Baserun {
       run.startTimestamp = Timestamp.fromDate(completionTimestamp);
     }
 
-    Baserun.createRun(run);
+    return { run: run, isNew: true };
+  }
 
+  static getOrCreateCurrentRun(options: RunOptions): Run {
+    const { run, isNew } = this._getOrCreateCurrentRun(options);
+    isNew && Baserun.createRun(run);
+    return run;
+  }
+
+  static async getOrCreateCurrentRunWithEnsureCreated(
+    options: RunOptions,
+  ): Promise<Run> {
+    const { run, isNew } = this._getOrCreateCurrentRun(options);
+    isNew && (await Baserun.createRun(run));
     return run;
   }
 

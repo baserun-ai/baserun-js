@@ -22,7 +22,7 @@ describe('Baserun end-to-end', () => {
   describe('openai-v4', () => {
     it('should suggest the Eiffel Tower', async () => {
       const completion = await api.completions.create({
-        model: 'text-davinci-003',
+        model: 'gpt-3.5-turbo-instruct',
         temperature: 0.7,
         prompt: 'What are three activities to do in Paris?',
       });
@@ -42,7 +42,7 @@ describe('Baserun end-to-end', () => {
 
     it('should suggest the Eiffel Tower Streaming', async () => {
       const completion = await api.completions.create({
-        model: 'text-davinci-003',
+        model: 'gpt-3.5-turbo-instruct',
         temperature: 0.7,
         prompt: 'What are three activities to do in Paris?',
         stream: true,

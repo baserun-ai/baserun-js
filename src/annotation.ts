@@ -50,14 +50,13 @@ export class Annotation {
       }
     }
 
-    const run = Baserun.getOrCreateCurrentRun({ name: DEFAULT_RUN_NAME });
     const feedback: Feedback = {
       name: name ?? 'General Feedback',
       score,
       metadata: stringify(metadata ?? {}),
       endUser: undefined,
     };
-    if (run.sessionId) {
+    if (this.run.sessionId) {
       const endUser = Baserun.sessionLocalStorage.getStore()?.session?.endUser;
       if (endUser) {
         feedback.endUser = endUser;

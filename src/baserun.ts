@@ -797,7 +797,7 @@ export class Baserun {
     store.evals.push(evalEntry);
   }
 
-  static annotate(completionId: string): Annotation {
+  static annotate(completionId?: string): Annotation {
     return new Annotation(completionId);
   }
 }

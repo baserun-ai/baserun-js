@@ -35,6 +35,7 @@ export function standardLogToSpan(log: StandardLog, runId: string): ProtoLog {
 
 export function autoLLMLogToSpan(log: AutoLLMLog, runId: string): Span {
   const { model, top_p, temperature, stream } = getModelConfig(log);
+  const user = (log.config as any).user;
 
   if (log.errorStack) {
     return {
@@ -54,6 +55,7 @@ export function autoLLMLogToSpan(log: AutoLLMLog, runId: string): Span {
       stop: [],
       totalTokens: 0,
       traceId: Uint8Array.from([]),
+      user: user,
     };
   }
 
@@ -76,6 +78,7 @@ export function autoLLMLogToSpan(log: AutoLLMLog, runId: string): Span {
     topP: top_p,
     temperature,
     stream,
+    user: user,
   };
 
   // the main difference between a chat.completion and just completion is, that a chat completion can have multiple prompts (messages)

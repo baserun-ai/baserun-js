@@ -124,7 +124,7 @@ describe('openai', () => {
       })();
     });
 
-    fn();
+    await fn();
 
     // eslint-disable-next-line prettier/prettier
     expect(logSpy.mock.calls[0][0]).toMatchInlineSnapshot(

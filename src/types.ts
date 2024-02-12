@@ -47,6 +47,7 @@ export interface LLMChatLog {
   errorStack?: string;
   tools?: ChatCompletionTool[];
   toolChoice?: ChatCompletionToolChoiceOption;
+  requestId?: string;
 }
 
 export interface LLMCompletionLog {
@@ -66,6 +67,7 @@ export interface LLMCompletionLog {
     total_tokens: number;
   };
   errorStack?: string;
+  requestId?: string;
 }
 
 export type AutoLLMLog = LLMChatLog | LLMCompletionLog;

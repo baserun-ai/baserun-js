@@ -19,6 +19,7 @@ export function generatePatchedMethod({
   log,
   isStreaming,
   collectStreamedResponse,
+  processUnawaitedResponse,
   processResponse,
 }: {
   symbol: string;
@@ -27,6 +28,7 @@ export function generatePatchedMethod({
   log: (log: AutoLLMLog) => Promise<void>;
   isStreaming: (_symbol: string, args: any[]) => boolean;
   collectStreamedResponse: (symbol: string, response: any, chunk: any) => any;
+  processUnawaitedResponse?: (response: any) => Promise<any>;
   processResponse?: (response: any) => Promise<any>;
 }) {
   return async function (this: any, ...args: any[]) {
@@ -43,7 +45,10 @@ export function generatePatchedMethod({
         let streamError = null;
         try {
           let collectedResponse = null;
-          const originalResponse = await boundOriginal(...args);
+          const unawaitedResponse = boundOriginal(...args);
+          const originalResponse = await (processUnawaitedResponse?.(
+            unawaitedResponse,
+          ) ?? unawaitedResponse);
           streamResponse =
             (await processResponse?.(originalResponse)) ?? originalResponse;
           for await (const chunk of streamResponse) {
@@ -76,8 +81,10 @@ export function generatePatchedMethod({
       return streamingWrapper();
     } else {
       try {
+        const unawaitedResponse = boundOriginal(...args);
         const originalResponse = await track(
-          () => boundOriginal(...args),
+          () =>
+            processUnawaitedResponse?.(unawaitedResponse) ?? unawaitedResponse,
           `patch: ${symbol}`,
         );
         response =
@@ -108,6 +115,7 @@ export function patch({
   symbols,
   resolver,
   log,
+  processUnawaitedResponse,
   processResponse,
   isStreaming,
   collectStreamedResponse,
@@ -118,6 +126,7 @@ export function patch({
   log: (logEntry: AutoLLMLog) => Promise<void>;
   isStreaming: (_symbol: string, args: any[]) => boolean;
   collectStreamedResponse: (symbol: string, response: any, chunk: any) => any;
+  processUnawaitedResponse?: (response: any) => Promise<any>;
   processResponse?: (response: any) => Promise<any>;
 }) {
   for (const symbol of symbols) {
@@ -131,6 +140,7 @@ export function patch({
         log,
         isStreaming,
         collectStreamedResponse,
+        processUnawaitedResponse,
         processResponse,
       });
     } else {
@@ -144,6 +154,7 @@ export function patch({
         log,
         isStreaming,
         collectStreamedResponse,
+        processUnawaitedResponse,
         processResponse,
       });
     }

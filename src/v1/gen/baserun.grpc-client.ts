@@ -34,7 +34,7 @@ import type { StartRunResponse } from './baserun.js';
 import type { StartRunRequest } from './baserun.js';
 import * as grpc from '@grpc/grpc-js';
 /**
- * @generated from protobuf service baserun.js.v1.SubmissionService
+ * @generated from protobuf service baserun.v1.SubmissionService
  */
 export interface ISubmissionServiceClient {
   /**

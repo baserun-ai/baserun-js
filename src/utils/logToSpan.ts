@@ -56,6 +56,7 @@ export function autoLLMLogToSpan(log: AutoLLMLog, runId: string): Span {
       totalTokens: 0,
       traceId: Uint8Array.from([]),
       user: user,
+      xRequestId: log.requestId,
     };
   }
 
@@ -79,6 +80,7 @@ export function autoLLMLogToSpan(log: AutoLLMLog, runId: string): Span {
     temperature,
     stream,
     user: user,
+    xRequestId: log.requestId,
   };
 
   // the main difference between a chat.completion and just completion is, that a chat completion can have multiple prompts (messages)

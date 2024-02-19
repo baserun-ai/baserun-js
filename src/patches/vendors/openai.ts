@@ -13,6 +13,7 @@ import { modulesPromise, openai } from '../modules.js';
 import getDebug from 'debug';
 import OpenAI from 'openai';
 import { track } from '../../utils/track.js';
+import { APIPromise } from 'openai/core';
 
 const debug = getDebug('baserun:openai');
 
@@ -211,14 +212,23 @@ export class OpenAIWrapper {
         'OpenAI.Completions.prototype.create',
         'OpenAI.Chat.Completions.prototype.create',
       ];
-
+      let requestId: string | null = null;
       patch({
         module: openaiModule,
         symbols,
-        resolver: OpenAIWrapper.resolver,
+        resolver: (...args) => {
+          const log = OpenAIWrapper.resolver(...args);
+          if (requestId) log.requestId = requestId;
+          return log;
+        },
         log,
         isStreaming: OpenAIWrapper.isStreaming,
         collectStreamedResponse: OpenAIWrapper.collectStreamedResponse,
+        processUnawaitedResponse: async (promise: APIPromise<any>) => {
+          const { data, response } = await promise.withResponse();
+          requestId = response.headers.get('x-request-id');
+          return data;
+        },
       });
     } catch (err) {
       /* openai isn't used */

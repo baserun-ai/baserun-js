@@ -1,4 +1,13 @@
 import { Baserun } from './baserun.js';
+import {
+  getTemplates,
+  formatPrompt,
+  formatPromptFromTemplate,
+  registerTemplate,
+  formatPromptFromTemplateName,
+  getTemplate,
+} from './templates.js';
+import { Template_TemplateType } from './v1/gen/baserun.js';
 
 const init = Baserun.init;
 const trace = Baserun.trace;
@@ -7,5 +16,21 @@ const evals = Baserun.evals;
 const session = Baserun.session;
 const flush = Baserun.flush;
 const annotate = Baserun.annotate;
+const TemplateType = Template_TemplateType;
 
-export const baserun = { init, log, trace, evals, session, flush, annotate };
+export const baserun = {
+  init,
+  log,
+  trace,
+  evals,
+  session,
+  flush,
+  annotate,
+  getTemplates,
+  getTemplate,
+  formatPrompt,
+  formatPromptFromTemplate,
+  formatPromptFromTemplateName,
+  registerTemplate,
+  TemplateType,
+};

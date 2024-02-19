@@ -21,6 +21,7 @@ import {
   StartTestSuiteRequest,
   TestSuite,
   SubmitEvalRequest,
+  Template,
 } from './v1/gen/baserun.js';
 import {
   TimeoutError,
@@ -102,6 +103,7 @@ type InitOptions = {
 export class Baserun {
   static evals = new Evals(Baserun._appendToEvals);
   private static _apiKey: string | undefined = process.env.BASERUN_API_KEY;
+  static environment: string = 'Development';
 
   static monkeyPatch(): Promise<[void, void]> {
     return Promise.all([
@@ -122,6 +124,8 @@ export class Baserun {
   static endTestSuitePromise: Promise<void> | undefined;
 
   static submitEvalPromises: Promise<void>[] = [];
+
+  static templates: Map<string, Template> = new Map();
 
   static get submissionService(): SubmissionServiceClient {
     return global.baserunSubmissionService;
@@ -160,6 +164,8 @@ export class Baserun {
         'Baserun API key is missing. Ensure the BASERUN_API_KEY environment variable is set.',
       );
     }
+
+    Baserun.environment = process.env.ENVIRONMENT ?? Baserun.environment;
 
     global.baserunSubmissionService = getOrCreateSubmissionService({
       apiKey: Baserun._apiKey!,

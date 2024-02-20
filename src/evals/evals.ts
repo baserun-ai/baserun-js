@@ -33,14 +33,6 @@ function getChoice(
   return '__invalid__';
 }
 
-function getChoiceWithoutScore(
-  choices: string[],
-): (output: string) => { choice: string; score?: number } {
-  return (output: string) => {
-    return { choice: getChoice(output, choices) };
-  };
-}
-
 function getChoiceAndScore(choiceScores: {
   [choice: string]: number;
 }): (output: string) => { choice: string; score: number } {
@@ -329,7 +321,14 @@ export class Evals {
     expert: string,
     submission: string,
   ): Promise<string> {
-    const choices = ['A', 'B', 'C', 'D', 'E'];
+    const choiceScores: { [choice: string]: number } = {
+      A: 0.6,
+      B: 0.8,
+      C: 1,
+      D: 0,
+      E: 0.5,
+    };
+    const choices = Object.keys(choiceScores);
     const config = {
       model: 'gpt-4-0613',
       temperature: 0,
@@ -347,7 +346,7 @@ export class Evals {
       name,
       EvalType.ModelGradedFact,
       config,
-      getChoiceWithoutScore(choices),
+      getChoiceAndScore(choiceScores),
       { question, expert, submission },
     );
   }

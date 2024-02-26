@@ -8,6 +8,7 @@ const debug = getDebug('baserun:modules');
 export const openai: any[] = [];
 // debug({ OpenAI });
 export const anthropic: any[] = [];
+export const googleGenerativeAI: any[] = [];
 
 const resolveOpenai = () =>
   track(async () => {
@@ -70,8 +71,29 @@ async function resolveAnthropic() {
   }
 }
 
+async function resolveGoogleGenerativeAI() {
+  try {
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    const geminiPaths = resolveAllSync('@google/generative-ai');
+    await Promise.all(
+      geminiPaths.map(async (path) => {
+        try {
+          const mod = await import(path);
+          googleGenerativeAI.push(mod);
+        } catch (e) {
+          debug(e);
+        }
+      }),
+    );
+  } catch (e) {
+    debug(e);
+  }
+}
+
 // get them in parallel
 export const modulesPromise = Promise.all([
   resolveOpenai(),
   resolveAnthropic(),
+  resolveGoogleGenerativeAI(),
 ]);

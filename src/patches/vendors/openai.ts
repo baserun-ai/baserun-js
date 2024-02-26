@@ -24,6 +24,7 @@ interface NewOpenAIError {
 export class OpenAIWrapper {
   static resolver(
     symbol: string,
+    _patchedObject: any,
     args: any[],
     startTimestamp: Date,
     completionTimestamp: Date,
@@ -216,7 +217,7 @@ export class OpenAIWrapper {
       patch({
         module: openaiModule,
         symbols,
-        resolver: (...args) => {
+        resolver: async (...args) => {
           const log = OpenAIWrapper.resolver(...args);
           if (requestId) log.requestId = requestId;
           return log;

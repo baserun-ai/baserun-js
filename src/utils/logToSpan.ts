@@ -34,32 +34,11 @@ export function standardLogToSpan(log: StandardLog, runId: string): ProtoLog {
 }
 
 export function autoLLMLogToSpan(log: AutoLLMLog, runId: string): Span {
-  const { model, top_p, temperature, stream } = getModelConfig(log);
+  const { model, top_p, top_k, max_tokens, temperature, stream } =
+    getModelConfig(log);
   const user = (log.config as any).user;
 
-  if (log.errorStack) {
-    return {
-      name: `baserun.${log.provider}.${log.type}`,
-      runId,
-      errorStacktrace: log.errorStack,
-      model,
-      requestType: log.type,
-      vendor: log.provider,
-      startTime: Timestamp.fromDate(log.startTimestamp),
-      endTime: Timestamp.fromDate(log.completionTimestamp),
-      completions: [],
-      completionTokens: 0,
-      promptMessages: [],
-      promptTokens: 0,
-      spanId: BigInt(0),
-      stop: [],
-      totalTokens: 0,
-      traceId: Uint8Array.from([]),
-      user: user,
-      xRequestId: log.requestId,
-    };
-  }
-
+  // let's fill all the fields we can, no matter if we had an error or not. no reason to discard all this information
   const span: Span = {
     name: `baserun.${log.provider}.${log.type}`,
     runId,
@@ -77,10 +56,13 @@ export function autoLLMLogToSpan(log: AutoLLMLog, runId: string): Span {
     promptTokens: log.usage?.prompt_tokens ?? 0,
     traceId: Uint8Array.from([]),
     topP: top_p,
+    topK: top_k,
+    maxTokens: max_tokens,
     temperature,
     stream,
     user: user,
     xRequestId: log.requestId,
+    errorStacktrace: log.errorStack,
   };
 
   // the main difference between a chat.completion and just completion is, that a chat completion can have multiple prompts (messages)
@@ -179,6 +161,8 @@ export function autoLLMLogToSpan(log: AutoLLMLog, runId: string): Span {
 type ModelConfig = {
   model: string;
   top_p?: number;
+  top_k?: number;
+  max_tokens?: number;
   stream?: boolean;
   temperature?: number;
 };

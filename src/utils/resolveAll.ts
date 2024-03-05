@@ -52,6 +52,7 @@ export function resolveAllSync(moduleName: string): string[] {
           expandDirectories: {
             files: ['package.json'],
           },
+          suppressErrors: true,
         }).forEach((p: any) => {
           resolveFromPackageSync(p, moduleName, paths);
         });
@@ -144,6 +145,7 @@ export async function resolveAll(moduleName: string): Promise<string[]> {
           expandDirectories: {
             files: ['package.json'],
           },
+          suppressErrors: true,
         });
 
         await Promise.all(

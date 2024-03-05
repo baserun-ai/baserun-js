@@ -9,8 +9,9 @@ import { patch } from '../patch.js';
 import { anthropic, modulesPromise } from '../modules.js';
 
 export class AnthropicWrapper {
-  static resolver(
+  static async resolver(
     _symbol: string,
+    _patchedObject: any,
     args: any[],
     startTimestamp: Date,
     completionTimestamp: Date,

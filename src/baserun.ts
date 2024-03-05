@@ -37,6 +37,7 @@ import { SubmissionServiceClient } from './v1/gen/baserun.grpc-client.js';
 import { track } from './utils/track.js';
 import pRetry from 'promise-retry';
 import { Annotation } from './annotation.js';
+import { GoogleGenerativeAIWrapper } from './patches/vendors/googleGenerativeAI.js';
 
 const debug = getDebug('baserun:baserun');
 const debugSubmitLogOrSpan = getDebug('baserun:submitLogOrSpan');
@@ -105,10 +106,11 @@ export class Baserun {
   private static _apiKey: string | undefined = process.env.BASERUN_API_KEY;
   static environment: string = 'Development';
 
-  static monkeyPatch(): Promise<[void, void]> {
+  static monkeyPatch(): Promise<[void, void, void]> {
     return Promise.all([
       OpenAIWrapper.init(Baserun._handleAutoLLM),
       AnthropicWrapper.init(Baserun._handleAutoLLM),
+      GoogleGenerativeAIWrapper.init(Baserun._handleAutoLLM),
     ]);
   }
 

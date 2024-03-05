@@ -9,6 +9,7 @@ import { Eval } from './evals/types.js';
 export enum BaserunProvider {
   Anthropic = 'anthropic',
   OpenAI = 'openai',
+  GoogleGenerativeAI = 'google',
 }
 
 export enum BaserunType {

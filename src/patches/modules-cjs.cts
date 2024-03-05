@@ -4,6 +4,7 @@ const debug = getDebug('baserun:modules-cjs');
 
 export const openai: any[] = [];
 export const anthropic: any[] = [];
+export const googleGenerativeAI: any[] = [];
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
@@ -41,6 +42,23 @@ try {
   debug('anthropic module not found');
   // fail silently
 }
+try {
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore
+  const geminiPaths = resolveAllSync('@google/generative-ai');
+  geminiPaths.map((path) => {
+    try {
+      const mod = module.require(path);
+      googleGenerativeAI.push(mod);
+    } catch (e) {
+      // fail silently
+    }
+  });
+} catch (e) {
+  debug('google/generative-ai module not found');
+  // fail silently
+}
+
 
 // just a polyfill
 export const modulesPromise = Promise.resolve();

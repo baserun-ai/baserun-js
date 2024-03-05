@@ -4,13 +4,25 @@ import { track } from '../utils/track.js';
 
 export type ResolverFn = (
   symbol: string,
+  patchedObject: any,
   args: any[],
   startTime: Date,
   endTime: Date,
   isStream: boolean,
   response?: any,
   error?: any,
-) => AutoLLMLog;
+) => Promise<AutoLLMLog>;
+
+export type generatePatchedMethodArgs = {
+  symbol: string;
+  original: (...args: any[]) => Promise<any>;
+  resolver: ResolverFn;
+  log: (log: AutoLLMLog) => Promise<void>;
+  isStreaming: (_symbol: string, args: any[]) => boolean;
+  collectStreamedResponse: (symbol: string, response: any, chunk: any) => any;
+  processUnawaitedResponse?: (response: any) => Promise<any>;
+  processResponse?: (response: any) => Promise<any>;
+};
 
 export function generatePatchedMethod({
   symbol,
@@ -21,21 +33,15 @@ export function generatePatchedMethod({
   collectStreamedResponse,
   processUnawaitedResponse,
   processResponse,
-}: {
-  symbol: string;
-  original: (...args: any[]) => Promise<any>;
-  resolver: ResolverFn;
-  log: (log: AutoLLMLog) => Promise<void>;
-  isStreaming: (_symbol: string, args: any[]) => boolean;
-  collectStreamedResponse: (symbol: string, response: any, chunk: any) => any;
-  processUnawaitedResponse?: (response: any) => Promise<any>;
-  processResponse?: (response: any) => Promise<any>;
-}) {
+}: generatePatchedMethodArgs) {
   return async function (this: any, ...args: any[]) {
+    /* eslint-disable-next-line  @typescript-eslint/no-this-alias */
+    const patchedObject = this;
     const startTime = getTimestamp();
     const isStream = isStreaming(symbol, args);
     let response = null;
     let error = null;
+
     const boundOriginal = original.bind(this);
 
     if (isStream) {
@@ -65,8 +71,9 @@ export function generatePatchedMethod({
           throw streamE;
         } finally {
           const streamEndTime = getTimestamp();
-          const streamLogEntry = resolver(
+          const streamLogEntry = await resolver(
             symbol,
+            patchedObject,
             args,
             startTime,
             streamEndTime,
@@ -95,8 +102,9 @@ export function generatePatchedMethod({
         throw e;
       } finally {
         const endTime = getTimestamp();
-        const logEntry = resolver(
+        const logEntry = await resolver(
           symbol,
+          patchedObject,
           args,
           startTime,
           endTime,

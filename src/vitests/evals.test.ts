@@ -12,6 +12,9 @@ import {
 import { baserun } from '../index.js';
 import { Baserun } from '../baserun.js';
 import pick from 'lodash.pick';
+import { Eval } from '../v1/gen/baserun.js';
+import { EvalPayload, EvalType } from '../evals/types.js';
+import { LLMChatLog } from '../types.js';
 
 describe('evals', () => {
   let storeTestSpy: any;
@@ -199,6 +202,40 @@ describe('evals', () => {
     expect(storedData[0][0].run.name).toMatchInlineSnapshot(
       '"customAsync run"',
     );
+  });
+
+  test('modelGradedCustom', async () => {
+    const statement = 'ChatGPT will take over the world';
+    const evalName = 'modelGradedCustom Test';
+    const prompt = `How true is this statement? ${statement}.`;
+    const expectedResult = 'Not true'; // : -)
+    const score = await baserun.trace(async () => {
+      return await baserun.evals.modelGradedCustom(
+        evalName,
+        prompt,
+        { 'Very True': 1, 'Kinda true': 0.5, 'Not true': 0 },
+        undefined,
+        { aaa: 'bbb', ccc: 6 },
+      );
+    }, 'modelGradedCustom run')();
+
+    expect(score).toEqual(expectedResult);
+
+    const storedData = storeTestSpy.mock.calls;
+
+    const eval_: Eval = storedData[0][0].eval;
+    expect(eval_.name).toEqual(evalName);
+    expect(eval_.score).toEqual(0);
+    expect(eval_.result).toEqual(expectedResult);
+    expect(eval_.type).toEqual(EvalType.ModelGradedCustom);
+    const payload: EvalPayload<EvalType.ModelGradedCustom> = JSON.parse(
+      eval_.payload,
+    );
+    expect(payload.aaa).toEqual('bbb');
+    expect(payload.ccc).toEqual(6);
+    expect(
+      (payload.step as LLMChatLog).promptMessages[0].content.includes(prompt),
+    ).toEqual(true);
   });
 
   test('modelGradedFact', async () => {

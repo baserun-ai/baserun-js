@@ -10,6 +10,7 @@ export enum EvalType {
   ValidJson = 'valid_json',
   Custom = 'custom',
   CustomAsync = 'custom_async',
+  ModelGradedCustom = 'model_graded_custom',
   ModelGradedFact = 'model_graded_fact',
   ModelGradedClosedQA = 'model_graded_closedqa',
   ModelGradedSecurity = 'model_graded_security',
@@ -37,6 +38,7 @@ interface ModelGradedClosedQAPayload {
 }
 
 export type ModelGradedEvalTypes =
+  | EvalType.ModelGradedCustom
   | EvalType.ModelGradedFact
   | EvalType.ModelGradedClosedQA
   | EvalType.ModelGradedSecurity;
@@ -51,6 +53,7 @@ export interface EvalPayloadWithStep {
   [EvalType.ValidJson]: SubmissionPayload;
   [EvalType.Custom]: SubmissionPayload;
   [EvalType.CustomAsync]: SubmissionPayload;
+  [EvalType.ModelGradedCustom]: Record<string, any>;
   [EvalType.ModelGradedFact]: ModelGradedFactPayload;
   [EvalType.ModelGradedClosedQA]: ModelGradedClosedQAPayload;
   [EvalType.ModelGradedSecurity]: SubmissionPayload;

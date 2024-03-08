@@ -789,7 +789,7 @@ export class Baserun {
       eval: {
         name: evalEntry.name,
         payload: stringify(evalEntry.payload),
-        result: '{}',
+        result: evalEntry.eval,
         score: evalEntry.score,
         submission: '{}',
         type: evalEntry.type,

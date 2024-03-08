@@ -315,6 +315,33 @@ export class Evals {
     return choice;
   }
 
+  async modelGradedCustom(
+    name: string,
+    prompt: string,
+    choices: Record<string, number>,
+    model: string = 'gpt-4-0125-preview',
+    metadata?: Record<string, any>,
+  ): Promise<string> {
+    const config = {
+      model: model,
+      temperature: 0,
+      messages: [
+        {
+          role: 'user',
+          content: `${prompt}\n\n${getAnswerPrompt(Object.keys(choices))}`,
+        },
+      ],
+    };
+
+    return this._modelGraded(
+      name,
+      EvalType.ModelGradedCustom,
+      config,
+      getChoiceAndScore(choices),
+      metadata ?? {},
+    );
+  }
+
   async modelGradedFact(
     name: string,
     question: string,

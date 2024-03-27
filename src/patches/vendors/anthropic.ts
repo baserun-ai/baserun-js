@@ -10,62 +10,68 @@ import { patch } from '../patch.js';
 import { anthropic, modulesPromise } from '../modules.js';
 import Anthropic from '@anthropic-ai/sdk';
 
+import { getTimestamp } from '../../utils/helpers.js';
+import { track } from '../../utils/track.js';
+import { Stream } from '@anthropic-ai/sdk/streaming';
+
 interface MessageWithUsage extends Message {
   output_tokens: number;
   input_tokens: number;
 }
 
-export class AnthropicWrapper {
-  static async resolve_completions(
-    _symbol: string,
-    _patchedObject: any,
-    args: any[],
-    startTimestamp: Date,
-    completionTimestamp: Date,
-    isStream: boolean,
-    response?: any,
-    error?: any,
-  ) {
-    const { prompt = '', ...config } = args[0] ?? {};
-    const type = BaserunType.Completion;
-
-    if (error) {
-      const errorMessage = error?.stack ?? error?.toString() ?? '';
-      return {
-        stepType: BaserunStepType.AutoLLM,
-        type,
-        provider: BaserunProvider.Anthropic,
-        startTimestamp,
-        completionTimestamp,
-        usage: DEFAULT_USAGE,
-        prompt: { content: prompt },
-        config,
-        isStream,
-        errorStack: errorMessage,
-      } as AutoLLMLog;
+function getStreamClass(
+  patchedObject: Anthropic.Messages,
+  log: (entry: AutoLLMLog) => Promise<void>,
+  startTime: Date,
+  args: any[],
+) {
+  class StreamWrapper<Item> extends Stream<Item> {
+    static fromSSEResponse<Item>(
+      response: any,
+      controller: AbortController,
+    ): StreamWrapper<Item> {
+      const stream = super.fromSSEResponse(response, controller);
+      return new StreamWrapper((stream as any).iterator, stream.controller);
     }
 
-    return {
-      stepType: BaserunStepType.AutoLLM,
-      type,
-      provider: BaserunProvider.Anthropic,
-      startTimestamp,
-      completionTimestamp,
-      usage: DEFAULT_USAGE,
-      prompt: { content: prompt },
-      config,
-      isStream,
-      choices: [
-        {
-          content: response.completion,
-          finish_reason: response.stop_reason,
-          role: 'Assistant',
+    [Symbol.asyncIterator](): AsyncIterator<Item> {
+      const originalIterator = super[Symbol.asyncIterator]();
+
+      let response: MessageWithUsage | null = null;
+
+      return {
+        next: async (...argsi): Promise<IteratorResult<Item>> => {
+          const result = await originalIterator.next(...argsi);
+          if (!result.done) {
+            response = AnthropicWrapper.collectMessagesCreateStreamedResponse(
+              response,
+              result.value as Anthropic.MessageStreamEvent,
+            );
+          } else {
+            const endTime = getTimestamp();
+            const logEntry = await AnthropicWrapper.resolver(
+              'Anthropic.Messages.prototype.create',
+              patchedObject,
+              args,
+              startTime,
+              endTime,
+              true,
+              response,
+              undefined,
+            );
+            await track(() => log(logEntry), 'patch: log');
+          }
+          return result;
         },
-      ],
-    } as AutoLLMLog;
+      };
+    }
   }
 
-  static async resolve_messages_stream(
+  return StreamWrapper;
+}
+
+export class AnthropicWrapper {
+  static async resolve_completions(
     _symbol: string,
     _patchedObject: any,
     args: any[],
@@ -219,18 +225,6 @@ export class AnthropicWrapper {
         error,
       );
     }
-    if (_symbol.endsWith('stream')) {
-      return await AnthropicWrapper.resolve_messages_stream(
-        _symbol,
-        _patchedObject,
-        args,
-        startTimestamp,
-        completionTimestamp,
-        isStream,
-        response,
-        error,
-      );
-    }
     return await AnthropicWrapper.resolve_messages_create(
       _symbol,
       _patchedObject,
@@ -244,8 +238,6 @@ export class AnthropicWrapper {
   }
 
   static isStreaming(_symbol: string, args: any[]): boolean {
-    // treating Anthropic.Messages.prototype.stream as non-streaming here as we can't return correct value
-    //  from the patched function with the code in path.ts otherwise
     return !!args[0].stream;
   }
 
@@ -262,38 +254,6 @@ export class AnthropicWrapper {
   }
 
   static collectMessagesCreateStreamedResponse(
-    response: MessageWithUsage | null,
-    chunk: Anthropic.MessageStreamEvent,
-  ): MessageWithUsage {
-    if (!response) {
-      if (chunk.type != 'message_start') {
-        throw new Error('wrong order of chunks');
-      }
-      return {
-        output_tokens: 0,
-        input_tokens: chunk.message.usage.input_tokens,
-        role: chunk.message.role,
-        finish_reason: '',
-        content: '',
-      };
-    }
-
-    if (
-      chunk.type == 'content_block_delta' &&
-      chunk.delta.type == 'text_delta'
-    ) {
-      response.content += chunk.delta.text;
-    }
-
-    if (chunk.type == 'message_delta') {
-      response.output_tokens += chunk.usage.output_tokens;
-      response.finish_reason =
-        chunk.delta.stop_reason || response.finish_reason;
-    }
-    return response;
-  }
-
-  static collectMessagesStreamResponse(
     response: MessageWithUsage | null,
     chunk: Anthropic.MessageStreamEvent,
   ): MessageWithUsage {
@@ -370,12 +330,79 @@ export class AnthropicWrapper {
     }
   }
 
+  static messagesCreateWrapper(
+    original: (
+      ...args: [Anthropic.MessageCreateParams, Anthropic.RequestOptions?]
+    ) => any,
+    log: (log: AutoLLMLog) => Promise<void>,
+  ) {
+    return async function (
+      this: Anthropic.Messages,
+      ...args: [Anthropic.MessageCreateParams, Anthropic.RequestOptions?]
+    ) {
+      /* eslint-disable-next-line  @typescript-eslint/no-this-alias */
+      const patchedObject = this;
+      const startTime = getTimestamp();
+      const [body, options] = args;
+      let response = null;
+      let error = null;
+
+      const boundOriginal = original.bind(this);
+
+      if (body.stream) {
+        if (options?.__streamClass) {
+          throw new Error('cannot use __streamClass option when using baserun');
+        }
+        const newOptions = {
+          ...options,
+          __streamClass: getStreamClass(patchedObject, log, startTime, args),
+        };
+        try {
+          response = await boundOriginal(body, newOptions);
+          return response;
+        } catch (e) {
+          const endTime = getTimestamp();
+          const logEntry = await AnthropicWrapper.resolver(
+            'Anthropic.Messages.prototype.create',
+            patchedObject,
+            args,
+            startTime,
+            endTime,
+            true,
+            undefined,
+            e,
+          );
+          await track(() => log(logEntry), 'patch: log');
+          throw e;
+        }
+      } else {
+        try {
+          response = await boundOriginal(...args);
+          return response;
+        } catch (e) {
+          error = e;
+          throw e;
+        } finally {
+          const endTime = getTimestamp();
+          const logEntry = await AnthropicWrapper.resolver(
+            'Anthropic.Messages.prototype.create',
+            patchedObject,
+            args,
+            startTime,
+            endTime,
+            false,
+            response,
+            error,
+          );
+          await track(() => log(logEntry), 'patch: log');
+        }
+      }
+    };
+  }
+
   static patch(mod: any, log: (entry: AutoLLMLog) => Promise<void>) {
     try {
-      const symbols = [
-        'Anthropic.Completions.prototype.create',
-        'Anthropic.Messages.prototype.create',
-      ];
+      const symbols = ['Anthropic.Completions.prototype.create'];
       patch({
         module: mod,
         symbols,
@@ -384,6 +411,10 @@ export class AnthropicWrapper {
         isStreaming: AnthropicWrapper.isStreaming,
         collectStreamedResponse: AnthropicWrapper.collectStreamedResponse,
       });
+      mod.Messages.prototype.create = AnthropicWrapper.messagesCreateWrapper(
+        mod.Messages.prototype.create,
+        log,
+      );
     } catch (err) {
       /* @anthropic-ai/sdk isn't used */
       if (

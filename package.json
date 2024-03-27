@@ -34,7 +34,6 @@
     "node": ">=18.0.0"
   },
   "devDependencies": {
-    "@anthropic-ai/sdk": "^0.9.1",
     "@bufbuild/buf": "^1.28.1",
     "@bufbuild/protobuf": "^1.4.2",
     "@bufbuild/protoc-gen-es": "^1.4.2",
@@ -74,6 +73,7 @@
   },
   "type": "module",
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.16.0",
     "@grpc/grpc-js": "^1.9.9",
     "@protobuf-ts/plugin": "^2.9.1",
     "@types/debug": "^4.1.12",
@@ -94,6 +94,7 @@
     "uuid": "^9.0.0"
   },
   "peerDependencies": {
+    "@anthropic-ai/sdk": "^0.16.0",
     "openai": "^4.19.1",
     "@google/generative-ai": "^0.2.1"
   },

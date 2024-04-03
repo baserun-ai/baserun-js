@@ -19,6 +19,8 @@ import pick from 'lodash.pick';
 import { BaserunProvider, BaserunType } from '../types.js';
 import { Stream } from '@anthropic-ai/sdk/streaming';
 import { MessageStream } from '@anthropic-ai/sdk/lib/MessageStream';
+import { randomUUID } from 'node:crypto';
+import { TemplateMessage } from '../templates.js';
 const anthropic = new Anthropic({});
 
 describe('anthropic', () => {
@@ -26,15 +28,24 @@ describe('anthropic', () => {
     [logOrSpan: Log | Span, run: Run, submitRun?: boolean],
     Promise<void>
   >;
+  let submitAnnotationsSpy = vi.spyOn(
+    Baserun.submissionService,
+    'submitAnnotations',
+  );
 
   beforeAll(() => baserun.init());
 
   beforeEach(() => {
     submitLogSpy = vi.spyOn(Baserun, 'submitLogOrSpan');
+    submitAnnotationsSpy = vi.spyOn(
+      Baserun.submissionService,
+      'submitAnnotations',
+    );
   });
 
   afterEach(() => {
     submitLogSpy.mockRestore();
+    submitAnnotationsSpy.mockRestore();
   });
 
   describe('legacy api', () => {
@@ -314,6 +325,77 @@ describe('anthropic', () => {
         toolCallId: '',
         toolCalls: [],
       });
+    });
+
+    const templateMessages: TemplateMessage[] = [
+      { role: 'user', content: 'hello {name2}' },
+      { role: 'assistant', content: 'hi {name1},' },
+    ];
+
+    test('formatted template', async () => {
+      const templateName = randomUUID();
+      await baserun.registerTemplate(templateMessages, templateName);
+      const template = await baserun.getTemplate(templateName);
+      const prompt = baserun.formatPromptFromTemplate(template!, {
+        name1: 'Grzegorz',
+        name2: 'Gregory',
+      });
+
+      await anthropic.messages.create({
+        model: model,
+        max_tokens: max_tokens,
+        messages: prompt as Anthropic.MessageParam[],
+      });
+
+      const span = submitLogSpy.mock.calls[0][0] as Span;
+      expect(span.templateId).toEqual(template!.id);
+
+      const annotation = submitAnnotationsSpy.mock.calls[0][0].annotations!;
+      expect(annotation.inputVariables.length).toEqual(2);
+      expect(annotation.inputVariables).toEqual(
+        expect.arrayContaining([
+          { id: '', key: 'name1', value: 'Grzegorz' },
+          { id: '', key: 'name2', value: 'Gregory' },
+        ]),
+      );
+    });
+
+    test('template formatted manually', async () => {
+      const templateName = randomUUID();
+      // just to make sure we have unique template messages since we could match with different template with the same contents
+      templateMessages[0].content = randomUUID() + templateMessages[0].content;
+      await baserun.registerTemplate(templateMessages, templateName);
+      const template = (await baserun.getTemplate(templateName))!;
+      const msgs =
+        template.templateVersions[template.templateVersions.length - 1]
+          .templateMessages;
+
+      await anthropic.messages.create({
+        model: model,
+        max_tokens: max_tokens,
+        messages: [
+          {
+            role: 'user',
+            content: msgs[0].message.replace('{name2}', 'Gregory'),
+          },
+          {
+            role: 'assistant',
+            content: msgs[1].message.replace('{name1}', 'Grzegorz'),
+          },
+        ],
+      });
+
+      const span = submitLogSpy.mock.calls[0][0] as Span;
+      expect(span.templateId).toEqual(template!.id);
+
+      const annotation = submitAnnotationsSpy.mock.calls[0][0].annotations!;
+      expect(annotation.inputVariables.length).toEqual(2);
+      expect(annotation.inputVariables).toEqual(
+        expect.arrayContaining([
+          { id: '', key: 'name1', value: 'Grzegorz' },
+          { id: '', key: 'name2', value: 'Gregory' },
+        ]),
+      );
     });
   });
 });

@@ -188,6 +188,7 @@ export class GoogleGenerativeAIWrapper {
         log,
         isStreaming: () => false,
         collectStreamedResponse: () => {},
+        getMessages: () => [], // prompt doesn't match templates format so no reason to analyze these
       });
       // not using path.ts helper functions in ths case. it's too much work to adjust it
       mod.GenerativeModel.prototype.generateContentStream =

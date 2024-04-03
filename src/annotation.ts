@@ -6,6 +6,7 @@ import {
   Feedback,
   Run,
   SubmitAnnotationsRequest,
+  InputVariable,
 } from './v1/gen/baserun.js';
 import { Baserun } from './baserun.js';
 
@@ -24,6 +25,7 @@ export class Annotation {
   private logs: Log[];
   private checks: Check[];
   private feedbackList: Feedback[];
+  private inputVariables: InputVariable[];
 
   constructor(completionId = '', run?: Run) {
     this.run = run || Baserun.getOrCreateCurrentRun({ name: DEFAULT_RUN_NAME });
@@ -31,6 +33,7 @@ export class Annotation {
     this.logs = [];
     this.checks = [];
     this.feedbackList = [];
+    this.inputVariables = [];
   }
 
   feedback(name?: string, options?: FeedbackOptions) {
@@ -120,13 +123,19 @@ export class Annotation {
     this.logs.push(log);
   }
 
+  input(key: string, value: string) {
+    this.inputVariables.push({ id: '', key, value });
+  }
+
   submit() {
-    const { completionId, checks, logs, feedbackList, run } = this;
+    const { completionId, checks, logs, feedbackList, run, inputVariables } =
+      this;
     const annotationMessage: CompletionAnnotations = {
       completionId,
       checks,
       logs,
       feedback: feedbackList,
+      inputVariables,
     };
     const request: SubmitAnnotationsRequest = {
       annotations: annotationMessage,

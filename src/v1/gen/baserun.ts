@@ -442,7 +442,7 @@ export interface Span {
   /**
    * @generated from protobuf field: optional string template_id = 37;
    */
-  templateId?: string;
+  templateId?: string; // Deprecated
   /**
    * @generated from protobuf field: optional string template_parameters = 38;
    */
@@ -450,11 +450,15 @@ export interface Span {
   /**
    * @generated from protobuf field: optional string template_string = 45;
    */
-  templateString?: string; // Deprecated, register_template is required to be done first
+  templateString?: string; // Deprecated
   /**
    * @generated from protobuf field: optional string template_version_id = 46;
    */
   templateVersionId?: string; // Deprecated
+  /**
+   * @generated from protobuf field: optional string template_name = 48;
+   */
+  templateName?: string;
   /**
    * @generated from protobuf field: optional string tools = 39;
    */
@@ -579,6 +583,10 @@ export interface CompletionAnnotations {
    * @generated from protobuf field: repeated baserun.v1.Feedback feedback = 4;
    */
   feedback: Feedback[];
+  /**
+   * @generated from protobuf field: repeated baserun.v1.InputVariable input_variables = 5;
+   */
+  inputVariables: InputVariable[];
 }
 /**
  * @generated from protobuf message baserun.v1.TestSuite
@@ -721,6 +729,35 @@ export interface Session {
    * @generated from protobuf field: baserun.v1.EndUser end_user = 5;
    */
   endUser?: EndUser;
+}
+/**
+ * @generated from protobuf message baserun.v1.InputVariable
+ */
+export interface InputVariable {
+  /**
+   * @generated from protobuf field: string id = 1;
+   */
+  id: string;
+  /**
+   * @generated from protobuf field: optional string template_id = 2;
+   */
+  templateId?: string;
+  /**
+   * @generated from protobuf field: optional string test_case_id = 3;
+   */
+  testCaseId?: string;
+  /**
+   * @generated from protobuf field: string key = 4;
+   */
+  key: string;
+  /**
+   * @generated from protobuf field: string value = 5;
+   */
+  value: string;
+  /**
+   * @generated from protobuf field: optional string label = 6;
+   */
+  label?: string;
 }
 /**
  * @generated from protobuf message baserun.v1.StartRunRequest
@@ -1017,6 +1054,24 @@ export interface SubmitAnnotationsRequest {
  * @generated from protobuf message baserun.v1.SubmitAnnotationsResponse
  */
 export interface SubmitAnnotationsResponse {
+  /**
+   * @generated from protobuf field: string message = 1;
+   */
+  message: string;
+}
+/**
+ * @generated from protobuf message baserun.v1.SubmitInputVariableRequest
+ */
+export interface SubmitInputVariableRequest {
+  /**
+   * @generated from protobuf field: baserun.v1.InputVariable input_variable = 1;
+   */
+  inputVariable?: InputVariable;
+}
+/**
+ * @generated from protobuf message baserun.v1.SubmitInputVariableResponse
+ */
+export interface SubmitInputVariableResponse {
   /**
    * @generated from protobuf field: string message = 1;
    */
@@ -2328,6 +2383,13 @@ class Span$Type extends MessageType<Span> {
         T: 9 /*ScalarType.STRING*/,
       },
       {
+        no: 48,
+        name: 'template_name',
+        kind: 'scalar',
+        opt: true,
+        T: 9 /*ScalarType.STRING*/,
+      },
+      {
         no: 39,
         name: 'tools',
         kind: 'scalar',
@@ -2552,6 +2614,9 @@ class Span$Type extends MessageType<Span> {
         case /* optional string template_version_id */ 46:
           message.templateVersionId = reader.string();
           break;
+        case /* optional string template_name */ 48:
+          message.templateName = reader.string();
+          break;
         case /* optional string tools */ 39:
           message.tools = reader.string();
           break;
@@ -2745,6 +2810,9 @@ class Span$Type extends MessageType<Span> {
       writer
         .tag(46, WireType.LengthDelimited)
         .string(message.templateVersionId);
+    /* optional string template_name = 48; */
+    if (message.templateName !== undefined)
+      writer.tag(48, WireType.LengthDelimited).string(message.templateName);
     /* optional string tools = 39; */
     if (message.tools !== undefined)
       writer.tag(39, WireType.LengthDelimited).string(message.tools);
@@ -3147,10 +3215,23 @@ class CompletionAnnotations$Type extends MessageType<CompletionAnnotations> {
         repeat: 1 /*RepeatType.PACKED*/,
         T: () => Feedback,
       },
+      {
+        no: 5,
+        name: 'input_variables',
+        kind: 'message',
+        repeat: 1 /*RepeatType.PACKED*/,
+        T: () => InputVariable,
+      },
     ]);
   }
   create(value?: PartialMessage<CompletionAnnotations>): CompletionAnnotations {
-    const message = { completionId: '', checks: [], logs: [], feedback: [] };
+    const message = {
+      completionId: '',
+      checks: [],
+      logs: [],
+      feedback: [],
+      inputVariables: [],
+    };
     globalThis.Object.defineProperty(message, MESSAGE_TYPE, {
       enumerable: false,
       value: this,
@@ -3186,6 +3267,11 @@ class CompletionAnnotations$Type extends MessageType<CompletionAnnotations> {
         case /* repeated baserun.v1.Feedback feedback */ 4:
           message.feedback.push(
             Feedback.internalBinaryRead(reader, reader.uint32(), options),
+          );
+          break;
+        case /* repeated baserun.v1.InputVariable input_variables */ 5:
+          message.inputVariables.push(
+            InputVariable.internalBinaryRead(reader, reader.uint32(), options),
           );
           break;
         default:
@@ -3234,6 +3320,13 @@ class CompletionAnnotations$Type extends MessageType<CompletionAnnotations> {
       Feedback.internalBinaryWrite(
         message.feedback[i],
         writer.tag(4, WireType.LengthDelimited).fork(),
+        options,
+      ).join();
+    /* repeated baserun.v1.InputVariable input_variables = 5; */
+    for (let i = 0; i < message.inputVariables.length; i++)
+      InputVariable.internalBinaryWrite(
+        message.inputVariables[i],
+        writer.tag(5, WireType.LengthDelimited).fork(),
         options,
       ).join();
     const u = options.writeUnknownFields;
@@ -3897,6 +3990,131 @@ class Session$Type extends MessageType<Session> {
  * @generated MessageType for protobuf message baserun.v1.Session
  */
 export const Session = new Session$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class InputVariable$Type extends MessageType<InputVariable> {
+  constructor() {
+    super('baserun.v1.InputVariable', [
+      { no: 1, name: 'id', kind: 'scalar', T: 9 /*ScalarType.STRING*/ },
+      {
+        no: 2,
+        name: 'template_id',
+        kind: 'scalar',
+        opt: true,
+        T: 9 /*ScalarType.STRING*/,
+      },
+      {
+        no: 3,
+        name: 'test_case_id',
+        kind: 'scalar',
+        opt: true,
+        T: 9 /*ScalarType.STRING*/,
+      },
+      { no: 4, name: 'key', kind: 'scalar', T: 9 /*ScalarType.STRING*/ },
+      { no: 5, name: 'value', kind: 'scalar', T: 9 /*ScalarType.STRING*/ },
+      {
+        no: 6,
+        name: 'label',
+        kind: 'scalar',
+        opt: true,
+        T: 9 /*ScalarType.STRING*/,
+      },
+    ]);
+  }
+  create(value?: PartialMessage<InputVariable>): InputVariable {
+    const message = { id: '', key: '', value: '' };
+    globalThis.Object.defineProperty(message, MESSAGE_TYPE, {
+      enumerable: false,
+      value: this,
+    });
+    if (value !== undefined)
+      reflectionMergePartial<InputVariable>(this, message, value);
+    return message;
+  }
+  internalBinaryRead(
+    reader: IBinaryReader,
+    length: number,
+    options: BinaryReadOptions,
+    target?: InputVariable,
+  ): InputVariable {
+    const message = target ?? this.create(),
+      end = reader.pos + length;
+    while (reader.pos < end) {
+      const [fieldNo, wireType] = reader.tag();
+      switch (fieldNo) {
+        case /* string id */ 1:
+          message.id = reader.string();
+          break;
+        case /* optional string template_id */ 2:
+          message.templateId = reader.string();
+          break;
+        case /* optional string test_case_id */ 3:
+          message.testCaseId = reader.string();
+          break;
+        case /* string key */ 4:
+          message.key = reader.string();
+          break;
+        case /* string value */ 5:
+          message.value = reader.string();
+          break;
+        case /* optional string label */ 6:
+          message.label = reader.string();
+          break;
+        default:
+          const u = options.readUnknownField;
+          if (u === 'throw')
+            throw new globalThis.Error(
+              `Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`,
+            );
+          const d = reader.skip(wireType);
+          if (u !== false)
+            (u === true ? UnknownFieldHandler.onRead : u)(
+              this.typeName,
+              message,
+              fieldNo,
+              wireType,
+              d,
+            );
+      }
+    }
+    return message;
+  }
+  internalBinaryWrite(
+    message: InputVariable,
+    writer: IBinaryWriter,
+    options: BinaryWriteOptions,
+  ): IBinaryWriter {
+    /* string id = 1; */
+    if (message.id !== '')
+      writer.tag(1, WireType.LengthDelimited).string(message.id);
+    /* optional string template_id = 2; */
+    if (message.templateId !== undefined)
+      writer.tag(2, WireType.LengthDelimited).string(message.templateId);
+    /* optional string test_case_id = 3; */
+    if (message.testCaseId !== undefined)
+      writer.tag(3, WireType.LengthDelimited).string(message.testCaseId);
+    /* string key = 4; */
+    if (message.key !== '')
+      writer.tag(4, WireType.LengthDelimited).string(message.key);
+    /* string value = 5; */
+    if (message.value !== '')
+      writer.tag(5, WireType.LengthDelimited).string(message.value);
+    /* optional string label = 6; */
+    if (message.label !== undefined)
+      writer.tag(6, WireType.LengthDelimited).string(message.label);
+    const u = options.writeUnknownFields;
+    if (u !== false)
+      (u == true ? UnknownFieldHandler.onWrite : u)(
+        this.typeName,
+        message,
+        writer,
+      );
+    return writer;
+  }
+}
+/**
+ * @generated MessageType for protobuf message baserun.v1.InputVariable
+ */
+export const InputVariable = new InputVariable$Type();
 // @generated message type with reflection information, may provide speed optimized methods
 class StartRunRequest$Type extends MessageType<StartRunRequest> {
   constructor() {
@@ -6274,6 +6492,169 @@ class SubmitAnnotationsResponse$Type extends MessageType<SubmitAnnotationsRespon
  * @generated MessageType for protobuf message baserun.v1.SubmitAnnotationsResponse
  */
 export const SubmitAnnotationsResponse = new SubmitAnnotationsResponse$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class SubmitInputVariableRequest$Type extends MessageType<SubmitInputVariableRequest> {
+  constructor() {
+    super('baserun.v1.SubmitInputVariableRequest', [
+      {
+        no: 1,
+        name: 'input_variable',
+        kind: 'message',
+        T: () => InputVariable,
+      },
+    ]);
+  }
+  create(
+    value?: PartialMessage<SubmitInputVariableRequest>,
+  ): SubmitInputVariableRequest {
+    const message = {};
+    globalThis.Object.defineProperty(message, MESSAGE_TYPE, {
+      enumerable: false,
+      value: this,
+    });
+    if (value !== undefined)
+      reflectionMergePartial<SubmitInputVariableRequest>(this, message, value);
+    return message;
+  }
+  internalBinaryRead(
+    reader: IBinaryReader,
+    length: number,
+    options: BinaryReadOptions,
+    target?: SubmitInputVariableRequest,
+  ): SubmitInputVariableRequest {
+    const message = target ?? this.create(),
+      end = reader.pos + length;
+    while (reader.pos < end) {
+      const [fieldNo, wireType] = reader.tag();
+      switch (fieldNo) {
+        case /* baserun.v1.InputVariable input_variable */ 1:
+          message.inputVariable = InputVariable.internalBinaryRead(
+            reader,
+            reader.uint32(),
+            options,
+            message.inputVariable,
+          );
+          break;
+        default:
+          const u = options.readUnknownField;
+          if (u === 'throw')
+            throw new globalThis.Error(
+              `Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`,
+            );
+          const d = reader.skip(wireType);
+          if (u !== false)
+            (u === true ? UnknownFieldHandler.onRead : u)(
+              this.typeName,
+              message,
+              fieldNo,
+              wireType,
+              d,
+            );
+      }
+    }
+    return message;
+  }
+  internalBinaryWrite(
+    message: SubmitInputVariableRequest,
+    writer: IBinaryWriter,
+    options: BinaryWriteOptions,
+  ): IBinaryWriter {
+    /* baserun.v1.InputVariable input_variable = 1; */
+    if (message.inputVariable)
+      InputVariable.internalBinaryWrite(
+        message.inputVariable,
+        writer.tag(1, WireType.LengthDelimited).fork(),
+        options,
+      ).join();
+    const u = options.writeUnknownFields;
+    if (u !== false)
+      (u == true ? UnknownFieldHandler.onWrite : u)(
+        this.typeName,
+        message,
+        writer,
+      );
+    return writer;
+  }
+}
+/**
+ * @generated MessageType for protobuf message baserun.v1.SubmitInputVariableRequest
+ */
+export const SubmitInputVariableRequest = new SubmitInputVariableRequest$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class SubmitInputVariableResponse$Type extends MessageType<SubmitInputVariableResponse> {
+  constructor() {
+    super('baserun.v1.SubmitInputVariableResponse', [
+      { no: 1, name: 'message', kind: 'scalar', T: 9 /*ScalarType.STRING*/ },
+    ]);
+  }
+  create(
+    value?: PartialMessage<SubmitInputVariableResponse>,
+  ): SubmitInputVariableResponse {
+    const message = { message: '' };
+    globalThis.Object.defineProperty(message, MESSAGE_TYPE, {
+      enumerable: false,
+      value: this,
+    });
+    if (value !== undefined)
+      reflectionMergePartial<SubmitInputVariableResponse>(this, message, value);
+    return message;
+  }
+  internalBinaryRead(
+    reader: IBinaryReader,
+    length: number,
+    options: BinaryReadOptions,
+    target?: SubmitInputVariableResponse,
+  ): SubmitInputVariableResponse {
+    const message = target ?? this.create(),
+      end = reader.pos + length;
+    while (reader.pos < end) {
+      const [fieldNo, wireType] = reader.tag();
+      switch (fieldNo) {
+        case /* string message */ 1:
+          message.message = reader.string();
+          break;
+        default:
+          const u = options.readUnknownField;
+          if (u === 'throw')
+            throw new globalThis.Error(
+              `Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`,
+            );
+          const d = reader.skip(wireType);
+          if (u !== false)
+            (u === true ? UnknownFieldHandler.onRead : u)(
+              this.typeName,
+              message,
+              fieldNo,
+              wireType,
+              d,
+            );
+      }
+    }
+    return message;
+  }
+  internalBinaryWrite(
+    message: SubmitInputVariableResponse,
+    writer: IBinaryWriter,
+    options: BinaryWriteOptions,
+  ): IBinaryWriter {
+    /* string message = 1; */
+    if (message.message !== '')
+      writer.tag(1, WireType.LengthDelimited).string(message.message);
+    const u = options.writeUnknownFields;
+    if (u !== false)
+      (u == true ? UnknownFieldHandler.onWrite : u)(
+        this.typeName,
+        message,
+        writer,
+      );
+    return writer;
+  }
+}
+/**
+ * @generated MessageType for protobuf message baserun.v1.SubmitInputVariableResponse
+ */
+export const SubmitInputVariableResponse =
+  new SubmitInputVariableResponse$Type();
 /**
  * @generated ServiceType for protobuf service baserun.v1.SubmissionService
  */
@@ -6353,6 +6734,12 @@ export const SubmissionService = new ServiceType(
       options: {},
       I: SubmitAnnotationsRequest,
       O: SubmitAnnotationsResponse,
+    },
+    {
+      name: 'SubmitInputVariable',
+      options: {},
+      I: SubmitInputVariableRequest,
+      O: SubmitInputVariableResponse,
     },
   ],
 );

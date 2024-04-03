@@ -1,6 +1,8 @@
 import { AutoLLMLog } from '../types.js';
 import { getTimestamp } from '../utils/helpers.js';
 import { track } from '../utils/track.js';
+import { TemplateMessage, TemplateMessageWithMetadata } from '../templates.js';
+import { Baserun } from '../baserun.js';
 
 export type ResolverFn = (
   symbol: string,
@@ -20,9 +22,91 @@ export type generatePatchedMethodArgs = {
   log: (log: AutoLLMLog) => Promise<void>;
   isStreaming: (_symbol: string, args: any[]) => boolean;
   collectStreamedResponse: (symbol: string, response: any, chunk: any) => any;
+  getMessages: (_symbol: string, args: any[]) => TemplateMessage[];
+  preprocessArgs?: (_symbol: string, args: any[]) => any[];
   processUnawaitedResponse?: (response: any) => Promise<any>;
   processResponse?: (response: any) => Promise<any>;
 };
+
+async function handleFormattedTemplate(
+  messages: TemplateMessageWithMetadata[],
+) {
+  // returns id of found template or undefined if not found any
+  for (let i = 0; i < messages.length; i++) {
+    const msg = messages[i];
+    if (msg.baserunFormatMetadata) {
+      const ann = Baserun.annotate();
+      for (const k in msg.baserunFormatMetadata.args) {
+        const v = msg.baserunFormatMetadata.args[k];
+        ann.input(k, v);
+      }
+      await ann.submit();
+      return msg.baserunFormatMetadata.templateId;
+    }
+  }
+}
+
+async function handleNotFormattedTemplate(messages: TemplateMessage[]) {
+  for (const [, template] of Baserun.templates) {
+    const templateMsgs =
+      template.templateVersions[template.templateVersions.length - 1]
+        .templateMessages;
+    if (templateMsgs.length !== messages.length) {
+      continue;
+    }
+    let ok = true;
+    const vars: Record<string, any> = {};
+    for (let i = 0; i < templateMsgs.length; i++) {
+      const templateMsg = templateMsgs[i];
+      const msg = messages[i];
+      const escaped = templateMsg.message.replaceAll(
+        /([[\].*+?^=!:${}()|\\/])/gm,
+        '\\$1',
+      );
+      const pattern = escaped.replaceAll(
+        /\\\{([a-zA-Z0-9_-]+)\\}/gm,
+        '(?<$1>.*)',
+      );
+      // this pattern building is very, very fragile. therefore try catch is a must
+      try {
+        const re = new RegExp(`^${pattern}$`, 's');
+        const res = re.exec(msg.content);
+        if (!res) {
+          ok = false;
+          break;
+        }
+        for (const varName in res.groups) {
+          vars[varName] = res.groups[varName];
+        }
+      } catch (e) {
+        ok = false;
+        break;
+      }
+    }
+    if (ok) {
+      // we can have multiple templates matches, and we have no way of knowing which one this was in reality,
+      // so we're just taking the first match we encounter.
+      if (Object.keys(vars).length) {
+        const ann = Baserun.annotate();
+        for (const varName in vars) {
+          ann.input(varName, vars[varName]);
+        }
+        await ann.submit();
+      }
+      return template.id;
+    }
+  }
+}
+
+export async function handleTemplates(
+  messages: TemplateMessage[],
+): Promise<string | undefined> {
+  const templateId = await handleFormattedTemplate(messages);
+  if (templateId) {
+    return templateId;
+  }
+  return await handleNotFormattedTemplate(messages);
+}
 
 export function generatePatchedMethod({
   symbol,
@@ -31,6 +115,8 @@ export function generatePatchedMethod({
   log,
   isStreaming,
   collectStreamedResponse,
+  getMessages,
+  preprocessArgs,
   processUnawaitedResponse,
   processResponse,
 }: generatePatchedMethodArgs) {
@@ -43,6 +129,9 @@ export function generatePatchedMethod({
     let error = null;
 
     const boundOriginal = original.bind(this);
+
+    const templateId = await handleTemplates(getMessages(symbol, args));
+    args = preprocessArgs ? preprocessArgs(symbol, args) : args;
 
     if (isStream) {
       /* eslint-disable-next-line  no-inner-declarations */
@@ -81,6 +170,7 @@ export function generatePatchedMethod({
             streamResponse,
             streamError,
           );
+          streamLogEntry.templateId = templateId;
           await log(streamLogEntry);
         }
       }
@@ -112,6 +202,7 @@ export function generatePatchedMethod({
           response,
           error,
         );
+        logEntry.templateId = templateId;
         await track(() => log(logEntry), 'patch: log');
       }
     }
@@ -123,10 +214,12 @@ export function patch({
   symbols,
   resolver,
   log,
-  processUnawaitedResponse,
-  processResponse,
   isStreaming,
   collectStreamedResponse,
+  getMessages,
+  preprocessArgs,
+  processUnawaitedResponse,
+  processResponse,
 }: {
   module: any;
   symbols: string[];
@@ -134,6 +227,8 @@ export function patch({
   log: (logEntry: AutoLLMLog) => Promise<void>;
   isStreaming: (_symbol: string, args: any[]) => boolean;
   collectStreamedResponse: (symbol: string, response: any, chunk: any) => any;
+  getMessages: (_symbol: string, args: any[]) => TemplateMessage[];
+  preprocessArgs?: (_symbol: string, args: any[]) => any[];
   processUnawaitedResponse?: (response: any) => Promise<any>;
   processResponse?: (response: any) => Promise<any>;
 }) {
@@ -148,6 +243,8 @@ export function patch({
         log,
         isStreaming,
         collectStreamedResponse,
+        getMessages,
+        preprocessArgs,
         processUnawaitedResponse,
         processResponse,
       });
@@ -162,6 +259,8 @@ export function patch({
         log,
         isStreaming,
         collectStreamedResponse,
+        getMessages,
+        preprocessArgs,
         processUnawaitedResponse,
         processResponse,
       });

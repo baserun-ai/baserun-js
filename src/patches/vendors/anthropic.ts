@@ -6,8 +6,9 @@ import {
   Message,
 } from '../../types.js';
 import { DEFAULT_USAGE } from '../constants.js';
-import { patch } from '../patch.js';
+import { handleTemplates, patch } from '../patch.js';
 import { anthropic, modulesPromise } from '../modules.js';
+import { TemplateMessage } from '../../templates.js';
 import Anthropic from '@anthropic-ai/sdk';
 
 import { getTimestamp } from '../../utils/helpers.js';
@@ -24,6 +25,7 @@ function getStreamClass(
   log: (entry: AutoLLMLog) => Promise<void>,
   startTime: Date,
   args: any[],
+  templateId: string | undefined,
 ) {
   class StreamWrapper<Item> extends Stream<Item> {
     static fromSSEResponse<Item>(
@@ -59,6 +61,7 @@ function getStreamClass(
               response,
               undefined,
             );
+            logEntry.templateId = templateId;
             await track(() => log(logEntry), 'patch: log');
           }
           return result;
@@ -241,6 +244,19 @@ export class AnthropicWrapper {
     return !!args[0].stream;
   }
 
+  static getMessages(args: any[]): TemplateMessage[] {
+    return args[0].messages;
+  }
+
+  static preprocessArgs(
+    args: any[],
+  ): [Anthropic.MessageCreateParams, Anthropic.RequestOptions?] {
+    args[0].messages.forEach((msg: any) => {
+      delete msg['baserunFormatMetadata'];
+    });
+    return args as [Anthropic.MessageCreateParams, Anthropic.RequestOptions?];
+  }
+
   static collectCompletionStreamedResponse(
     response: Anthropic.Completion | null,
     chunk: Anthropic.Completion,
@@ -349,13 +365,24 @@ export class AnthropicWrapper {
 
       const boundOriginal = original.bind(this);
 
+      const templateId = await handleTemplates(
+        AnthropicWrapper.getMessages(args),
+      );
+      args = AnthropicWrapper.preprocessArgs(args);
+
       if (body.stream) {
         if (options?.__streamClass) {
           throw new Error('cannot use __streamClass option when using baserun');
         }
         const newOptions = {
           ...options,
-          __streamClass: getStreamClass(patchedObject, log, startTime, args),
+          __streamClass: getStreamClass(
+            patchedObject,
+            log,
+            startTime,
+            args,
+            templateId,
+          ),
         };
         try {
           response = await boundOriginal(body, newOptions);
@@ -372,6 +399,7 @@ export class AnthropicWrapper {
             undefined,
             e,
           );
+          logEntry.templateId = templateId;
           await track(() => log(logEntry), 'patch: log');
           throw e;
         }
@@ -394,6 +422,7 @@ export class AnthropicWrapper {
             response,
             error,
           );
+          logEntry.templateId = templateId;
           await track(() => log(logEntry), 'patch: log');
         }
       }
@@ -410,6 +439,7 @@ export class AnthropicWrapper {
         log,
         isStreaming: AnthropicWrapper.isStreaming,
         collectStreamedResponse: AnthropicWrapper.collectStreamedResponse,
+        getMessages: () => [], // prompt doesn't match templates format anyway
       });
       mod.Messages.prototype.create = AnthropicWrapper.messagesCreateWrapper(
         mod.Messages.prototype.create,

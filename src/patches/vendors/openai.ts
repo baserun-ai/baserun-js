@@ -14,6 +14,7 @@ import getDebug from 'debug';
 import OpenAI from 'openai';
 import { track } from '../../utils/track.js';
 import { APIPromise } from 'openai/core';
+import { TemplateMessage } from '../../templates.js';
 
 const debug = getDebug('baserun:openai');
 
@@ -104,6 +105,17 @@ export class OpenAIWrapper {
 
   static isStreaming(_symbol: string, args: any[]): boolean {
     return args[0].stream;
+  }
+
+  static getMessages(_symbol: string, args: any[]): TemplateMessage[] {
+    return args[0].messages || [];
+  }
+
+  static preprocessArgs(_symbol: string, args: any[]) {
+    args[0].messages?.forEach((msg: any) => {
+      delete msg['baserunFormatMetadata'];
+    });
+    return args;
   }
 
   static collectStreamedResponse(
@@ -225,6 +237,8 @@ export class OpenAIWrapper {
         log,
         isStreaming: OpenAIWrapper.isStreaming,
         collectStreamedResponse: OpenAIWrapper.collectStreamedResponse,
+        getMessages: OpenAIWrapper.getMessages,
+        preprocessArgs: OpenAIWrapper.preprocessArgs,
         processUnawaitedResponse: async (promise: APIPromise<any>) => {
           const { data, response } = await promise.withResponse();
           requestId = response.headers.get('x-request-id');

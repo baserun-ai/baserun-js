@@ -63,6 +63,7 @@ export function autoLLMLogToSpan(log: AutoLLMLog, runId: string): Span {
     user: user,
     xRequestId: log.requestId,
     errorStacktrace: log.errorStack,
+    templateId: log.templateId,
   };
 
   // the main difference between a chat.completion and just completion is, that a chat completion can have multiple prompts (messages)

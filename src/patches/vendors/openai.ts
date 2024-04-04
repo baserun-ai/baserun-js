@@ -14,6 +14,8 @@ import getDebug from 'debug';
 import OpenAI from 'openai';
 import { track } from '../../utils/track.js';
 import { APIPromise } from 'openai/core';
+import { Chat } from 'openai/resources/index';
+import ChatCompletionChunk = Chat.ChatCompletionChunk;
 
 const debug = getDebug('baserun:openai');
 
@@ -106,6 +108,32 @@ export class OpenAIWrapper {
     return args[0].stream;
   }
 
+  static handleToolCallChunk(
+    choice: any,
+    chunk: ChatCompletionChunk.Choice.Delta.ToolCall,
+  ) {
+    if (!choice.message.tool_calls) {
+      choice.message.tool_calls = [];
+    }
+    if (choice.message.tool_calls.length <= chunk.index) {
+      choice.message.tool_calls.push({
+        id: '',
+        type: 'function',
+        function: { name: '', arguments: '' },
+      });
+    }
+    const tc = choice.message.tool_calls[chunk.index];
+    if (chunk.id) {
+      tc.id += chunk.id;
+    }
+    if (chunk.function?.name) {
+      tc.function.name += chunk.function.name;
+    }
+    if (chunk.function?.arguments) {
+      tc.function.arguments += chunk.function.arguments;
+    }
+  }
+
   static collectStreamedResponse(
     symbol: string,
     response: any,
@@ -130,8 +158,8 @@ export class OpenAIWrapper {
         const newDelta = newChoice.delta || {};
         const newContent = newDelta.content || '';
         const newRole = newDelta.role || 'assistant';
-        const newName = newDelta.name || null;
         const newFunctionCall = newDelta.function_call || null;
+        const newToolCalls = newDelta.tool_calls || null;
         const newFinishReason = newChoice.finish_reason;
 
         const existingChoice = response.choices.find(
@@ -151,8 +179,10 @@ export class OpenAIWrapper {
             existingChoice.message.function_call = newFunctionCall;
           }
 
-          if (newName) {
-            existingChoice.name = newName;
+          if (newToolCalls) {
+            for (const toolCallChunk of newToolCalls) {
+              OpenAIWrapper.handleToolCallChunk(existingChoice, toolCallChunk);
+            }
           }
 
           existingChoice.finish_reason = newFinishReason;
@@ -161,6 +191,7 @@ export class OpenAIWrapper {
             index: newIndex,
             message: {
               role: newRole,
+              content: '',
             },
             finish_reason: newFinishReason,
           };
@@ -173,8 +204,10 @@ export class OpenAIWrapper {
             newChoiceObj.message.function_call = newFunctionCall;
           }
 
-          if (newName) {
-            newChoiceObj.message.name = newName;
+          if (newToolCalls) {
+            for (const toolCallChunk of newToolCalls) {
+              OpenAIWrapper.handleToolCallChunk(newChoiceObj, toolCallChunk);
+            }
           }
 
           response.choices.push(newChoiceObj);

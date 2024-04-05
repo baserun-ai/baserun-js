@@ -16,6 +16,7 @@ const evals = Baserun.evals;
 const session = Baserun.session;
 const flush = Baserun.flush;
 const annotate = Baserun.annotate;
+const submitInputVariable = Baserun.submitInputVariable;
 const TemplateType = Template_TemplateType;
 
 export const baserun = {
@@ -26,6 +27,7 @@ export const baserun = {
   session,
   flush,
   annotate,
+  submitInputVariable,
   getTemplates,
   getTemplate,
   formatPrompt,

@@ -14,9 +14,21 @@ import { createHash } from 'node:crypto';
 const debug = getDebug('baserun:templates');
 
 type roleType = 'user' | 'system' | 'assistant';
+
+export interface FormattedTemplateMeta {
+  templateId: string;
+  args: Record<string, any>;
+}
+
 export interface TemplateMessage {
   content: string;
   role: roleType;
+}
+
+export interface TemplateMessageWithMetadata extends TemplateMessage {
+  // I don't really like this extra param as we're required to handle it later, we can't just
+  //  leave it be...but that's the best thing I came up with
+  baserunFormatMetadata?: FormattedTemplateMeta;
 }
 
 // TODO: in python sdk there's some kind of caching functionality with cache living for some period of time for this
@@ -116,14 +128,18 @@ export function formatPromptFromTemplate(
     template.templateVersions[
       template.templateVersions.length - 1
     ]?.templateMessages.map((v) => {
-      if (v.role != 'user' && v.role != 'system') {
+      if (v.role != 'user' && v.role != 'system' && v.role != 'assistant') {
         throw new Error(
-          'only `user` and `system` template messages are currently supported in the js sdk',
+          'only `user`, `system` and `assistant` template messages are currently supported in the js sdk',
         );
       }
       return {
         role: v.role as roleType,
         content: v.message,
+        baserunFormatMetadata: {
+          templateId: template.id,
+          args: parameters,
+        },
       };
     }) ?? [];
   return applyTemplate(templateMessages, parameters, template.templateType);

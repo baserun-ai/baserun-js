@@ -4,6 +4,8 @@
 import { SubmissionService } from './baserun.js';
 import type { BinaryWriteOptions } from '@protobuf-ts/runtime';
 import type { BinaryReadOptions } from '@protobuf-ts/runtime';
+import type { SubmitInputVariableResponse } from './baserun.js';
+import type { SubmitInputVariableRequest } from './baserun.js';
 import type { SubmitAnnotationsResponse } from './baserun.js';
 import type { SubmitAnnotationsRequest } from './baserun.js';
 import type { GetTemplatesResponse } from './baserun.js';
@@ -503,6 +505,41 @@ export interface ISubmissionServiceClient {
       value?: SubmitAnnotationsResponse,
     ) => void,
   ): grpc.ClientUnaryCall;
+  /**
+   * @generated from protobuf rpc: SubmitInputVariable(baserun.v1.SubmitInputVariableRequest) returns (baserun.v1.SubmitInputVariableResponse);
+   */
+  submitInputVariable(
+    input: SubmitInputVariableRequest,
+    metadata: grpc.Metadata,
+    options: grpc.CallOptions,
+    callback: (
+      err: grpc.ServiceError | null,
+      value?: SubmitInputVariableResponse,
+    ) => void,
+  ): grpc.ClientUnaryCall;
+  submitInputVariable(
+    input: SubmitInputVariableRequest,
+    metadata: grpc.Metadata,
+    callback: (
+      err: grpc.ServiceError | null,
+      value?: SubmitInputVariableResponse,
+    ) => void,
+  ): grpc.ClientUnaryCall;
+  submitInputVariable(
+    input: SubmitInputVariableRequest,
+    options: grpc.CallOptions,
+    callback: (
+      err: grpc.ServiceError | null,
+      value?: SubmitInputVariableResponse,
+    ) => void,
+  ): grpc.ClientUnaryCall;
+  submitInputVariable(
+    input: SubmitInputVariableRequest,
+    callback: (
+      err: grpc.ServiceError | null,
+      value?: SubmitInputVariableResponse,
+    ) => void,
+  ): grpc.ClientUnaryCall;
 }
 /**
  * @generated from protobuf service baserun.v1.SubmissionService
@@ -966,6 +1003,45 @@ export class SubmissionServiceClient
       (value: SubmitAnnotationsRequest): Buffer =>
         Buffer.from(method.I.toBinary(value, this._binaryOptions)),
       (value: Buffer): SubmitAnnotationsResponse =>
+        method.O.fromBinary(value, this._binaryOptions),
+      input,
+      metadata as any,
+      options as any,
+      callback as any,
+    );
+  }
+  /**
+   * @generated from protobuf rpc: SubmitInputVariable(baserun.v1.SubmitInputVariableRequest) returns (baserun.v1.SubmitInputVariableResponse);
+   */
+  submitInputVariable(
+    input: SubmitInputVariableRequest,
+    metadata:
+      | grpc.Metadata
+      | grpc.CallOptions
+      | ((
+          err: grpc.ServiceError | null,
+          value?: SubmitInputVariableResponse,
+        ) => void),
+    options?:
+      | grpc.CallOptions
+      | ((
+          err: grpc.ServiceError | null,
+          value?: SubmitInputVariableResponse,
+        ) => void),
+    callback?: (
+      err: grpc.ServiceError | null,
+      value?: SubmitInputVariableResponse,
+    ) => void,
+  ): grpc.ClientUnaryCall {
+    const method = SubmissionService.methods[14];
+    return this.makeUnaryRequest<
+      SubmitInputVariableRequest,
+      SubmitInputVariableResponse
+    >(
+      `/${SubmissionService.typeName}/${method.name}`,
+      (value: SubmitInputVariableRequest): Buffer =>
+        Buffer.from(method.I.toBinary(value, this._binaryOptions)),
+      (value: Buffer): SubmitInputVariableResponse =>
         method.O.fromBinary(value, this._binaryOptions),
       input,
       metadata as any,

@@ -22,6 +22,8 @@ import {
   TestSuite,
   SubmitEvalRequest,
   Template,
+  SubmitInputVariableRequest,
+  InputVariable,
 } from './v1/gen/baserun.js';
 import {
   TimeoutError,
@@ -821,6 +823,42 @@ export class Baserun {
 
   static annotate(completionId?: string): Annotation {
     return new Annotation(completionId);
+  }
+
+  static submitInputVariable(args: {
+    key: string;
+    value: string;
+    label?: string;
+    testCaseId?: string;
+    template?: Template;
+    templateId?: string;
+  }): Promise<void> {
+    const { key, value, label, testCaseId, template } = args;
+    let { templateId } = args;
+    if (template && !templateId) {
+      templateId = template.id;
+    }
+    const inputVariable: InputVariable = {
+      id: '',
+      key,
+      value,
+      label,
+      testCaseId,
+      templateId,
+    };
+    const request: SubmitInputVariableRequest = {
+      inputVariable: inputVariable,
+    };
+    return new Promise((resolve, reject) => {
+      Baserun.submissionService.submitInputVariable(request, (error) => {
+        if (error) {
+          console.error('Failed to submit input variable to Baserun: ', error);
+          reject(error);
+        } else {
+          resolve(undefined);
+        }
+      });
+    });
   }
 }
 

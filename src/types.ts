@@ -49,6 +49,7 @@ export interface LLMChatLog {
   tools?: ChatCompletionTool[];
   toolChoice?: ChatCompletionToolChoiceOption;
   requestId?: string;
+  templateId?: string;
 }
 
 export interface LLMCompletionLog {
@@ -69,6 +70,7 @@ export interface LLMCompletionLog {
   };
   errorStack?: string;
   requestId?: string;
+  templateId?: string;
 }
 
 export type AutoLLMLog = LLMChatLog | LLMCompletionLog;

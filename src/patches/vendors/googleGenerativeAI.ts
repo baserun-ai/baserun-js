@@ -86,7 +86,6 @@ export class GoogleGenerativeAIWrapper {
         usage: DEFAULT_USAGE,
         promptMessages: promptMessages,
         config,
-        isStream,
         errorStack: errorMessage,
       } as AutoLLMLog;
     }
@@ -100,7 +99,6 @@ export class GoogleGenerativeAIWrapper {
       usage: DEFAULT_USAGE,
       promptMessages: promptMessages,
       config,
-      isStream,
       choices: [
         {
           content: respContent,

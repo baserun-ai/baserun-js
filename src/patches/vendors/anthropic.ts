@@ -3,6 +3,8 @@ import {
   BaserunProvider,
   BaserunStepType,
   BaserunType,
+  LLMChatLog,
+  LLMCompletionLog,
   Message,
 } from '../../types.js';
 import { DEFAULT_USAGE } from '../constants.js';
@@ -100,7 +102,7 @@ export class AnthropicWrapper {
         config,
         isStream,
         errorStack: errorMessage,
-      } as AutoLLMLog;
+      } as LLMCompletionLog;
     }
 
     return {
@@ -120,7 +122,7 @@ export class AnthropicWrapper {
           role: 'Assistant',
         },
       ],
-    } as AutoLLMLog;
+    } as LLMCompletionLog;
   }
 
   static async resolve_messages_create(
@@ -187,9 +189,8 @@ export class AnthropicWrapper {
         usage,
         promptMessages,
         config,
-        isStream,
         errorStack: errorMessage,
-      } as AutoLLMLog;
+      } as LLMChatLog;
     }
 
     return {
@@ -202,8 +203,7 @@ export class AnthropicWrapper {
       promptMessages,
       choices,
       config,
-      isStream,
-    } as AutoLLMLog;
+    } as LLMChatLog;
   }
 
   static async resolver(

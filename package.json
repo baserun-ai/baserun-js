@@ -95,8 +95,9 @@
   },
   "peerDependencies": {
     "@anthropic-ai/sdk": "^0.16.0",
+    "@google/generative-ai": "^0.2.1",
     "openai": "^4.19.1",
-    "@google/generative-ai": "^0.2.1"
+    "llamaindex": "^0.2.8"
   },
   "tshy": {
     "exports": {

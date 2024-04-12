@@ -40,6 +40,7 @@ import { track } from './utils/track.js';
 import pRetry from 'promise-retry';
 import { Annotation } from './annotation.js';
 import { GoogleGenerativeAIWrapper } from './patches/vendors/googleGenerativeAI.js';
+import { initLlamaIndex } from './patches/vendors/llamaIndex.js';
 
 const debug = getDebug('baserun:baserun');
 const debugSubmitLogOrSpan = getDebug('baserun:submitLogOrSpan');
@@ -186,6 +187,8 @@ export class Baserun {
       debug('starting monkey patching');
       await Baserun.monkeyPatch();
     }, 'Baserun.init.monkeyPatch');
+
+    await initLlamaIndex();
 
     debug('done initializing');
 
@@ -569,7 +572,7 @@ export class Baserun {
 
     const log: ProtoLog = {
       name,
-      payload: stringify(payload),
+      payload: typeof payload === 'string' ? payload : stringify(payload),
       timestamp: Timestamp.fromDate(new Date()),
       runId: run.runId,
     };

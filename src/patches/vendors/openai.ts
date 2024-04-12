@@ -5,6 +5,7 @@ import {
   BaserunType,
   LLMChatLog,
   LLMCompletionLog,
+  LLMEmbeddingsLog,
   Message,
 } from '../../types.js';
 import { patch } from '../patch.js';
@@ -15,8 +16,8 @@ import OpenAI from 'openai';
 import { track } from '../../utils/track.js';
 import { APIPromise } from 'openai/core';
 import { Chat } from 'openai/resources/index';
-import ChatCompletionChunk = Chat.ChatCompletionChunk;
 import { TemplateMessage } from '../../templates.js';
+import ChatCompletionChunk = Chat.ChatCompletionChunk;
 
 const debug = getDebug('baserun:openai');
 
@@ -36,9 +37,10 @@ export class OpenAIWrapper {
     error?: any,
   ) {
     let usage = DEFAULT_USAGE;
-    let output = '';
     const type = symbol.includes('Chat')
       ? BaserunType.Chat
+      : symbol.includes('Embeddings')
+      ? BaserunType.Embeddings
       : BaserunType.Completion;
 
     let errorStack: string | undefined = undefined;
@@ -51,7 +53,6 @@ export class OpenAIWrapper {
         errorStack = error.stack;
       } else {
         if (maybeOpenAIError?.response?.error?.message) {
-          output = `Error: ${maybeOpenAIError.response.error.message}`;
           errorStack = maybeOpenAIError.response.error.message;
         } else {
           errorStack = error;
@@ -59,11 +60,6 @@ export class OpenAIWrapper {
       }
     } else if (response) {
       usage = response.usage;
-      if (type === BaserunType.Completion) {
-        output = response.choices[0]?.text ?? '';
-      } else {
-        output = response.choices[0]?.message?.content ?? '';
-      }
     }
     // todo: this is a bunch of duplicate code from the function above, this is something to clean up later, but it's also not
     // clear if we need to keep the support for the old OpenAI lib around
@@ -81,28 +77,46 @@ export class OpenAIWrapper {
         provider: BaserunProvider.OpenAI,
         promptMessages: messages,
         usage: usage ?? DEFAULT_USAGE,
-        isStream,
         errorStack,
         tools,
         toolChoice: config.tool_choice,
       } as LLMChatLog;
+    } else if (type === BaserunType.Completion) {
+      const { prompt = '', ...config } = options;
+      return {
+        stepType: BaserunStepType.AutoLLM,
+        type,
+        provider: BaserunProvider.OpenAI,
+        startTimestamp,
+        completionTimestamp,
+        usage: usage ?? DEFAULT_USAGE,
+        prompt: { content: prompt },
+        choices: getChoiceMessages(response),
+        config,
+        errorStack,
+      } as LLMCompletionLog;
     }
 
-    const { prompt = '', ...config } = options;
+    /* eslint-disable-next-line prefer-const */
+    let { input, ...config }: { input: string[] | string } = options;
+    if (typeof input === 'string') {
+      input = [input];
+    }
     return {
+      config: { stream: false, ...config },
       stepType: BaserunStepType.AutoLLM,
-      type,
-      provider: BaserunProvider.OpenAI,
-      output,
       startTimestamp,
       completionTimestamp,
+      type,
+      provider: BaserunProvider.OpenAI,
+      promptMessages: input.map((v) => ({
+        role: 'user',
+        content: v,
+        finish_reason: '',
+      })),
       usage: usage ?? DEFAULT_USAGE,
-      prompt: { content: prompt },
-      choices: getChoiceMessages(response),
-      config,
-      isStream,
       errorStack,
-    } as LLMCompletionLog;
+    } as LLMEmbeddingsLog;
   }
 
   static isStreaming(_symbol: string, args: any[]): boolean {
@@ -257,6 +271,7 @@ export class OpenAIWrapper {
       const symbols = [
         'OpenAI.Completions.prototype.create',
         'OpenAI.Chat.Completions.prototype.create',
+        'OpenAI.Embeddings.prototype.create',
       ];
       let requestId: string | null = null;
       patch({

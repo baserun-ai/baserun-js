@@ -5,6 +5,7 @@ const debug = getDebug('baserun:modules-cjs');
 export const openai: any[] = [];
 export const anthropic: any[] = [];
 export const googleGenerativeAI: any[] = [];
+export const llamaindex: any[] = [];
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
@@ -56,6 +57,22 @@ try {
   });
 } catch (e) {
   debug('google/generative-ai module not found');
+  // fail silently
+}
+try {
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore
+  const llamaPaths = resolveAllSync('llamaindex');
+  llamaPaths.map((path) => {
+    try {
+      const mod = module.require(path);
+      llamaindex.push(mod);
+    } catch (e) {
+      // fail silently
+    }
+  });
+} catch (e) {
+  debug('llamaindex module not found');
   // fail silently
 }
 

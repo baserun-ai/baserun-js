@@ -9,6 +9,7 @@ export const openai: any[] = [];
 // debug({ OpenAI });
 export const anthropic: any[] = [];
 export const googleGenerativeAI: any[] = [];
+export const llamaindex: any[] = [];
 
 const resolveOpenai = () =>
   track(async () => {
@@ -91,9 +92,30 @@ async function resolveGoogleGenerativeAI() {
   }
 }
 
+async function resolveLlamaIndex() {
+  try {
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    const llamaPaths = resolveAllSync('llamaindex');
+    await Promise.all(
+      llamaPaths.map(async (path) => {
+        try {
+          const mod = await import(path);
+          llamaindex.push(mod);
+        } catch (e) {
+          debug(e);
+        }
+      }),
+    );
+  } catch (e) {
+    debug(e);
+  }
+}
+
 // get them in parallel
 export const modulesPromise = Promise.all([
   resolveOpenai(),
   resolveAnthropic(),
   resolveGoogleGenerativeAI(),
+  resolveLlamaIndex(),
 ]);

@@ -308,7 +308,6 @@ export class Evals {
           startTimestamp: startTime,
           completionTimestamp: endTime,
           usage: response.usage ?? DEFAULT_USAGE,
-          isStream: false, // TODO: Set the correct value
         },
       },
     });

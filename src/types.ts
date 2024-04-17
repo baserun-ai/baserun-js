@@ -15,6 +15,7 @@ export enum BaserunProvider {
 export enum BaserunType {
   Chat = 'chat',
   Completion = 'completion',
+  Embeddings = 'embeddings',
 }
 
 export enum BaserunStepType {
@@ -39,7 +40,6 @@ export interface LLMChatLog {
   logId: string;
   startTimestamp: Date;
   completionTimestamp: Date;
-  isStream: boolean;
   usage?: {
     prompt_tokens: number;
     completion_tokens: number;
@@ -62,7 +62,6 @@ export interface LLMCompletionLog {
   startTimestamp: Date;
   completionTimestamp: Date;
   logId?: string;
-  isStream: boolean;
   usage?: {
     prompt_tokens: number;
     completion_tokens: number;
@@ -73,7 +72,24 @@ export interface LLMCompletionLog {
   templateId?: string;
 }
 
-export type AutoLLMLog = LLMChatLog | LLMCompletionLog;
+export interface LLMEmbeddingsLog {
+  stepType: BaserunStepType.AutoLLM;
+  type: BaserunType.Embeddings;
+  provider: BaserunProvider;
+  config: object;
+  promptMessages: Message[];
+  startTimestamp: Date;
+  completionTimestamp: Date;
+  usage?: {
+    prompt_tokens: number;
+    total_tokens: number;
+  };
+  errorStack?: string;
+  requestId?: string;
+  templateId?: string;
+}
+
+export type AutoLLMLog = LLMChatLog | LLMCompletionLog | LLMEmbeddingsLog;
 
 export interface StandardLog {
   stepType: BaserunStepType.Log;

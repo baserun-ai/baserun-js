@@ -299,4 +299,22 @@ describe('openai', () => {
       );
     });
   });
+
+  describe('embeddings', () => {
+    test('create embeddings', async () => {
+      const input = [
+        'hello your computer has virus',
+        'hello give me your credit card details',
+      ];
+      const model = 'text-embedding-ada-002';
+      const res = await openai.embeddings.create({ input, model });
+      const span = submitLogSpy.mock.calls[0][0] as Span;
+      expect(span.promptMessages.length).toEqual(2);
+      expect(span.promptMessages[0].content).toEqual(input[0]);
+      expect(span.promptMessages[1].content).toEqual(input[1]);
+      expect(span.model).toEqual(model);
+      expect(span.promptTokens).toEqual(res.usage.prompt_tokens);
+      expect(span.totalTokens).toEqual(res.usage.total_tokens);
+    });
+  });
 });

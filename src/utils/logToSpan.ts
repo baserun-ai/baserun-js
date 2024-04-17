@@ -3,10 +3,16 @@ import {
   BaserunStepType,
   BaserunType,
   LLMChatLog,
+  LLMCompletionLog,
   Log,
+  Message,
   StandardLog,
 } from '../types.js';
-import { Message, Span, Log as ProtoLog } from '../v1/gen/baserun.js';
+import {
+  Message as ProtoMessage,
+  Span,
+  Log as ProtoLog,
+} from '../v1/gen/baserun.js';
 import { Timestamp } from '../v1/gen/google/protobuf/timestamp.js';
 
 export function logToSpanOrLog(log: Log, runId: string): Span | ProtoLog {
@@ -33,6 +39,36 @@ export function standardLogToSpan(log: StandardLog, runId: string): ProtoLog {
   };
 }
 
+function promptMessagesToProtoMessages(
+  promptMessages: Message[],
+): ProtoMessage[] {
+  return promptMessages.map(({ content, finish_reason, tool_calls, role }) => {
+    const message: ProtoMessage = {
+      content,
+      finishReason: finish_reason,
+      role,
+      functionCall: '',
+      name: '',
+      systemFingerprint: '',
+      toolCallId: '',
+      toolCalls: [],
+    };
+
+    if (tool_calls) {
+      message.toolCalls = tool_calls.map((t) => ({
+        id: t.id,
+        type: t.type,
+        function: {
+          name: t.function.name,
+          arguments: t.function.arguments,
+        },
+      }));
+    }
+
+    return message;
+  });
+}
+
 export function autoLLMLogToSpan(log: AutoLLMLog, runId: string): Span {
   const { model, top_p, top_k, max_tokens, temperature, stream } =
     getModelConfig(log);
@@ -51,7 +87,7 @@ export function autoLLMLogToSpan(log: AutoLLMLog, runId: string): Span {
     promptMessages: [],
     spanId: BigInt(0),
     stop: [],
-    completionTokens: log.usage?.completion_tokens ?? 0,
+    completionTokens: (log.usage as any)?.completion_tokens ?? 0,
     totalTokens: log.usage?.total_tokens ?? 0,
     promptTokens: log.usage?.prompt_tokens ?? 0,
     traceId: Uint8Array.from([]),
@@ -78,40 +114,12 @@ export function autoLLMLogToSpan(log: AutoLLMLog, runId: string): Span {
       span.tools = JSON.stringify(tools);
     }
 
-    const mappedMessages = promptMessages.map(
-      ({ content, finish_reason, tool_calls, role }) => {
-        const message: Message = {
-          content,
-          finishReason: finish_reason,
-          role,
-          functionCall: '',
-          name: '',
-          systemFingerprint: '',
-          toolCallId: '',
-          toolCalls: [],
-        };
-
-        if (tool_calls) {
-          message.toolCalls = tool_calls.map((t) => ({
-            id: t.id,
-            type: t.type,
-            function: {
-              name: t.function.name,
-              arguments: t.function.arguments,
-            },
-          }));
-        }
-
-        return message;
-      },
-    );
-
-    span.promptMessages = mappedMessages;
-  } else {
+    span.promptMessages = promptMessagesToProtoMessages(promptMessages);
+  } else if (isLLMCompletionLog(log)) {
     const { prompt } = log;
 
     // todo: we need to make some fields optional in the proto because they are not always present
-    const message: Message = {
+    const message: ProtoMessage = {
       content: prompt.content,
       finishReason: '',
       functionCall: '',
@@ -122,12 +130,15 @@ export function autoLLMLogToSpan(log: AutoLLMLog, runId: string): Span {
       toolCalls: [],
     };
     span.promptMessages = [message];
+  } else {
+    // embeddings
+    span.promptMessages = promptMessagesToProtoMessages(log.promptMessages);
   }
 
-  if (log.choices) {
+  if ('choices' in log && log.choices) {
     const completions = log.choices.map(
       ({ content, finish_reason, tool_calls, role }) => {
-        const message: Message = {
+        const message: ProtoMessage = {
           content,
           finishReason: finish_reason,
           role,
@@ -176,4 +187,8 @@ function getModelConfig(log: AutoLLMLog): ModelConfig {
 
 function isLLMChatLog(log: AutoLLMLog): log is LLMChatLog {
   return log.type === BaserunType.Chat;
+}
+
+function isLLMCompletionLog(log: AutoLLMLog): log is LLMCompletionLog {
+  return log.type === BaserunType.Completion;
 }

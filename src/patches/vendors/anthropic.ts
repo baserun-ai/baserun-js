@@ -441,10 +441,13 @@ export class AnthropicWrapper {
         collectStreamedResponse: AnthropicWrapper.collectStreamedResponse,
         getMessages: () => [], // prompt doesn't match templates format anyway
       });
-      mod.Messages.prototype.create = AnthropicWrapper.messagesCreateWrapper(
-        mod.Messages.prototype.create,
-        log,
-      );
+      if (mod.Messages) {
+        // conditionally patch for compatibility with older anthropic sdk versions
+        mod.Messages.prototype.create = AnthropicWrapper.messagesCreateWrapper(
+          mod.Messages.prototype.create,
+          log,
+        );
+      }
     } catch (err) {
       /* @anthropic-ai/sdk isn't used */
       if (

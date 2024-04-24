@@ -11,7 +11,7 @@ import {
   afterEach,
 } from 'vitest';
 import { baserun } from '../index.js';
-import { Baserun } from '../baserun.js';
+import { AssignMetadataFunc, Baserun } from '../baserun.js';
 import pick from 'lodash.pick';
 import { Log, Run, Span } from '../v1/gen/baserun.js';
 
@@ -53,7 +53,7 @@ describe('Baserun trace', () => {
     expect(expectedLog).toMatchInlineSnapshot(`
       {
         "name": "TestEvent",
-        "payload": "\\"whatever\\"",
+        "payload": "whatever",
       }
     `);
     expect(expectedRun).toMatchInlineSnapshot(`
@@ -114,7 +114,7 @@ describe('Baserun trace', () => {
     expect(expectedRun).toMatchInlineSnapshot(`
       {
         "name": "TestEvent",
-        "payload": "\\"whatever\\"",
+        "payload": "whatever",
       }
     `);
     expect(expectedTrace).toMatchInlineSnapshot(`
@@ -124,5 +124,31 @@ describe('Baserun trace', () => {
         "result": "",
       }
     `);
+  });
+
+  test('assign string metadata', async () => {
+    async function entrypoint(fn: AssignMetadataFunc) {
+      baserun.log('TestEvent', 'whatever');
+      fn('123');
+    }
+
+    const tracedEntrypoint = baserun.trace(entrypoint);
+    await tracedEntrypoint();
+
+    const trace = storeTestSpy.mock.calls[0][1];
+    expect(trace.metadata).toEqual('123');
+  });
+
+  test('assign object metadata', async () => {
+    async function entrypoint(fn: AssignMetadataFunc) {
+      baserun.log('TestEvent', 'whatever');
+      fn({ aaa: 'bbb', qqq: { www: 123 } });
+    }
+
+    const tracedEntrypoint = baserun.trace(entrypoint);
+    await tracedEntrypoint();
+
+    const trace = storeTestSpy.mock.calls[0][1];
+    expect(trace.metadata).toEqual('{"aaa":"bbb"}');
   });
 });

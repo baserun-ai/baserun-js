@@ -1,4 +1,4 @@
-import { Baserun } from './baserun.js';
+import { Baserun, AssignMetadataFunc as AssignMetadataFn } from './baserun.js';
 import {
   getTemplates,
   formatPrompt,
@@ -18,6 +18,8 @@ const flush = Baserun.flush;
 const annotate = Baserun.annotate;
 const submitInputVariable = Baserun.submitInputVariable;
 const TemplateType = Template_TemplateType;
+
+export type AssignMetadataFunc = AssignMetadataFn;
 
 export const baserun = {
   init,

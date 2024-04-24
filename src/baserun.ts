@@ -45,6 +45,11 @@ import { initLlamaIndex } from './patches/vendors/llamaIndex.js';
 const debug = getDebug('baserun:baserun');
 const debugSubmitLogOrSpan = getDebug('baserun:submitLogOrSpan');
 
+export type AssignMetadataFunc = (metadata: any) => void;
+type TraceArgs<T extends any[]> = T extends [...infer I, AssignMetadataFunc]
+  ? I
+  : T;
+
 type TraceStorage = {
   run: Run;
   args: any[];
@@ -291,10 +296,15 @@ export class Baserun {
     return true;
   }
 
+  private static _assignMetadataToRun(run: Run, metadata: any) {
+    run.metadata =
+      typeof metadata === 'string' ? metadata : stringify(metadata);
+  }
+
   static trace<T extends (...args: any[]) => any>(
     fn: T,
     traceOptions?: TraceOptions | string,
-  ): (...args: Parameters<T>) => Promise<ReturnType<T>> {
+  ): (...args: TraceArgs<Parameters<T>>) => Promise<ReturnType<T>> {
     if (typeof traceOptions === 'string') {
       traceOptions = { name: traceOptions };
     }
@@ -307,10 +317,18 @@ export class Baserun {
       console.warn(
         'baserun.trace was called inside of an existing Baserun decorated trace. The new trace will be ignored.',
       );
-      return fn;
+      return async (
+        ...args: TraceArgs<Parameters<T>>
+      ): Promise<ReturnType<T>> => {
+        return await fn(...args, (metadata: any) =>
+          Baserun._assignMetadataToRun(store.run, metadata),
+        );
+      };
     }
 
-    return async (...args: Parameters<T>): Promise<ReturnType<T>> => {
+    return async (
+      ...args: TraceArgs<Parameters<T>>
+    ): Promise<ReturnType<T>> => {
       const run = await Baserun.getOrCreateCurrentRunWithEnsureCreated({
         name,
         traceType: isTestEnv() ? Run_RunType.TEST : Run_RunType.PRODUCTION,
@@ -324,7 +342,9 @@ export class Baserun {
         { run, args, evals: [] },
         async () => {
           try {
-            const result = await fn(...args);
+            const result = await fn(...args, (metadata: any) =>
+              Baserun._assignMetadataToRun(run, metadata),
+            );
             run.result = JSON.stringify(result);
             return result;
           } catch (err) {

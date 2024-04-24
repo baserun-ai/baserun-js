@@ -45,7 +45,9 @@ import { initLlamaIndex } from './patches/vendors/llamaIndex.js';
 const debug = getDebug('baserun:baserun');
 const debugSubmitLogOrSpan = getDebug('baserun:submitLogOrSpan');
 
-export type AssignMetadataFunc = (metadata: any) => void;
+export type AssignMetadataFunc = (
+  metadata: string | Record<string, unknown>,
+) => void;
 type TraceArgs<T extends any[]> = T extends [...infer I, AssignMetadataFunc]
   ? I
   : T;

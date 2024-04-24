@@ -142,7 +142,7 @@ describe('Baserun trace', () => {
   test('assign object metadata', async () => {
     async function entrypoint(fn: AssignMetadataFunc) {
       baserun.log('TestEvent', 'whatever');
-      fn({ aaa: 'bbb' });
+      fn({ aaa: 'bbb', qqq: { www: 123 } });
     }
 
     const tracedEntrypoint = baserun.trace(entrypoint);
